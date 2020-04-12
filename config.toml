@@ -1,0 +1,43 @@
+baseURL = "http://markusbilz.com/"
+languageCode = "en"
+DefaultContentLanguage = "en"
+title = "I'm Markus Bilz"
+theme = "anatole"
+summarylength = 10
+enableEmoji = true
+disqusShortname = ""
+math=true
+
+[params]
+author = "Markus Bilz"
+description = "Home to Markus Bilz"
+profilePicture = "images/profile.png"
+keywords = "Bilz, Markus, DHBW, KIT, Computer Science Student, Commercial Computer Scientist, Karlsruhe"
+favicon = "favicons/"
+
+
+## Set as many as you want.
+
+[[params.socialIcons]]
+icon = "fa-github"
+title = "GitHub"
+url = "https://github.com/karelze"
+
+[[params.socialIcons]]
+icon = "fa-envelope"
+title = "e-mail"
+url = "mailto:mail@markusbilz.com"
+
+[menu]
+
+  [[menu.main]]
+  name = "Home"
+  identifier = "home"
+  weight = 100
+  url = "/"
+
+  [[menu.main]]
+  name = "Posts"
+  weight = 200
+  identifier = "posts"
+  url = "/post/"
