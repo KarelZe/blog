@@ -5,7 +5,7 @@ title = "I'm Markus Bilz"
 theme = "anatole"
 summarylength = 10
 enableEmoji = true
-disqusShortname = ""
+disqusShortname = "blog-markusbilz-com"
 math=true
 
 [params]
