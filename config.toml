@@ -37,9 +37,9 @@ url = "mailto:mail@markusbilz.com"
   url = "/"
 
   [[menu.main]]
-  name = "Posts"
+  name = "Archive"
   weight = 200
-  identifier = "posts"
+  identifier = "archive"
   url = "/post/"
 
   [[menu.main]]
