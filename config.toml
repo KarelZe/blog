@@ -41,3 +41,9 @@ url = "mailto:mail@markusbilz.com"
   weight = 200
   identifier = "posts"
   url = "/post/"
+
+  [[menu.main]]
+  name = "CV"
+  weight = 300
+  identifier = "cv"
+  url = "/documents/document.pdf"

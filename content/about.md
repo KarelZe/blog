@@ -4,7 +4,7 @@ description: "about Alexander Bilz"
 date: "2018-02-11"
 menu: main
 name: "Contact"
-weight: 300
+weight: 400
 ---
 
 If you ask Sandi Thom I was probably born too late, cause Alexander Bilz was raised up in the 90/00’s in southern Germany. Ever since I have enjoyed solving problems, building and tinkering in my dad’s workshop. These were the main reasons why I’ve founded the successful blog called Quaintproject. On this blog, I am sharing my latest experiments, code snippets, and doodles in the field of Raspberry Pi, IT in general, FOSS, CG and 3D Printing with you. My main goal is both to inspire but to also help with common problems. I am also contributing to quaintproject ’s GitHub projects on a regular basis. My weapons of choice for programming are C#, Python, and JavaScript.
