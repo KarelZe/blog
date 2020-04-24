@@ -13,4 +13,4 @@ Ever since I have enjoyed solving problems and building things out of wood in my
 
 Besides from this I enjoy cooking and programming.
 
-Thank you for visiting my website! If you have any questions about me or the posted content feel free to post a comment or write me an E-mail to: mail@markusbilz.com.
+Thank you for visiting my website! If you have any questions about me or the posted content feel free to comment or write me an E-mail: mail@markusbilz.com.
