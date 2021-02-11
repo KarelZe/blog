@@ -46,4 +46,4 @@ url = "mailto:web@markusbilz.com"
   name = "CV"
   weight = 300
   identifier = "cv"
-  url = "/documents/document.pdf"
+  url = "/documents/cv_en.pdf"
