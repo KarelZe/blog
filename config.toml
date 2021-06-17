@@ -50,6 +50,6 @@ url = "mailto:web@markusbilz.com"
 
   [[menu.main]]
   name = "Edu"
-  weight = 400
+  weight = 250
   identifier = "edu"
   url = "https://edu.markusbilz.com/"
