@@ -19,12 +19,22 @@ favicon = "favicons/"
 ## Set as many as you want.
 
 [[params.socialIcons]]
-icon = "fa-github"
+icon = "fab fa-github"
 title = "GitHub"
 url = "https://github.com/karelze"
 
 [[params.socialIcons]]
-icon = "fa-envelope"
+icon = "fab fa-stack-overflow"
+title = "Stackoverflow"
+url = "https://stackoverflow.com/users/5755604/karelze"
+
+[[params.socialIcons]]
+icon = "fab fa-linkedin"
+title = "Linkedin"
+url = "https://www.linkedin.com/in/markus-bilz/"
+
+[[params.socialIcons]]
+icon = "fab fa-envelope"
 title = "e-mail"
 url = "mailto:web@markusbilz.com"
 
