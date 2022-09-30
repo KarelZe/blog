@@ -34,7 +34,7 @@ title = "Linkedin"
 url = "https://www.linkedin.com/in/markus-bilz/"
 
 [[params.socialIcons]]
-icon = "fab fa-envelope"
+icon = "fas fa-envelope"
 title = "e-mail"
 url = "mailto:web@markusbilz.com"
 
