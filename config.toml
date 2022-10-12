@@ -29,6 +29,11 @@ title = "Stackoverflow"
 url = "https://stackoverflow.com/users/5755604/karelze"
 
 [[params.socialIcons]]
+icon = "fas fa-brackets-curly"
+title = "codewars"
+url = "https://www.codewars.com/users/KarelZe"
+
+[[params.socialIcons]]
 icon = "fab fa-linkedin"
 title = "Linkedin"
 url = "https://www.linkedin.com/in/markus-bilz/"
