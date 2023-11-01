@@ -9,6 +9,7 @@ disqusShortname = "blog-markusbilz-com"
 math=true
 
 [params]
+mainSections = []
 author = "Markus Bilz"
 description = "Computer Scientist. Learner."
 profilePicture = "images/profile.jpg"
@@ -51,12 +52,6 @@ url = "mailto:web@markusbilz.com"
   identifier = "home"
   weight = 100
   url = "/"
-
-  [[menu.main]]
-  name = "Archive"
-  weight = 200
-  identifier = "archive"
-  url = "/post/"
 
   [[menu.main]]
   name = "CV"
