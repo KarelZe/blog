@@ -7,7 +7,7 @@ Hi, I'm Markus Bilz.👋
 
 I'm passionate about machine learning and quantitative finance. I like to write readable and performant code.🐅
 
-At the moment, I'm developing fraud-detection solutions at [Atruvia](https://atruvia.de/). I'm also pursuing a master's degree at [KIT](https://www.kit.edu/english/index.php).
+I graduated from [KIT](https://www.kit.edu/english/index.php). At the moment, I'm developing fraud-detection solutions at [Atruvia](https://atruvia.de/).
 
 You can connect with me on:
 * [🏪LinkedIn](https://www.linkedin.com/in/markus-bilz/)
