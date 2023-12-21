@@ -58,9 +58,3 @@ url = "mailto:web@markusbilz.com"
   weight = 300
   identifier = "cv"
   url = "/documents/cv_en.pdf"
-
-  [[menu.main]]
-  name = "Edu"
-  weight = 250
-  identifier = "edu"
-  url = "https://edu.markusbilz.com/"
