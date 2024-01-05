@@ -9,7 +9,6 @@ disqusShortname = "blog-markusbilz-com"
 math=true
 
 [params]
-mainSections = []
 author = "Markus Bilz"
 description = "Computer Scientist. Learner."
 profilePicture = "images/profile.jpg"
