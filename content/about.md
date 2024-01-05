@@ -1,6 +1,10 @@
 ---
+title: "About me"
 description: "About Markus Bilz"
 date: "2018-02-11"
+menu: main
+name: "About me"
+weight: 400
 ---
 
 Hi, I'm Markus Bilz.👋 
