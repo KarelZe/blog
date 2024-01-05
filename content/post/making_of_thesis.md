@@ -71,7 +71,7 @@ After I had created the final version of my thesis, I had a second repo (`KarelZ
 find . -type f -exec md5sum {} + | sort | uniq -w32 -d --all-repeated=separate | sed -r 's/^[^ ]* //' | xargs rm
 ```
 
-To create the [montages](https://imagemagick.org/script/montage.php) from the pdfs, I used the [paper2movie script](https://github.com/momentofgeekiness/paper2movie) by Raymond Vermaas. I tweaked the script to adapt to my preferences. In particular, I adjusted the scaling logic to dynamically scale the size of the tiles in the montage with the number of pages in the document and removed the code for compiling the LaTeX documents and reading the git history, as I head the pdf files already. 
+To create the [montages](https://imagemagick.org/script/montage.php) from the pdfs, I used the [paper2movie script](https://github.com/momentofgeekiness/paper2movie) by Raymond Vermaas. I tweaked the script to adapt to my preferences. In particular, I adjusted the scaling logic to dynamically scale the size of the tiles in the montage with the number of pages in the document and removed the code for compiling the LaTeX documents and reading the git history, as I had compiled the pdf files already. 
 
 Initially, I experimented with converting the pdf to frames using a GitHub action but ran into memory issues quickly. Therefore, I decided to perform the conversion locally.   
 
