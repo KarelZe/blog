@@ -7,10 +7,11 @@ Categories: [academia]
 DisableComments: false
 ---
 While procrastinating during the research phase for my thesis, I came across [a timelapse of a research paper in the making](https://youtu.be/hNENiG7LAnc?feature=shared) by Tim Weninger. I wanted to create a video similar to his but for my own thesis.🥳 
-## Timelapse
-![video](https://youtu.be/nTiMGg_rock?feature=shared)
-## Making-of
 
+## Timelapse
+{{< youtube nTiMGg_rock >}}
+
+## Making-of
 The basic idea is to create montages from different versions of the pdf and stitch them together as a video. All it needs is a versioned LaTeX document, a bit of [github magic](https://github.com/features/actions), and the power of [ImageMagick](https://imagemagick.org/) and [FFmpeg](https://ffmpeg.org/).
 
 First, I set up a github action in [my thesis repo](https://github.com/KarelZe/thesis), that compiled my document and committed the binary to a second repo. The action runs on every push to the `reports/` directory. Every pushed commit becomes a new frame in the final video.
