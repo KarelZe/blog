@@ -1,5 +1,5 @@
 ---
-title: "Timelapse of writing a thesis🎓"
+title: "Timelapse of writing a thesis in 180 days🎓"
 date: 2024-01-05T17:35:00+02:00
 Description: "Timelapse of writing a thesis"
 Tags: [academia, thesis, making-of, timelapse]
