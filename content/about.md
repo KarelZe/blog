@@ -7,7 +7,7 @@ name: "About me"
 weight: 400
 ---
 
-Hi, I'm Markus Bilz.👋 
+Hi, I'm Markus Bilz.👋
 
 I'm passionate about machine learning and quantitative finance. I like to write readable and performant code.🐅
 
