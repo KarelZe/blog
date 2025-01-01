@@ -28,3 +28,12 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
+  - repo: https://github.com/hukkin/mdformat
+    rev: 0.7.21
+    hooks:
+    - id: mdformat
+      additional_dependencies:
+      - mdformat-frontmatter
+      - mdformat-footnote
+      - mdformat-ruff
+      exclude: ^archetypes/
