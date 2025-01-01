@@ -9,7 +9,7 @@ weight: 400
 
 Hi, I'm Markus Bilz.👋
 
-I'm passionate about machine learning and quantitative finance. I like to write readable and performant code.🐅
+I'm passionate about machine learning. I like to write readable and performant code.🐅
 
 I graduated from [KIT](https://www.kit.edu/english/index.php). At the moment, I'm developing document ai solutions at [Atruvia](https://atruvia.de/).
 
