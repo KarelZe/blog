@@ -7,7 +7,7 @@ Categories: [machine-learning]
 DisableComments: false
 ---
 
-I had several weeks off from work and wanted to do a macro cycle to ramp up my onnx skills[^1]. *Oh boy* did I go on a journey!
+I had several weeks off from work and wanted to do a macro cycle to ramp up my onnx skills[^1]. And *boy* did I go on a journey! This blogpost documents the entire process.
 
 ## DONUT architecture
 
