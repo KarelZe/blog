@@ -1,6 +1,11 @@
-______________________________________________________________________
-
-## title: "Timelapse of writing a thesis in 180 days🎓" date: 2024-01-05T17:35:00+02:00 Description: "Timelapse of writing a thesis" Tags: [academia, thesis, making-of, timelapse] Categories: [academia] DisableComments: false
+---
+title: Timelapse of writing a thesis in 180 days🎓
+date: 2024-01-05T17:35:00+02:00
+Description: Timelapse of writing a thesis
+Tags: [academia, thesis, making-of, timelapse]
+Categories: [academia]
+DisableComments: false
+---
 
 While procrastinating during the research phase for my thesis, I came across [a timelapse of a research paper in the making](https://youtu.be/hNENiG7LAnc?feature=shared) by Tim Weninger. I wanted to create a video similar to his but for my own thesis.🥳
 
