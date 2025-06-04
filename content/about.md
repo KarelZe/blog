@@ -9,12 +9,14 @@ weight: 400
 
 Hi, I'm Markus Bilz.👋
 
-I'm passionate about machine learning and quantitative finance. I like to write readable and performant code.🐅
+I'm passionate about machine learning and deep learning, currently focusing on vision-language models and synthetic data generation. My goal is always readable, performant code.🚀
 
-I graduated from [KIT](https://www.kit.edu/english/index.php). At the moment, I'm developing document ai solutions at [Atruvia](https://atruvia.de/).
+After graduating from KIT, I joined Atruvia to develop document AI solutions.
+
+In my spare time, you'll find me strolling, gravel biking or traveling. One of my greatest dreams would be to set foot on [Jan Mayen](https://en.wikipedia.org/wiki/Jan_Mayen).❄️
 
 You can connect with me on:
 
 - [🏪LinkedIn](https://www.linkedin.com/in/markus-bilz/)
 - [🐞Stack Overflow](https://stackoverflow.com/users/5755604/karelze)
-- [📫Mail](mailto:web@markusbilz.com)
+- [📫Mail](mailto:github@markusbilz.com)
