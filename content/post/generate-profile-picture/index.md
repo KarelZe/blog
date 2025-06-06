@@ -19,9 +19,7 @@ These are some of the *best* images, that I've generated. Subjectively, they loo
 
 ## Methodology
 
-Fine-tuning FLUX.1 is super easy with replicate.com's [fast-flux-trainer](https://replicate.com/replicate/fast-flux-trainer/train).
-
-First, create an account at replicate and go to [ostris/flux-dev-lora-trainer](https://replicate.com/ostris/flux-dev-lora-trainer/train). Alternatively, you can use the even faster [fast-flux-trainer](https://replicate.com/replicate/fast-flux-trainer/train) at the cost of some flexibility.
+Fine-tuning FLUX.1 is super easy with replicate. First, create an account at replicate.com and go to [ostris/flux-dev-lora-trainer](https://replicate.com/ostris/flux-dev-lora-trainer/train). Alternatively, you can use the even faster [fast-flux-trainer](https://replicate.com/replicate/fast-flux-trainer/train) at the cost of some flexibility.
 
 We choose a name for our model and set it to private. Gather your input images for fine-tuning. Replicate recommends around 10 to 20 images with a resolution of 1024x1024.
 
@@ -60,4 +58,4 @@ I found that including the profession in the prompt had the greatest impact on a
 
 ## Final thoughts
 
-Tinkering with FLUX.1 and LoRA is great fun for a rainy afternoon. The hurdle is very low with services like replicate. In the future I'd like to experiment with alternative models like [epiCRealism](https://www.seaart.ai/models/detail/9a0e9e0cc9a1ab753e356d4a3c51a76b). I can envision a future where we simply generate images for ourselves using our custom models for specific occasions (e.g., talks, our blog, etc.) based on a few reference images. However, in many cases it's difficult to overcome the [uncanny valley](https://de.wikipedia.org/wiki/Uncanny_Valley) or you might generate images of yourself that just don't quite look like you. Be responsible.
+Tinkering with FLUX.1 and LoRA is great fun for a rainy afternoon. The hurdle is very low with services like replicate and it only cost around 3 EUR. In the future I'd like to experiment with alternative models like [epiCRealism](https://www.seaart.ai/models/detail/9a0e9e0cc9a1ab753e356d4a3c51a76b). I can envision a future where we simply generate images for ourselves using our custom models for specific occasions (e.g., talks, our blog, etc.) based on a few reference images. However, in many cases it's difficult to overcome the [uncanny valley](https://de.wikipedia.org/wiki/Uncanny_Valley) or you might generate images of yourself that just don't quite look like you. Be responsible.
