@@ -6,7 +6,5 @@ updates:
     labels:
       - "dependencies"
       - "gitsubmodule"
-    allow:
-      - dependency-name: "contrib/proxy"
     schedule:
       interval: "daily"
