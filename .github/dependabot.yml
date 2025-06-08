@@ -8,3 +8,5 @@ updates:
       - "gitsubmodule"
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "build"
