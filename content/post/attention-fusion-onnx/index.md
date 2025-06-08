@@ -7,17 +7,17 @@ Categories: [ml]
 DisableComments: false
 ---
 
-The attention mechanism is the core of Transformer-based models. Being compute-intensive, we often want to optimize it to achieve high throughput and low inference times. This article explores different approaches to optimize attention mechanism for huggingface transformers in onnx graphs.
+The attention mechanism is the core of Transformer-based models. Being compute-intensive, we often want to optimize it to achieve high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs.
 
 ## Background
 
 Odds are that when working with Transformers, you come back to huggingface's Transformer package. Transformers uses *custom modelling code* for the attention layers (see e.g., [here](https://github.com/huggingface/transformers/blob/ebeec13609b537f9c760292354118c9d1d63f5a0/src/transformers/models/bart/modeling_bart.py#L147)). During export the pytorch modelling code gets first translated into an [onnx-ir representation](https://github.com/onnx/ir-py), optimized (optional), and then serialized as protobuf.[^1]
 
-Similar to the transformers modelling code, the onnx graph will consist of low-level onnx primitives like `MatMul`, `Reshape` or `Concat` to model attention, despite the availability of highly-optimized [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops in recent versions of onnx.
+Similar to the transformers modelling code, the onnx graph will consist of low-level onnx primitives like `MatMul`, `Reshape` or `Concat` to model attention, despite the availability of specialized [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops in recent versions of onnx (>= opset 23).
 
-```yaml
-# insert sample image from netron here.
-```
+![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
+
+In the screenshot above, you can see a typical subgraph of the scaled-dot-production attention mechanism from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!
 
 ## Core idea of attention fusion
 
@@ -30,6 +30,14 @@ The core idea is now to identify patterns in the onnx graph, that look like the 
 ## Export onnx graph
 
 Let's look at a simple bart encoder first. Despite being conceptually simple, it makes up for an interesting example, as being the cornerstone to more complex models like openai's whisper. We first prepare the model for export. I export via `torch` for ache of flexibility, while you could also use [optimum](https://huggingface.co/docs/optimum/index) if you favour higher level abstractions.
+
+Let's first setup a venv and require all dependencies:
+
+```bash
+uvx venv
+source .venv
+uv pip install torch onnx onnxscript transformers
+```
 
 ```python
 import os
@@ -188,6 +196,8 @@ print(model)
 ## Performance results
 
 ## Conclusion
+
+Attention fusion is unfortunately a very brittle process, which lead to initiatives like `onnxscript`.
 
 While researching for this blog post, I made several open-source contributions.
 
