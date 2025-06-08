@@ -63,3 +63,9 @@ url = "mailto:web@markusbilz.com"
   weight = 1
   identifier = "legal_notice"
   url = "/legal_notice/"
+
+[markup]
+  [markup.highlight]
+    style = "github-dark"
+    codeFences = true
+    guessSyntax = false
