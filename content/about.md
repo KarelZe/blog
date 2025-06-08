@@ -11,9 +11,9 @@ Hi, I'm Markus Bilz.👋
 
 I'm passionate about machine learning and deep learning, currently focusing on vision-language models and synthetic data generation. My goal is always readable, performant code.🚀
 
-After graduating from KIT, I joined Atruvia to develop document AI solutions.
+After graduating from KIT, I joined [Atruvia](https://atruvia.de/) to develop document AI solutions.
 
-In my spare time, you'll find me strolling, gravel biking or traveling. One of my greatest dreams would be to set foot on [Jan Mayen](https://en.wikipedia.org/wiki/Jan_Mayen).❄️
+In my spare time, you'll find me strolling, gravel biking or travelling. One of my greatest dreams would be to set foot on [Jan Mayen](https://en.wikipedia.org/wiki/Jan_Mayen).❄️
 
 You can connect with me on:
 

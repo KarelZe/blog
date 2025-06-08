@@ -7,7 +7,7 @@ Categories: [academia]
 DisableComments: false
 ---
 
-While procrastinating during the research phase for my thesis, I came across [a timelapse of a research paper in the making](https://youtu.be/hNENiG7LAnc?feature=shared) by Tim Weninger. I wanted to create a video similar to his but for my own thesis.🥳
+While procrastinating on my thesis research, I came across [a timelapse of a research paper in the making](https://youtu.be/hNENiG7LAnc?feature=shared) by Tim Weninger. I wanted to create a video similar to his but for my own thesis.🥳
 
 ## Timelapse
 
@@ -15,9 +15,9 @@ While procrastinating during the research phase for my thesis, I came across [a 
 
 ## Making-of
 
-The basic idea is to create montages from different versions of the pdf and stitch them together as a video. All it needs is a versioned LaTeX document, a bit of [github magic](https://github.com/features/actions), and the power of [ImageMagick](https://imagemagick.org/) and [FFmpeg](https://ffmpeg.org/).
+The basic idea is to create montages from different versions of the pdf and stitch them together as a video. All you need is a version-controlled LaTeX document, a little [github magic](https://github.com/features/actions), and the power of [ImageMagick](https://imagemagick.org/) and [FFmpeg](https://ffmpeg.org/).
 
-First, I set up a github action in [my thesis repo](https://github.com/KarelZe/thesis), that compiled my document and committed the binary to a second repo. The action runs on every push to the `reports/` directory. Every pushed commit becomes a new frame in the final video.
+First, I set up a github action in [my thesis repo](https://github.com/KarelZe/thesis), that compiled my document and committed the resulting PDF to a second repo. The action runs on every push to the `reports/` directory. Every pushed commit becomes a new frame in the final video.
 
 ```yaml
 name: Build LaTeX document
@@ -68,13 +68,13 @@ jobs:
           git push origin main
 ```
 
-After I had created the final version of my thesis, I had a second repo (`KarelZe/thesis2video`) full of pdf files versioned by timestamp. As some commits like the removal of unused packages did not affect the layout, I decided to deduplicate files before moving any further.
+Once I had finished my thesis, I had a second repository (KarelZe/thesis2video) containing all the timestamped PDF versions. Since some commits, like removing unused packages, didn't change the layout, I decided to deduplicate the PDF files before proceeding.
 
 ```bash
 find . -type f -exec md5sum {} + | sort | uniq -w32 -d --all-repeated=separate | sed -r 's/^[^ ]* //' | xargs rm
 ```
 
-To create the [montages](https://imagemagick.org/script/montage.php) from the pdfs, I used the [paper2movie script](https://github.com/momentofgeekiness/paper2movie) by Raymond Vermaas. I tweaked the script to adapt to my preferences. In particular, I adjusted the scaling logic to dynamically scale the size of the tiles in the montage with the number of pages in the document and removed the code for compiling the LaTeX documents and reading the git history, as I had compiled the pdf files already.
+To generate the [montages](https://imagemagick.org/script/montage.php) from the pdfs, I used the [paper2movie script](https://github.com/momentofgeekiness/paper2movie) by Raymond Vermaas. I tweaked the script to adapt to my preferences. In particular, I adjusted the scaling logic to dynamically scale the size of the tiles in the montage with the number of pages in the document and removed the code for compiling the LaTeX documents and reading the git history, as I had compiled the pdf files already.
 
 Initially, I experimented with converting the pdf to frames using a GitHub action but ran into memory issues quickly. Therefore, I decided to perform the conversion locally.
 
@@ -144,4 +144,4 @@ cat $(find . -maxdepth 1 -name "*.png" | sort -V) | ffmpeg -r $fps -i - $filenam
 echo -e "Movie available at $filename"
 ```
 
-Depending on the image magick version installed, you might have to [adjust policies for pdf conversion](https://askubuntu.com/a/1081907). That's all it needs.
+Depending on your image magick version installed, you might have to [adjust policies for pdf conversion](https://askubuntu.com/a/1081907). That's all it needs.
