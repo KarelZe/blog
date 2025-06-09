@@ -1,0 +1,12 @@
+# see https://stackoverflow.com/a/75078947
+version: 2
+updates:
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    labels:
+      - "dependencies"
+      - "gitsubmodule"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "build"
