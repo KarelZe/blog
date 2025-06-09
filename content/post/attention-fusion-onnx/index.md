@@ -7,31 +7,31 @@ Categories: [ml]
 DisableComments: false
 ---
 
-The attention mechanism is the core of Transformer-based models. Being compute-intensive, we often want to optimize it to achieve high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs.
+The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs.
 
 ## Background
 
-Odds are that when working with Transformers, you come back to huggingface's Transformer package. Transformers uses *custom modelling code* for the attention layers (see e.g., [here](https://github.com/huggingface/transformers/blob/ebeec13609b537f9c760292354118c9d1d63f5a0/src/transformers/models/bart/modeling_bart.py#L147)). During export the pytorch modelling code gets first translated into an [onnx-ir representation](https://github.com/onnx/ir-py), optimized (optional), and then serialized as protobuf.[^1]
+Odds are that when working with Transformers, you come back to huggingface's Transformer package. Transformers uses *custom modelling code* for the attention layers (see e.g., [here](https://github.com/huggingface/transformers/blob/ebeec13609b537f9c760292354118c9d1d63f5a0/src/transformers/models/bart/modeling_bart.py#L147)). During export the PyTorch modelling code gets first translated into an [onnx-ir representation](https://github.com/microsoft/onnxscript/blob/main/onnxscript/function_libs/torch_lib/ops/__init__.py), optimized (optional), and then serialized as protobuf.[^1]
 
-Similar to the transformers modelling code, the onnx graph will consist of low-level onnx primitives like `MatMul`, `Reshape` or `Concat` to model attention, despite the availability of specialized [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops in recent versions of onnx (>= opset 23).
+Like the transformers modelling code, the onnx graph will consist of low-level onnx primitives like `MatMul`, `Reshape` or `Concat` to model attention, even through more specialized [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops are available in recent versions of onnx (>= opset 23).
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
-In the screenshot above, you can see a typical subgraph of the scaled-dot-production attention mechanism from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!
+In the screenshot above, you can see a typical subgraph of the scaled-dot-product-attention mechanism (SDPA) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!
 
 ## Core idea of attention fusion
 
 The core idea is now to identify patterns in the onnx graph, that look like the attention mechanism and replace the entire subgraph with the `Attention` op plus required adaptions. Fusing Attention is desirable for three reasons:
 
-1. Its likely faster. When the onnx graph is executed on a gpu, the model is first loaded into high-bandwidth memory (HBM). Each operator is run as a small kernel (or program) on the gpu and launched into small but fast static RAM (SRAM) and then results are saved back to HBM. Memory transfers are typically slow, therefore we want to fuse multiple kernels or ops into larger kernels to minimize the amount of memory transfers required. [^2]
-1. Hardware vendors often implement optimized implementations for onnx execution providers e.g., attention, which will give you an additional performance edge.
-1. Operator fusion will keep your graphs tidy and thereby your inner [Marie Kondo](https://knowyourmeme.com/photos/2247427-does-it-spark-joy) happy.🤓
+1. It's likely faster. When the onnx graph is executed on a gpu, the model is first loaded into high-bandwidth memory (HBM). Each operator is run as a small kernel (or program) on the gpu and launched into small but fast static RAM (SRAM) and then results are saved back to HBM. Memory transfers are typically slow, so we want to fuse multiple kernels or ops into larger kernels to minimize the number of memory transfers. [^2]
+1. Hardware vendors often implement optimized implementations for ops for their onnx execution providers e.g., `CUDAExecutionProvider`, which will give you an additional performance edge.
+1. Operator fusion will make your graphs cleaner and satisfy your inner [Marie Kondō](https://knowyourmeme.com/photos/2247427-does-it-spark-joy).🤓
 
 ## Export onnx graph
 
-Let's look at a simple bart encoder first. Despite being conceptually simple, it makes up for an interesting example, as being the cornerstone to more complex models like openai's whisper. We first prepare the model for export. I export via `torch` for ache of flexibility, while you could also use [optimum](https://huggingface.co/docs/optimum/index) if you favour higher level abstractions.
+Let's look at a simple bart encoder first. Despite being conceptually simple, it's an interesting example because it's a building block for more complex models like OpenAI's Whisper. We first prepare the model for export. I export via `torch` for ache of flexibility, while you could also use [optimum](https://huggingface.co/docs/optimum/index) if you favour higher level abstractions.
 
-Let's first setup a venv and require all dependencies:
+Let's first setup a venv and require all necessary dependencies:
 
 ```bash
 uvx venv
@@ -100,7 +100,7 @@ torch.onnx.export(
 )
 ```
 
-Some aspects deserve more explanation. We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled-dot product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in recent nightly builds of pytorch and function-based rewrites have been removed from `onnxscript`.
+Some aspects deserve more explanation. We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled-dot product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in recent nightly builds of PyTorch and function-based rewrites have been removed from `onnxscript`.
 
 ## Fusion with onnxruntime
 
@@ -125,7 +125,11 @@ m.save_model_to_file(optimized_path)
 
 print(f"Optimized ONNX model saved to {optimized_path}")
 print(m.get_fused_operator_statistics())
+```
 
+Next, we can verify the correctness of our graph:
+
+```python
 sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
 encoder_outs_original = sess.run(["encoder_output"], {"input_ids": input_ids.numpy()})
 
@@ -193,16 +197,66 @@ print(model)
 
 ## Fusion with custom rule in onnxscript
 
+Now, let's consider a different model: the [SWIN encoder](https://arxiv.org/abs/2103.14030). The SWIN encoder is interesting, as no attention fusion has been implemented in `onnxruntime` and other approaches are required.
+
+```python
+import requests
+import torch
+from PIL import Image
+from transformers import AutoImageProcessor, SwinModel
+from transformers.models.swin.modeling_swin import SwinAttention
+
+from onnxruntime.transformers import optimizer
+
+model = SwinModel.from_pretrained("hf-internal-testing/tiny-random-SwinModel")
+model.eval()
+
+url = "http://images.cocodataset.org/val2017/000000039769.jpg"
+image = Image.open(requests.get(url, stream=True).raw)
+
+image_processor = AutoImageProcessor.from_pretrained(
+    "hf-internal-testing/tiny-random-SwinModel"
+)
+inputs = image_processor(images=image, return_tensors="pt")
+
+input_names = ["pixel_values"]
+output_names = ["output"]
+
+onnx_path = "swin_model.onnx"
+
+# see:
+# https://github.com/huggingface/transformers/blob/1094dd34f73dae1d9a91a6632635934516612490/src/transformers/models/swin/modeling_swin.py#L552
+torch.onnx.export(
+    model,
+    (inputs["pixel_values"],),
+    onnx_path,
+    input_names=input_names,
+    output_names=output_names,
+    dynamic_axes={
+        "pixel_values": {0: "batch_size", 1: "sequence_length"},
+        "output": {0: "batch_size", 1: "sequence_length"},
+    },
+    opset_version=20,
+    verbose=True,
+    export_modules_as_functions={SwinAttention},
+)
+print(f"Model exported to {onnx_path}")
+```
+
+## Cross-attention with/without kv cache
+
+To keep things simple, our focus till now, was only on SDPA. In practice, we will also have to deal with cross-attention, kv caches,....
+
 ## Performance results
 
 ## Conclusion
 
-Attention fusion is unfortunately a very brittle process, which lead to initiatives like `onnxscript`.
+Unfortunately, attention fusion is a very brittle process, which lead to the development of initiatives like `onnxscript`.
 
 While researching for this blog post, I made several open-source contributions.
 
 ## References:
 
-[^1]: see [https://github.com/justinchuby/diagrams/](https://github.com/justinchuby/diagrams/pull/1/files) for a helpful diagram on the internals of the pytorch onnx exporter.
+[^1]: see [https://github.com/justinchuby/diagrams/](https://github.com/justinchuby/diagrams/pull/1/files) for a helpful diagram on the internals of the PyTorch onnx exporter.
 
 [^2]: see [talk on large language model inference with ONNX Runtime by Kunal Vaishnavi](https://youtu.be/jrIJT01E8Xw?feature=shared&t=420)
