@@ -150,18 +150,93 @@ print("abs_difference", abs_diff)
 # example adapted from:
 # https://github.com/justinchuby/onnx-meetup-2025/blob/main/demos.ipynb
 
+import numpy as np
+import onnxscript.ir as ir
 import onnxscript.rewriter as rewriter
 
+INT_MAX = np.iinfo(np.int64).max
 
-class CombineQKVWeights(rewriter.pattern.RewriteRuleClassBase):
-    def pattern(cls, op, input, q_weight, k_weight, v_weight):
+
+@rewriter.register_rewrite_rule
+class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
+    def pattern(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
         q = op.MatMul(input, q_weight)
-        k = op.MatMul(input, k_weight)
-        v = op.MatMul(input, v_weight)
-        return op.Attention(q, k, v, q_num_heads=1, kv_num_heads=1)
+        q_add = op.Add(q_bias, q)
 
-    def rewrite(cls, op, input, q_weight, k_weight, v_weight):
-        qkv_weight = op.initializer(
+        k = op.MatMul(input, k_weight)
+        k_add = op.Add(k_bias, k)
+
+        shape = ir.Shape(input)
+        gathered_shape = op.Gather(shape, ir.Constant(np.array([0], dtype=np.int64)))
+        q_unsqueezed_shape = op.Unsqueeze(gathered_shape, axes=[0])
+
+        q_shape_concat = op.Concat(
+            [
+                q_unsqueezed_shape,
+                ir.Constant(np.array([-1], dtype=np.int64)),
+                ir.Constant(np.array([4], dtype=np.int64)),
+                ir.Constant(np.array([4], dtype=np.int64)),
+            ],
+            axis=0,
+        )
+        q_reshaped = op.Reshape(q_add, q_shape_concat)
+        q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
+
+        q_shape_transposed = ir.Shape(q_transposed)
+        q_t_slice_shape = op.Slice(
+            q_shape_transposed,
+            starts=[-1],
+            ends=[INT_MAX],
+        )
+        q_dim = op.Cast(q_t_slice_shape, to=ir.TensorProto.FLOAT)
+        q_dim_sqrt_temp = op.Sqrt(q_dim)
+        q_dim_divided = op.Div(
+            ir.Constant(np.array([1], dtype=np.int32)), q_dim_sqrt_temp
+        )
+        q_dim_divided_cast = op.Cast(q_dim_divided, to=ir.TensorProto.FLOAT)
+        q_dim_sqrt = op.sqrt(q_dim_divided_cast)
+        k_dim_sqrt = op.sqrt(q_dim_sqrt)
+
+        q_mul = op.Mul(q_transposed, q_dim_sqrt)
+
+        k_unsqueezed_shape = op.Unsqueeze(gathered_shape, axes=[0])
+        k_shape_concat = op.Concat(
+            [
+                k_unsqueezed_shape,
+                ir.Constant(np.array([-1], dtype=np.int64)),
+                ir.Constant(np.array([4], dtype=np.int64)),
+                ir.Constant(np.array([4], dtype=np.int64)),
+            ],
+            axis=0,
+        )
+        k_reshaped = op.Reshape(k_add, k_shape_concat)
+        k_transposed = op.Transpose(k_reshaped, perm=[0, 2, 3, 1])
+        k_mul = op.Mul(k_transposed, k_dim_sqrt)
+
+        logits = op.MatMul(q_mul, k_mul)
+        logits_softmax = op.Softmax(logits, axis=-1)
+
+        v = op.MatMul(input, v_weight)
+        v_bias = op.Add(v_bias, v)
+        v_unsqueezed_shape = op.Unsqueeze(gathered_shape, axes=[0])
+        v_shape_concat = op.Concat(
+            [
+                v_unsqueezed_shape,
+                ir.Constant(np.array([-1], dtype=np.int64)),
+                ir.Constant(np.array([4], dtype=np.int64)),
+                ir.Constant(np.array([4], dtype=np.int64)),
+            ],
+            axis=0,
+        )
+        v_reshaped = op.Reshape(v_bias, v_shape_concat)
+        v_transposed = op.Transpose(v_reshaped, perm=[0, 2, 1, 3])
+
+        sdpa = op.MatMul(logits_softmax, v_transposed)
+
+        return sdpa
+
+    def rewrite(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
+        qkv_weight_packed = op.initializer(
             ir.tensor(
                 np.concatenate(
                     [
@@ -174,16 +249,30 @@ class CombineQKVWeights(rewriter.pattern.RewriteRuleClassBase):
             ),
             name="qkv_weight",
         )
-        combined_matmul = op.MatMul(input, qkv_weight)
-        new_q, new_k, new_v = op.Split(
-            combined_matmul, axis=2, num_outputs=3, _outputs=3
+        qkv_bias_packed = op.initializer(
+            ir.tensor(
+                np.concatenate(
+                    [
+                        q_bias.const_value.numpy(),
+                        k_bias.const_value.numpy(),
+                        v_bias.const_value.numpy(),
+                    ],
+                    axis=0,
+                )
+            ),
+            name="qkv_bias",
         )
-        return op.Attention(new_q, new_k, new_v, q_num_heads=1, kv_num_heads=1)
+
+        # NOTE: This is custom op Attention!
+        # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
+        return op.Attention(
+            input, qkv_weight_packed, qkv_bias_packed, _domain="com.microsoft"
+        )
 
 
 model = build_model()
 # Create the rewrite rule
-rule = CombineQKVWeights.rule()
+rule = FuseSDPARule.rule()
 # Apply the rewrite rule to the model
 rule.apply_to_model(model)
 # Clean up and run shape inference. Note that you can use the Sequential pass to chain multiple passes together.
