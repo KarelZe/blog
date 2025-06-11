@@ -156,8 +156,6 @@ import onnxscript.rewriter as rewriter
 import onnxscript.rewriter.ort_fusions
 from onnxscript.rewriter import pattern
 
-INT_MAX = np.iinfo(np.int64).max
-
 
 class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
     def pattern(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
@@ -188,15 +186,17 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
             op.Constant(),
         )
         q_dim = op.Cast(q_t_slice_shape, to=onnx.TensorProto.FLOAT)
-        q_dim_sqrt_temp = op.Sqrt(q_dim)
-        q_dim_divided = op.Div(op.Constant(), q_dim_sqrt_temp)
-        q_dim_divided_cast = op.Cast(q_dim_divided, to=onnx.TensorProto.FLOAT)
-        q_dim_sqrt = op.Sqrt(q_dim_divided_cast)
-        k_dim_sqrt = op.Sqrt(q_dim_sqrt)
+        # q_dim_sqrt_temp = op.Sqrt(q_dim)
+        normalization_const = op.Constant()
+        q_dim_divided = op.Div(normalization_const, op.Sqrt(q_dim))
+        # q_dim_divided_cast = op.Cast(q_dim_divided, to=onnx.TensorProto.FLOAT)
+        q_dim_sqrt = op.Sqrt(q_dim_divided)  # (q_dim_divided_cast)
+        k_dim_sqrt = op.Sqrt(q_dim_divided)
 
         q_mul = op.Mul(q_transposed, q_dim_sqrt)
 
-        k_unsqueezed_shape = op.Unsqueeze(gathered_shape, op.Constant())
+        unsqueeze_dim = op.Constant()
+        k_unsqueezed_shape = op.Unsqueeze(gathered_shape, unsqueeze_dim)
         k_shape_concat = op.Concat(
             k_unsqueezed_shape,
             op.Constant(),
@@ -213,7 +213,7 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         v = op.MatMul(input, v_weight)
         v_bias = op.Add(v_bias, v)
-        v_unsqueezed_shape = op.Unsqueeze(gathered_shape, [1])
+        v_unsqueezed_shape = op.Unsqueeze(gathered_shape, op.Constant())
         v_shape_concat = op.Concat(
             v_unsqueezed_shape,
             op.Constant(),
@@ -226,7 +226,19 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         sdpa = op.MatMul(logits_softmax, v_transposed)
 
-        return sdpa
+        # reshape branch
+        shape_unsqueeze = op.Unsqueeze(gathered_shape, op.Constant())
+        shape_input = op.Shape(input)
+        gather_shape_input = op.Gather(shape_input, op.Constant(), axis=0)
+        gather_shape_unsqueeze = op.Unsqueeze(gather_shape_input, op.Constant())
+        concat_shape_input = op.Concat(
+            shape_unsqueeze, gather_shape_unsqueeze, op.Constant(), axis=0
+        )
+
+        sdpa_transposed = op.Transpose(sdpa, perm=[0, 2, 1, 3])
+        sdpa_reshaped = op.Reshape(sdpa_transposed, concat_shape_input, allowzero=0)
+
+        return sdpa_reshaped
 
     def rewrite(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
         qkv_weight_packed = op.initializer(
@@ -237,7 +249,7 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
                         k_weight.const_value.numpy(),
                         v_weight.const_value.numpy(),
                     ],
-                    axis=1,
+                    axis=-1,
                 )
             ),
             name="qkv_weight",
@@ -250,7 +262,7 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
                         k_bias.const_value.numpy(),
                         v_bias.const_value.numpy(),
                     ],
-                    axis=0,
+                    axis=-1,
                 )
             ),
             name="qkv_bias",
@@ -258,13 +270,17 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         # NOTE: This is custom op Attention!
         # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
+        # see also:
+        # https://github.com/microsoft/onnxscript/blob/51ecf47523ef079c53b0e620c62d56d70cfd3871/onnxscript/rewriter/ort_fusions/attention.py#L34
+        # FIXME: do not hardcode number of heads
         return op.Attention(
-            input, qkv_weight_packed, qkv_bias_packed, _domain="com.microsoft"
+            input,
+            qkv_weight_packed,
+            qkv_bias_packed,
+            None,
+            num_heads=4,
+            _domain="com.microsoft",
         )
-
-        # combined_matmul = op.MatMul(input, qkv_weight)
-        # new_q, new_k, new_v = op.Split(combined_matmul, axis=2, num_outputs=3, _outputs=3)
-        # return op.Attention(new_q, new_k, new_v, q_num_heads=1, kv_num_heads=1)
 
 
 onnx_model = ir.load(onnx_path)
