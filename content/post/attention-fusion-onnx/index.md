@@ -302,7 +302,7 @@ print(onnx_model)
 ir.save(onnx_model, "bart_model_onnxscript_fused_new.onnx")
 ```
 
-## Fusion with custom rule in onnxscript
+## Fusion with standard rules in onnxscript
 
 Now, let's consider a different model: the [SWIN encoder](https://arxiv.org/abs/2103.14030). The SWIN encoder is interesting, as no attention fusion has been implemented in `onnxruntime` and other approaches are required.
 
@@ -350,11 +350,36 @@ torch.onnx.export(
 print(f"Model exported to {onnx_path}")
 ```
 
+Now let's apply a set of `sdpa_rules` rules.
+
+```python
+import onnxscript
+import onnxscript.ir as ir
+import requests
+import torch
+from onnxscript.rewriter.ort_fusions.sdpa import sdpa_rules
+from PIL import Image
+from transformers import AutoImageProcessor, SwinModel
+from transformers.models.swin.modeling_swin import SwinAttention
+
+onnx_model = ir.load("/Users/markusbilz/Documents/git/onnxruntime/swin_model.onnx")
+onnx_model = onnxscript.optimizer.optimize(onnx_model)
+
+model_with_rewrite_applied = onnxscript.rewriter.rewrite(
+    onnx_model, pattern_rewrite_rules=sdpa_rules
+)
+ir.save(model_with_rewrite_applied, "swin_model_with_attention_fusion.onnx")
+```
+
 ## Cross-attention with/without kv cache
 
 To keep things simple, our focus till now, was only on SDPA. In practice, we will also have to deal with cross-attention, kv caches,....
 
 ## Performance results
+
+```python
+# TODO: add some solid timing code.
+```
 
 ## Conclusion
 
