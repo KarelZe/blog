@@ -153,11 +153,12 @@ print("abs_difference", abs_diff)
 import numpy as np
 import onnxscript.ir as ir
 import onnxscript.rewriter as rewriter
+import onnxscript.rewriter.ort_fusions
+from onnxscript.rewriter import pattern
 
 INT_MAX = np.iinfo(np.int64).max
 
 
-@rewriter.register_rewrite_rule
 class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
     def pattern(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
         q = op.MatMul(input, q_weight)
@@ -166,47 +167,41 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         k = op.MatMul(input, k_weight)
         k_add = op.Add(k_bias, k)
 
-        shape = ir.Shape(input)
-        gathered_shape = op.Gather(shape, ir.Constant(np.array([0], dtype=np.int64)))
-        q_unsqueezed_shape = op.Unsqueeze(gathered_shape, axes=[0])
+        shape = op.Shape(input)
+        gathered_shape = op.Gather(shape, op.Constant(), axis=0)
+        q_unsqueezed_shape = op.Unsqueeze(gathered_shape, op.Constant())
 
         q_shape_concat = op.Concat(
-            [
-                q_unsqueezed_shape,
-                ir.Constant(np.array([-1], dtype=np.int64)),
-                ir.Constant(np.array([4], dtype=np.int64)),
-                ir.Constant(np.array([4], dtype=np.int64)),
-            ],
+            q_unsqueezed_shape,
+            op.Constant(),
+            op.Constant(),
+            op.Constant(),
             axis=0,
         )
-        q_reshaped = op.Reshape(q_add, q_shape_concat)
+        q_reshaped = op.Reshape(q_add, q_shape_concat, allowzero=0)
         q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
 
-        q_shape_transposed = ir.Shape(q_transposed)
+        q_shape_transposed = op.Shape(q_transposed)
         q_t_slice_shape = op.Slice(
             q_shape_transposed,
-            starts=[-1],
-            ends=[INT_MAX],
+            op.Constant(),
+            op.Constant(),
         )
-        q_dim = op.Cast(q_t_slice_shape, to=ir.TensorProto.FLOAT)
+        q_dim = op.Cast(q_t_slice_shape, to=onnx.TensorProto.FLOAT)
         q_dim_sqrt_temp = op.Sqrt(q_dim)
-        q_dim_divided = op.Div(
-            ir.Constant(np.array([1], dtype=np.int32)), q_dim_sqrt_temp
-        )
-        q_dim_divided_cast = op.Cast(q_dim_divided, to=ir.TensorProto.FLOAT)
-        q_dim_sqrt = op.sqrt(q_dim_divided_cast)
-        k_dim_sqrt = op.sqrt(q_dim_sqrt)
+        q_dim_divided = op.Div(op.Constant(), q_dim_sqrt_temp)
+        q_dim_divided_cast = op.Cast(q_dim_divided, to=onnx.TensorProto.FLOAT)
+        q_dim_sqrt = op.Sqrt(q_dim_divided_cast)
+        k_dim_sqrt = op.Sqrt(q_dim_sqrt)
 
         q_mul = op.Mul(q_transposed, q_dim_sqrt)
 
-        k_unsqueezed_shape = op.Unsqueeze(gathered_shape, axes=[0])
+        k_unsqueezed_shape = op.Unsqueeze(gathered_shape, op.Constant())
         k_shape_concat = op.Concat(
-            [
-                k_unsqueezed_shape,
-                ir.Constant(np.array([-1], dtype=np.int64)),
-                ir.Constant(np.array([4], dtype=np.int64)),
-                ir.Constant(np.array([4], dtype=np.int64)),
-            ],
+            k_unsqueezed_shape,
+            op.Constant(),
+            op.Constant(),
+            op.Constant(),
             axis=0,
         )
         k_reshaped = op.Reshape(k_add, k_shape_concat)
@@ -218,14 +213,12 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         v = op.MatMul(input, v_weight)
         v_bias = op.Add(v_bias, v)
-        v_unsqueezed_shape = op.Unsqueeze(gathered_shape, axes=[0])
+        v_unsqueezed_shape = op.Unsqueeze(gathered_shape, [1])
         v_shape_concat = op.Concat(
-            [
-                v_unsqueezed_shape,
-                ir.Constant(np.array([-1], dtype=np.int64)),
-                ir.Constant(np.array([4], dtype=np.int64)),
-                ir.Constant(np.array([4], dtype=np.int64)),
-            ],
+            v_unsqueezed_shape,
+            op.Constant(),
+            op.Constant(),
+            op.Constant(),
             axis=0,
         )
         v_reshaped = op.Reshape(v_bias, v_shape_concat)
@@ -269,19 +262,28 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
             input, qkv_weight_packed, qkv_bias_packed, _domain="com.microsoft"
         )
 
+        # combined_matmul = op.MatMul(input, qkv_weight)
+        # new_q, new_k, new_v = op.Split(combined_matmul, axis=2, num_outputs=3, _outputs=3)
+        # return op.Attention(new_q, new_k, new_v, q_num_heads=1, kv_num_heads=1)
 
-model = build_model()
-# Create the rewrite rule
+
+onnx_model = ir.load(onnx_path)
+
 rule = FuseSDPARule.rule()
 # Apply the rewrite rule to the model
-rule.apply_to_model(model)
+tracer = pattern.MatchingTracer()
+rule.apply_to_model(onnx_model, tracer=tracer, verbose=4)
+tracer.report()
 # Clean up and run shape inference. Note that you can use the Sequential pass to chain multiple passes together.
 ir.passes.Sequential(
+    onnxscript.rewriter.RewritePass([rule]),
     common_passes.RemoveUnusedNodesPass(),
     common_passes.ShapeInferencePass(),
-)(model)
+)(onnx_model)
 
-print(model)
+print(onnx_model)
+
+ir.save(onnx_model, "bart_model_onnxscript_fused_new.onnx")
 ```
 
 ## Fusion with custom rule in onnxscript

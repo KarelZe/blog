@@ -4,6 +4,10 @@
         "Atruvia",
         "Bilz",
         "headshot",
-        "onnxscript"
+        "numpy",
+        "onnx",
+        "onnxscript",
+        "SDPA",
+        "venv"
     ]
 }
