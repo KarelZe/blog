@@ -13,7 +13,7 @@ The attention mechanism is the core of Transformer-based models. Due to its comp
 
 Odds are that when working with Transformers, you come back to huggingface's Transformer package. Transformers uses *custom modelling code* for the attention layers (see e.g., [here](https://github.com/huggingface/transformers/blob/ebeec13609b537f9c760292354118c9d1d63f5a0/src/transformers/models/bart/modeling_bart.py#L147)). During export the PyTorch modelling code gets first translated into an [onnx-ir representation](https://github.com/microsoft/onnxscript/blob/main/onnxscript/function_libs/torch_lib/ops/__init__.py), optimized (optional), and then serialized as protobuf.[^1]
 
-Like the transformers modelling code, the onnx graph will consist of low-level onnx primitives like `MatMul`, `Reshape` or `Concat` to model attention, even through more specialized [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops are available in recent versions of onnx (>= opset 23).
+Like the transformers modelling code, the onnx graph will consist of low-level onnx primitives like `MatMul`, `Reshape` or `Concat` to model attention, even through more specialized [`ai.onnx.Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops are available in recent versions of onnx (>= opset 23) or from contributor ops [`com.microsoft.Attention`](https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention).
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
@@ -39,7 +39,7 @@ source .venv
 uv pip install torch onnx onnxscript transformers
 ```
 
-```python
+```python {hl_lines="2-4 7"}
 import os
 
 import torch
@@ -103,6 +103,8 @@ torch.onnx.export(
 Some aspects deserve more explanation. We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled-dot product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in recent nightly builds of PyTorch and function-based rewrites have been removed from `onnxscript`.
 
 ## Fusion with onnxruntime
+
+TODO: this requires some unreleased nightly or building from source. https://github.com/microsoft/onnxruntime/pull/24857
 
 ```python
 optimization_options = FusionOptions("bart")
