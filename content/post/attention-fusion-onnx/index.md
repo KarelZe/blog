@@ -151,6 +151,8 @@ print("abs_difference", abs_diff)
 TODO: Maybe rename to BART self-attention fusion.
 TODO: Explain that rule is written to match against optimized model with `optimizer.optimize(...)`. Verify this.
 
+TODO: Rename variables in code similar to transformers.
+
 ```python
 # example adapted from:
 # https://github.com/justinchuby/onnx-meetup-2025/blob/main/demos.ipynb
@@ -407,35 +409,41 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
         q = op.MatMul(input, q_weight)
         q_add = op.Add(q_bias, q)
 
-        q_dim_0_axis = op.Gather(op.Shape(q_add), op.Constant(), axis=0)
-        q_dim_0_shape = op.Unsqueeze(q_dim_0_axis, op.Constant())
+        q_shape = op.Shape(q_add)
 
-        q_dim_1_axis = op.Gather(op.Shape(q_add), op.Constant(), axis=0)
-        q_dim_1_shape = op.Unsqueeze(q_dim_1_axis, op.Constant())
+        q_dim_0_axis = op.Gather(q_shape, pattern.ANY_VALUE, axis=0)
+        q_dim_0_shape = op.Unsqueeze(q_dim_0_axis, pattern.ANY_VALUE)
+
+        q_dim_1_axis = op.Gather(q_shape, pattern.ANY_VALUE, axis=0)
+        q_dim_1_shape = op.Unsqueeze(q_dim_1_axis, pattern.ANY_VALUE)
 
         q_shape_concat = op.Concat(
             q_dim_0_shape,
             q_dim_1_shape,
-            op.Constant(),
-            op.Constant(),
+            pattern.ANY_VALUE,
+            pattern.ANY_VALUE,
             axis=0,
         )
-        q_reshaped = op.Reshape(q_add, q_shape_concat, allowzero=0)
+        q_reshaped = op.Reshape(
+            q_add, q_shape_concat, allowzero=0, _outputs=["q_reshaped"]
+        )
         q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
 
         k = op.MatMul(input, k_weight)
         k_add = op.Add(k_bias, k)
-        k_dim_0_axis = op.Gather(op.Shape(k_add), op.Constant(), axis=0)
-        k_dim_0_shape = op.Unsqueeze(k_dim_0_axis, op.Constant())
+        k_shape = op.Shape(k_add)
+        k_dim_0_axis = op.Gather(k_shape, pattern.ANY_VALUE, axis=0)
+        k_dim_0_shape = op.Unsqueeze(k_dim_0_axis, pattern.ANY_VALUE)
 
-        k_dim_1_axis = op.Gather(op.Shape(k_add), op.Constant(), axis=0)
-        k_dim_1_shape = op.Unsqueeze(k_dim_1_axis, op.Constant())
+        k_dim_1_axis = op.Gather(k_shape, pattern.ANY_VALUE, axis=0)
+        k_dim_1_shape = op.Unsqueeze(k_dim_1_axis, pattern.ANY_VALUE)
 
+        # TODO: Figure out, why ANY_VALUE is needed here.?
         k_shape_concat = op.Concat(
             k_dim_0_shape,
             k_dim_1_shape,
-            op.Constant(),
-            op.Constant(),
+            pattern.ANY_VALUE,
+            pattern.ANY_VALUE,
             axis=0,
         )
         k_reshaped = op.Reshape(k_add, k_shape_concat, allowzero=0)
@@ -443,25 +451,28 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
 
         logits = op.MatMul(q_transposed, k_transposed)
 
-        normalization_constant = op.Constant()
-        logits_div = op.Div(logits, normalization_constant)
-        logits_add = op.Add(logits_div, op.Constant())
+        # sqrt_head_dim = math.sqrt(float(k_transposed.const_value.shape[-1]))
+        # sqrt_head_dim = 2.828427 # math.sqrt(8.0)
+        # op.Constant(value=make_tensor("true", TensorProto.BOOL, [1], [1])
+        # normalization_constant = op.Constant(value=ir.tensor(sqrt_head_dim,dtype=ir.DataType.FLOAT))
+        logits_div = op.Div(logits, pattern.ANY_VALUE)
+        logits_add = op.Add(logits_div, pattern.ANY_VALUE)
 
         logits_softmax = op.Softmax(logits_add, axis=-1)
 
         v = op.MatMul(input, v_weight)
         v_add = op.Add(v_bias, v)
-        v_dim_0_axis = op.Gather(op.Shape(v_add), op.Constant(), axis=0)
-        v_dim_0_shape = op.Unsqueeze(v_dim_0_axis, op.Constant())
-
-        v_dim_1_axis = op.Gather(op.Shape(v_add), op.Constant(), axis=0)
-        v_dim_1_shape = op.Unsqueeze(v_dim_1_axis, op.Constant())
+        v_dim_shape = op.Shape(v_add)
+        v_dim_0_axis = op.Gather(v_dim_shape, pattern.ANY_VALUE, axis=0)
+        v_dim_0_shape = op.Unsqueeze(v_dim_0_axis, pattern.ANY_VALUE)
+        v_dim_1_axis = op.Gather(v_dim_shape, pattern.ANY_VALUE, axis=0)
+        v_dim_1_shape = op.Unsqueeze(v_dim_1_axis, pattern.ANY_VALUE)
 
         v_shape_concat = op.Concat(
             v_dim_0_shape,
             v_dim_1_shape,
-            op.Constant(),
-            op.Constant(),
+            pattern.ANY_VALUE,
+            pattern.ANY_VALUE,
             axis=0,
         )
         v_reshaped = op.Reshape(v_add, v_shape_concat, allowzero=0)
@@ -472,20 +483,80 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
         # relative position bias
         sdpa_transposed = op.Transpose(sdpa, perm=[0, 2, 1, 3])
         # sdpa_shape = op.Shape(sdpa_transposed)
-        sdpa_dim_0_axis = op.Gather(op.Shape(sdpa_transposed), op.Constant(), axis=0)
-        sdpa_dim_0_shape = op.Unsqueeze(sdpa_dim_0_axis, op.Constant())
+        # FIXME: maybe introduce OrPattern here to match against unoptimized graph.
+        sdpa_shape = op.Shape(sdpa_transposed)
+        sdpa_dim_0_axis = op.Gather(sdpa_shape, pattern.ANY_VALUE, axis=0)
+        sdpa_dim_0_shape = op.Unsqueeze(sdpa_dim_0_axis, pattern.ANY_VALUE)
 
-        sdpa_dim_1_axis = op.Gather(op.Shape(sdpa_transposed), op.Constant(), axis=0)
-        sdpa_dim_1_shape = op.Unsqueeze(sdpa_dim_1_axis, op.Constant())
+        sdpa_dim_1_axis = op.Gather(sdpa_shape, pattern.ANY_VALUE, axis=0)
+        sdpa_dim_1_shape = op.Unsqueeze(sdpa_dim_1_axis, pattern.ANY_VALUE)
 
         sdpa_dim_concat = op.Concat(
             sdpa_dim_0_shape,
             sdpa_dim_1_shape,
-            op.Constant(),
+            pattern.ANY_VALUE,
             axis=0,
         )
         sdpa_reshaped = op.Reshape(sdpa_transposed, sdpa_dim_concat, allowzero=0)
         return sdpa_reshaped
+
+        # return dense_add_bias
+
+    def rewrite(
+        self,
+        op,
+        input,
+        q_weight,
+        k_weight,
+        v_weight,
+        q_bias,
+        k_bias,
+        v_bias,
+        q_reshaped,
+    ):
+        # Pack the weights and biases for Q, K, V
+        qkv_weight_packed = op.initializer(
+            ir.tensor(
+                np.concatenate(
+                    [
+                        q_weight.const_value.numpy(),
+                        k_weight.const_value.numpy(),
+                        v_weight.const_value.numpy(),
+                    ],
+                    axis=-1,
+                )
+            ),
+            name="qkv_weight",
+        )
+        qkv_bias_packed = op.initializer(
+            ir.tensor(
+                np.concatenate(
+                    [
+                        q_bias.const_value.numpy(),
+                        k_bias.const_value.numpy(),
+                        v_bias.const_value.numpy(),
+                    ],
+                    axis=-1,
+                )
+            ),
+            name="qkv_bias",
+        )
+        num_heads = _ir_utils.get_dim(q_reshaped, 2)
+        if not isinstance(num_heads, int):
+            return None
+        # NOTE: This is custom op Attention!
+        # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
+        # see also:
+        # https://github.com/microsoft/onnxscript/blob/51ecf47523ef079c53b0e620c62d56d70cfd3871/onnxscript/rewriter/ort_fusions/attention.py#L34
+        # FIXME: https://github.com/huggingface/transformers/blob/9487765f07ef4e5500d6ec21cad99aed4a037a3d/src/transformers/models/swin/modeling_swin.py#L439
+        return op.Attention(
+            input,
+            qkv_weight_packed,
+            qkv_bias_packed,
+            None,
+            num_heads=num_heads,
+            _domain="com.microsoft",
+        )
 ```
 
 ## Cross-attention with/without kv cache
