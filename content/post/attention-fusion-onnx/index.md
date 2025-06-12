@@ -5,9 +5,10 @@ Description: Fusing Attention in ONNX graphs✨
 Tags: [attention, self-attention, onnx, onnxscript, bart, swin]
 Categories: [ml]
 DisableComments: false
+thumbnail: images/thumbnail_attention_fusion.png
 ---
 
-The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs.
+The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs. Our focus is on BART and SWIN.
 
 ## Background
 
@@ -17,17 +18,17 @@ Like the transformers modelling code, the onnx graph will consist of low-level o
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
-In the screenshot above, you can see a typical subgraph of the scaled-dot-product-attention mechanism (SDPA) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!🥵
+In the screenshot above, you can see a typical subgraph of the scaled-dot-product-attention mechanism (SDPA) from a BART encoder. You might spot the query, key, and value, which we know from the [Attention is all you need paper](https://arxiv.org/abs/1706.03762). On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!🥵
 
 ## Core idea of attention fusion
 
 The core idea is now to identify patterns in the onnx graph, that look like the attention mechanism and replace the entire subgraph with the `Attention` op plus required adaptions. Fusing Attention is desirable for three reasons:
 
-1. It's likely faster. When the onnx graph is executed on a gpu, the model is first loaded into high-bandwidth memory (HBM). Each operator is run as a small kernel (or program) on the gpu and launched into small but fast static RAM (SRAM) and then results are saved back to HBM. Memory transfers are typically slow, so we want to fuse multiple kernels or ops into larger kernels to minimize the number of memory transfers. [^2]
+1. It's likely faster. When the onnx graph is executed on a gpu, the model is first loaded into high-bandwidth memory (HBM). Each operator is run as a small kernel (or program) on the gpu and launched into small but fast static RAM (SRAM) and then results are saved back to HBM. Memory transfers are typically slow, so we want to fuse multiple kernels or ops into larger kernels to minimize the number of memory transfers.[^2]
 1. Hardware vendors often implement optimized implementations for ops for their onnx execution providers e.g., `CUDAExecutionProvider`, which will give you an additional performance edge.
-1. Operator fusion will make your graphs cleaner and satisfy your inner [Marie Kondō](https://knowyourmeme.com/photos/2247427-does-it-spark-joy).🤓
+1. Operator fusion will make your graphs tidier and satisfy your inner [Marie Kondō](https://knowyourmeme.com/photos/2247427-does-it-spark-joy).🤓
 
-## Export onnx graph
+## Export onnx graph of BART encoder
 
 Let's look at a simple bart encoder first. Despite being conceptually simple, it's an interesting example because it's a building block for more complex models like OpenAI's Whisper. We first prepare the model for export. I export via `torch` for ache of flexibility, while you could also use [optimum](https://huggingface.co/docs/optimum/index) if you favour higher level abstractions.
 
@@ -36,10 +37,12 @@ Let's first setup a venv and require all necessary dependencies:
 ```bash
 uvx venv
 source .venv
-uv pip install torch onnx onnxscript transformers
+uv pip install torch onnx onnxscript==0.3.0 transformers==4.52.4
 ```
 
-```python {hl_lines="2-4 7"}
+I strongly advocate to pin at least the dependencies of `transformers` and `onnxscript` due to frequent changes in modelling or fusion.
+
+```python {hl_lines="16-27 57"}
 import os
 
 import torch
@@ -56,6 +59,8 @@ model.eval()
 
 
 class EncoderWrapper(torch.nn.Module):
+    """A wrapper around the BART encoder for onnx export."""
+
     def __init__(self, encoder: torch.nn.Module):
         super().__init__()
         self.encoder = encoder
@@ -70,11 +75,10 @@ class EncoderWrapper(torch.nn.Module):
 model = EncoderWrapper(encoder=model.model.encoder)
 print(model)
 
-text = "Hello, how are you?"
+text = "God bless the internet."
 inputs = tokenizer(text, return_tensors="pt")
 
-input_ids = inputs["input_ids"]
-attention_mask = inputs["attention_mask"]
+input_ids, attention_mask = inputs["input_ids"], inputs["attention_mask"]
 
 input_names = ["input_ids"]
 output_names = ["encoder_output"]
@@ -95,18 +99,23 @@ torch.onnx.export(
         "encoder_output": {0: "batch_size", 1: "sequence_length"},
     },
     opset_version=20,
-    # NOTE: deprecated in latest versions (torch > 2.6) https://docs.pytorch.org/docs/stable/onnx_torchscript.html
     export_modules_as_functions={BartSdpaAttention},
 )
 ```
 
-Some aspects deserve more explanation. We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled-dot product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in recent nightly builds of PyTorch and function-based rewrites have been removed from `onnxscript`.
+Some aspects deserve more explanation (see highlight). We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled-dot product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in PyTorch and function-based rewrites have been removed from `onnxscript`.[^3]
 
-## Fusion with onnxruntime
+## BART attention fusion with onnxruntime
+
+The most straight-forward way to attempt attention fusion is via `onnxruntime`. Yet it's also the most brittle, s
 
 TODO: this requires some unreleased nightly or building from source. https://github.com/microsoft/onnxruntime/pull/24857
 
 ```python
+import onnxruntime as ort
+from onnxruntime.transformers import optimizer
+from onnxruntime.transformers.fusion_options import FusionOptions
+
 optimization_options = FusionOptions("bart")
 optimization_options.enable_attention = True
 
@@ -165,7 +174,17 @@ from onnxscript.rewriter import pattern
 
 
 class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
-    def pattern(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
+    def pattern(
+        self,
+        op,
+        input,
+        q_weight: ir.Value,
+        k_weight: ir.Value,
+        v_weight: ir.Value,
+        q_bias: ir.Value,
+        k_bias: ir.Value,
+        v_bias: ir.Value,
+    ):
         q = op.MatMul(input, q_weight)
         q_add = op.Add(q_bias, q)
 
@@ -198,8 +217,7 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         q_dim = op.Cast(q_t_slice_shape, to=onnx.TensorProto.FLOAT)
         normalization_const = op.Constant()
         q_dim_divided = op.Div(normalization_const, op.Sqrt(q_dim))
-        # q_dim_divided_cast = op.Cast(q_dim_divided, to=onnx.TensorProto.FLOAT)
-        q_dim_sqrt = op.Sqrt(q_dim_divided)  # (q_dim_divided_cast)
+        q_dim_sqrt = op.Sqrt(q_dim_divided)
         k_dim_sqrt = op.Sqrt(q_dim_divided)
 
         q_mul = op.Mul(q_transposed, q_dim_sqrt)
@@ -248,64 +266,6 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         sdpa_reshaped = op.Reshape(sdpa_transposed, concat_shape_input, allowzero=0)
 
         return sdpa_reshaped
-
-    def rewrite(
-        self,
-        op,
-        input,
-        q_weight,
-        k_weight,
-        v_weight,
-        q_bias,
-        k_bias,
-        v_bias,
-        q_reshaped,
-    ):
-        # NOTE: similar to onnxruntime, we retrieve num_heads from q-reshape
-        # https://github.com/KarelZe/onnxruntime/blob/0e52117520508e3b14d8272390449c29ac089647/onnxruntime/python/tools/transformers/fusion_attention.py#L165
-        num_heads = _ir_utils.get_dim(q_reshaped, 2)
-        if not isinstance(num_heads, int):
-            return None
-
-        qkv_weight_packed = op.initializer(
-            ir.tensor(
-                np.concatenate(
-                    [
-                        q_weight.const_value.numpy(),
-                        k_weight.const_value.numpy(),
-                        v_weight.const_value.numpy(),
-                    ],
-                    axis=-1,
-                )
-            ),
-            name="qkv_weight",
-        )
-        qkv_bias_packed = op.initializer(
-            ir.tensor(
-                np.concatenate(
-                    [
-                        q_bias.const_value.numpy(),
-                        k_bias.const_value.numpy(),
-                        v_bias.const_value.numpy(),
-                    ],
-                    axis=-1,
-                )
-            ),
-            name="qkv_bias",
-        )
-
-        # NOTE: This is custom op Attention!
-        # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
-        # see also:
-        # https://github.com/microsoft/onnxscript/blob/51ecf47523ef079c53b0e620c62d56d70cfd3871/onnxscript/rewriter/ort_fusions/attention.py#L34
-        return op.Attention(
-            input,
-            qkv_weight_packed,
-            qkv_bias_packed,
-            None,
-            num_heads=num_heads,
-            _domain="com.microsoft",
-        )
 
 
 onnx_model = ir.load(onnx_path)
@@ -580,3 +540,5 @@ While researching for this blog post, I made several open-source contributions.
 [^1]: see [https://github.com/justinchuby/diagrams/](https://github.com/justinchuby/diagrams/pull/1/files) for a helpful diagram on the internals of the PyTorch onnx exporter.
 
 [^2]: see [talk on large language model inference with ONNX Runtime by Kunal Vaishnavi](https://youtu.be/jrIJT01E8Xw?feature=shared&t=420)
+
+[^3]: see [pytorch docs](https://docs.pytorch.org/docs/stable/onnx_torchscript.html)
