@@ -17,7 +17,7 @@ Like the transformers modelling code, the onnx graph will consist of low-level o
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
-In the screenshot above, you can see a typical subgraph of the scaled-dot-product-attention mechanism (SDPA) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!
+In the screenshot above, you can see a typical subgraph of the scaled-dot-product-attention mechanism (SDPA) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!🥵
 
 ## Core idea of attention fusion
 
@@ -145,6 +145,9 @@ print("abs_difference", abs_diff)
 ```
 
 ## Fusion with rule in onnxscript
+
+TODO: Maybe rename to BART self-attention fusion.
+TODO: Explain that rule is written to match against optimized model with `optimizer.optimize(...)`. Verify this.
 
 ```python
 # example adapted from:
@@ -304,6 +307,9 @@ ir.save(onnx_model, "bart_model_onnxscript_fused_new.onnx")
 
 ## Fusion with standard rules in onnxscript
 
+TODO: Maybe rename this section to SWIN?
+TODO: explain what is special about SWIN self-attention? https://github.com/huggingface/transformers/blob/9487765f07ef4e5500d6ec21cad99aed4a037a3d/src/transformers/models/swin/modeling_swin.py#L439 Explain role of context layer. Explain of dropout in attention mechanism. How do we incorporate context layer in node assembly?
+
 Now, let's consider a different model: the [SWIN encoder](https://arxiv.org/abs/2103.14030). The SWIN encoder is interesting, as no attention fusion has been implemented in `onnxruntime` and other approaches are required.
 
 ```python
@@ -369,6 +375,95 @@ model_with_rewrite_applied = onnxscript.rewriter.rewrite(
     onnx_model, pattern_rewrite_rules=sdpa_rules
 )
 ir.save(model_with_rewrite_applied, "swin_model_with_attention_fusion.onnx")
+```
+
+## Fusion for SWIN
+
+```python
+class FuseSDPARule(pattern.RewriteRuleClassBase):
+    def pattern(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
+        q = op.MatMul(input, q_weight)
+        q_add = op.Add(q_bias, q)
+
+        q_dim_0_axis = op.Gather(op.Shape(q_add), op.Constant(), axis=0)
+        q_dim_0_shape = op.Unsqueeze(q_dim_0_axis, op.Constant())
+
+        q_dim_1_axis = op.Gather(op.Shape(q_add), op.Constant(), axis=0)
+        q_dim_1_shape = op.Unsqueeze(q_dim_1_axis, op.Constant())
+
+        q_shape_concat = op.Concat(
+            q_dim_0_shape,
+            q_dim_1_shape,
+            op.Constant(),
+            op.Constant(),
+            axis=0,
+        )
+        q_reshaped = op.Reshape(q_add, q_shape_concat, allowzero=0)
+        q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
+
+        k = op.MatMul(input, k_weight)
+        k_add = op.Add(k_bias, k)
+        k_dim_0_axis = op.Gather(op.Shape(k_add), op.Constant(), axis=0)
+        k_dim_0_shape = op.Unsqueeze(k_dim_0_axis, op.Constant())
+
+        k_dim_1_axis = op.Gather(op.Shape(k_add), op.Constant(), axis=0)
+        k_dim_1_shape = op.Unsqueeze(k_dim_1_axis, op.Constant())
+
+        k_shape_concat = op.Concat(
+            k_dim_0_shape,
+            k_dim_1_shape,
+            op.Constant(),
+            op.Constant(),
+            axis=0,
+        )
+        k_reshaped = op.Reshape(k_add, k_shape_concat, allowzero=0)
+        k_transposed = op.Transpose(k_reshaped, perm=[0, 2, 3, 1])
+
+        logits = op.MatMul(q_transposed, k_transposed)
+
+        normalization_constant = op.Constant()
+        logits_div = op.Div(logits, normalization_constant)
+        logits_add = op.Add(logits_div, op.Constant())
+
+        logits_softmax = op.Softmax(logits_add, axis=-1)
+
+        v = op.MatMul(input, v_weight)
+        v_add = op.Add(v_bias, v)
+        v_dim_0_axis = op.Gather(op.Shape(v_add), op.Constant(), axis=0)
+        v_dim_0_shape = op.Unsqueeze(v_dim_0_axis, op.Constant())
+
+        v_dim_1_axis = op.Gather(op.Shape(v_add), op.Constant(), axis=0)
+        v_dim_1_shape = op.Unsqueeze(v_dim_1_axis, op.Constant())
+
+        v_shape_concat = op.Concat(
+            v_dim_0_shape,
+            v_dim_1_shape,
+            op.Constant(),
+            op.Constant(),
+            axis=0,
+        )
+        v_reshaped = op.Reshape(v_add, v_shape_concat, allowzero=0)
+        v_transposed = op.Transpose(v_reshaped, perm=[0, 2, 1, 3])
+
+        sdpa = op.MatMul(logits_softmax, v_transposed)
+
+        # relative position bias
+        sdpa_transposed = op.Transpose(sdpa, perm=[0, 2, 1, 3])
+        # sdpa_shape = op.Shape(sdpa_transposed)
+        sdpa_dim_0_axis = op.Gather(op.Shape(sdpa_transposed), op.Constant(), axis=0)
+        sdpa_dim_0_shape = op.Unsqueeze(sdpa_dim_0_axis, op.Constant())
+
+        sdpa_dim_1_axis = op.Gather(op.Shape(sdpa_transposed), op.Constant(), axis=0)
+        sdpa_dim_1_shape = op.Unsqueeze(sdpa_dim_1_axis, op.Constant())
+
+        sdpa_dim_concat = op.Concat(
+            sdpa_dim_0_shape,
+            sdpa_dim_1_shape,
+            op.Constant(),
+            axis=0,
+        )
+        sdpa_reshaped = op.Reshape(sdpa_transposed, sdpa_dim_concat, allowzero=0)
+        return sdpa_reshaped
 ```
 
 ## Cross-attention with/without kv cache
