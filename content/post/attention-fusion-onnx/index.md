@@ -179,7 +179,10 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
             op.Constant(),
             axis=0,
         )
-        q_reshaped = op.Reshape(q_add, q_shape_concat, allowzero=0)
+        q_reshaped = op.Reshape(
+            q_add, q_shape_concat, allowzero=0, _outputs=["q_reshaped"]
+        )
+
         q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
 
         q_shape_transposed = op.Shape(q_transposed)
@@ -189,7 +192,6 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
             op.Constant(),
         )
         q_dim = op.Cast(q_t_slice_shape, to=onnx.TensorProto.FLOAT)
-        # q_dim_sqrt_temp = op.Sqrt(q_dim)
         normalization_const = op.Constant()
         q_dim_divided = op.Div(normalization_const, op.Sqrt(q_dim))
         # q_dim_divided_cast = op.Cast(q_dim_divided, to=onnx.TensorProto.FLOAT)
@@ -229,7 +231,7 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         sdpa = op.MatMul(logits_softmax, v_transposed)
 
-        # reshape branch
+        # context layer
         shape_unsqueeze = op.Unsqueeze(gathered_shape, op.Constant())
         shape_input = op.Shape(input)
         gather_shape_input = op.Gather(shape_input, op.Constant(), axis=0)
@@ -243,7 +245,24 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         return sdpa_reshaped
 
-    def rewrite(self, op, input, q_weight, k_weight, v_weight, q_bias, k_bias, v_bias):
+    def rewrite(
+        self,
+        op,
+        input,
+        q_weight,
+        k_weight,
+        v_weight,
+        q_bias,
+        k_bias,
+        v_bias,
+        q_reshaped,
+    ):
+        # NOTE: similar to onnxruntime, we retrieve num_heads from q-reshape
+        # https://github.com/KarelZe/onnxruntime/blob/0e52117520508e3b14d8272390449c29ac089647/onnxruntime/python/tools/transformers/fusion_attention.py#L165
+        num_heads = _ir_utils.get_dim(q_reshaped, 2)
+        if not isinstance(num_heads, int):
+            return None
+
         qkv_weight_packed = op.initializer(
             ir.tensor(
                 np.concatenate(
@@ -275,13 +294,12 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
         # see also:
         # https://github.com/microsoft/onnxscript/blob/51ecf47523ef079c53b0e620c62d56d70cfd3871/onnxscript/rewriter/ort_fusions/attention.py#L34
-        # FIXME: do not hardcode number of heads
         return op.Attention(
             input,
             qkv_weight_packed,
             qkv_bias_packed,
             None,
-            num_heads=4,
+            num_heads=num_heads,
             _domain="com.microsoft",
         )
 
@@ -304,6 +322,8 @@ print(onnx_model)
 
 ir.save(onnx_model, "bart_model_onnxscript_fused_new.onnx")
 ```
+
+TODO: we retrieve head dimensions from the graph (q-reshape) similar to onnxruntime.
 
 ## Fusion with standard rules in onnxscript
 
