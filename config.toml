@@ -15,6 +15,14 @@ keywords = "Bilz, Markus, DHBW, KIT, Atruvia, Computer Science Student, Commerci
 favicon = "favicons/"
 customCss = ["css/custom.css"]
 
+[params.repository]
+branch = 'master'
+owner = 'KarelZe'
+repo = 'blog'
+service = 'GitHub'
+urlPatternEdit = 'https://github.com/%s/%s/edit/%s/%s'
+urlPatternView = 'https://github.com/%s/%s/blob/%s/%s'
+
 ## Set as many as you want.
 
 [[params.socialIcons]]
