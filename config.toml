@@ -7,6 +7,7 @@ summarylength = 10
 enableEmoji = true
 disqusShortname = "blog-markusbilz-com"
 math=true
+copyright = "cc-by"
 
 [params]
 author = "Markus Bilz"

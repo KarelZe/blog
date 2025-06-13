@@ -1,11 +1,13 @@
 ---
-title: The good, the bad, the brittle. Fusing Attention in ONNX graphs✨
-date: 2025-06-07T08:32:00+02:00
-Description: Fusing Attention in ONNX graphs✨
-Tags: [attention, self-attention, onnx, onnxscript, bart, swin]
+title: The good, the bad, the brittle. Fusing Attention in ONNX graphs⚡️
+date: 2025-06-13T05:32:00+02:00
+Description: Fusing Attention in ONNX graphs⚡️
+Tags: [attention, self-attention, onnx, onnxscript, bart, swin, inference, onnxruntime, onnx-ir]
 Categories: [ml]
 DisableComments: false
 thumbnail: images/thumbnail_attention_fusion.png
+images:
+  - images/thumbnail_attention_fusion.png
 ---
 
 The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs. Our focus is on BART and SWIN.
