@@ -36,4 +36,5 @@ repos:
       - mdformat-frontmatter
       - mdformat-footnote
       - mdformat-ruff
+      - mdformat-shfmt
       exclude: ^archetypes/

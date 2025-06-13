@@ -5,7 +5,6 @@ title = "I'm Markus Bilz"
 theme = "anatole"
 summarylength = 10
 enableEmoji = true
-disqusShortname = "blog-markusbilz-com"
 math=true
 copyright = "cc-by"
 
@@ -15,7 +14,7 @@ description = "Data Scientist. Learner."
 profilePicture = "images/profile.jpg"
 keywords = "Bilz, Markus, DHBW, KIT, Atruvia, Computer Science Student, Commercial Computer Scientist, Karlsruhe"
 favicon = "favicons/"
-
+customCss = ["css/custom.css"]
 
 ## Set as many as you want.
 
@@ -30,20 +29,32 @@ title = "Stackoverflow"
 url = "https://stackoverflow.com/users/5755604/karelze"
 
 [[params.socialIcons]]
-icon = "fas fa-brackets-curly"
-title = "codewars"
-url = "https://www.codewars.com/users/KarelZe"
-
-[[params.socialIcons]]
 icon = "fab fa-linkedin"
 title = "Linkedin"
 url = "https://www.linkedin.com/in/markus-bilz/"
-
 
 [[params.socialIcons]]
 icon = "fas fa-envelope"
 title = "e-mail"
 url = "mailto:web@markusbilz.com"
+
+[params.giscus]
+repo = "karelze/blog"
+repoId = "MDEwOlJlcG9zaXRvcnkyNTUwMjk2MzY="
+category = "General"
+categoryId = "DIC_kwDODzNxhM4Crbuf"
+mapping = "pathname"
+strict = false
+reactionsEnabled = true
+emitMetadata = false
+inputPosition = "bottom"
+theme = "dark"
+lang = "en"
+loading = "lazy"
+
+[params.math]
+enable = true
+use = "katex"
 
 [menu]
 
@@ -70,3 +81,6 @@ url = "mailto:web@markusbilz.com"
     style = "github-dark"
     codeFences = true
     guessSyntax = false
+
+[mermaid]
+enable = true
