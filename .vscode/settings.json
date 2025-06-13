@@ -6,6 +6,7 @@
         "headshot",
         "numpy",
         "onnx",
+        "onnxruntime",
         "onnxscript",
         "SDPA",
         "venv"

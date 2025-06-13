@@ -56,6 +56,9 @@ loading = "lazy"
 enable = true
 use = "katex"
 
+[params.mermaid]
+enable = true
+
 [menu]
 
   [[menu.main]]
@@ -81,6 +84,3 @@ use = "katex"
     style = "github-dark"
     codeFences = true
     guessSyntax = false
-
-[mermaid]
-enable = true

@@ -20,7 +20,7 @@ Like the transformers modelling code, the onnx graph will consist of low-level o
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
-In the screenshot above, you can see a typical subgraph of the scaled-dot-product-attention mechanism (SDPA) from a BART encoder. You might spot the query, key, and value, which we know from the [Attention is all you need paper](https://arxiv.org/abs/1706.03762). On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!🥵
+In the screenshot above, you can see a typical subgraph of the [scaled-dot-product-attention mechanism (SDPA)](<(https://arxiv.org/abs/1706.03762)>) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!🥵
 
 ## Core idea of attention fusion
 
@@ -109,9 +109,13 @@ Some aspects deserve more explanation (see highlight). We wrap the encoder as a 
 
 ## BART attention fusion with onnxruntime
 
-The most straight-forward way to attempt attention fusion is via `onnxruntime`. Yet it's also the most brittle, s
+Hands down, the most easiest way to attempt attention fusion is via `onnxruntime`. Yet it's also the most brittle.
 
-TODO: this requires some unreleased nightly or building from source. https://github.com/microsoft/onnxruntime/pull/24857
+In a nutshell, `onnxruntime` tries to fuse attention by locating nodes like normalization layers subsequent to the attention mechanism in the onnx graph and from there pattern matches contiguous paths to parent nodes by their node type and position as a node input. If a suitable subgraph is found, the new attention nodes (+ other nodes if needed) are added and unused nodes are subsequently removed.
+
+This approach to attention fusion is prone to modelling changes in transformers code or previous optimizations that affect the onnx graph. [^4] Also, capabilities for matching against alternative paths or node attributes are limited. These issues, ultimately lead to the development of `onnxscript`, a powerful alternative, which we discuss below.
+
+Speaking of brittle, ...
 
 ```python
 import onnxruntime as ort
@@ -139,6 +143,10 @@ m.save_model_to_file(optimized_path)
 print(f"Optimized ONNX model saved to {optimized_path}")
 print(m.get_fused_operator_statistics())
 ```
+
+TODO: this requires some unreleased nightly or building from source. https://github.com/microsoft/onnxruntime/pull/24857
+
+https://github.com/huggingface/transformers/commit/2c47618c1a282f925446506d53108dc6e82d9ef0
 
 Next, we can verify the correctness of our graph:
 
@@ -525,6 +533,45 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
 
 To keep things simple, our focus till now, was only on SDPA. In practice, we will also have to deal with cross-attention, kv caches,....
 
+```mermaid
+graph LR
+    Input --> MatMul1
+    Input --> MatMul2
+    Input --> MatMul3
+
+    MatMul1 --> Add1
+    Add1 --> Reshape1_1
+    Reshape1_1 --> Transpose1_1
+    Transpose1_1 --> Reshape1_2
+    Reshape1_2 --> Transpose1_2
+
+    MatMul2 --> Add2
+    Add2 --> Reshape2_1
+    Reshape2_1 --> Transpose2_1
+    Transpose2_1 --> Reshape2_2
+    Reshape2_2 --> Transpose2_2
+
+    MatMul3 --> Add3
+    Add3 --> Reshape3_1
+    Reshape3_1 --> Transpose3_1
+    Transpose3_1 --> Reshape3_2
+    Reshape3_2 --> Transpose3_2
+
+    Transpose1_2 --> MatMul4
+    Transpose2_2 --> MatMul4
+    MatMul4 --> Div
+    Div --> Add4
+    Add4 --> Softmax
+
+    Softmax --> MatMul5
+    Transpose3_2 --> MatMul5
+
+    MatMul5 --> Reshape5_1
+    Reshape5_1 --> Transpose5_1
+    Transpose5_1 --> Reshape5_2
+    Reshape5_2 --> Output
+```
+
 ## Performance results
 
 ```python
@@ -544,3 +591,5 @@ While researching for this blog post, I made several open-source contributions.
 [^2]: see [talk on large language model inference with ONNX Runtime by Kunal Vaishnavi](https://youtu.be/jrIJT01E8Xw?feature=shared&t=420)
 
 [^3]: see [pytorch docs](https://docs.pytorch.org/docs/stable/onnx_torchscript.html)
+
+[^4]: Modelling changes for attention happen more often than you'd think. See e.g., https://github.com/huggingface/transformers/commit/2c47618c1a282f925446506d53108dc6e82d9ef0
