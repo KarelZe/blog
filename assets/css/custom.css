@@ -1,0 +1,7 @@
+.post__thumbnail {
+    height: 25em !important;
+}
+.theme--light .post__thumbnail-wrapper,
+.theme--dark .post__thumbnail-wrapper {
+    box-shadow: none !important;
+}

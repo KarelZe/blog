@@ -14,7 +14,7 @@ description = "Data Scientist. Learner."
 profilePicture = "images/profile.jpg"
 keywords = "Bilz, Markus, DHBW, KIT, Atruvia, Computer Science Student, Commercial Computer Scientist, Karlsruhe"
 favicon = "favicons/"
-
+customCss = ["css/custom.css"]
 
 ## Set as many as you want.
 
