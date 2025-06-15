@@ -113,9 +113,9 @@ Some aspects deserve more explanation (see highlight). We wrap the encoder as a 
 
 Hands down, the most easiest way to perform attention fusion is via `onnxruntime`. Yet, it's also the most brittle. In a nutshell, `onnxruntime` tries to fuse attention by locating nodes like normalization layers subsequent to the attention mechanism in the onnx graph and from there pattern matches contiguous paths to parent nodes by their node type and position as a node input. If a suitable subgraph is found, the new attention nodes are added and unused nodes are subsequently removed.[^5]
 
-This approach to attention fusion is prone to modelling changes or previous optimization passes that affect the onnx graph. [^4] Also, capabilities for matching against alternative paths or node attributes in onnxruntime are limited as we operate on directly on the protobuf. These limitations, ultimately led to the development of [`onnxscript`](https://github.com/microsoft/onnxscript), a powerful alternative, which we discuss below.
+This approach to attention fusion is prone to modelling changes or previous optimization passes that affect the onnx graph. [^4] Also, capabilities for matching against alternative paths or node attributes in onnxruntime are limited as we operate on directly on the protobuf. These limitations, ultimately led to the development of [`onnxscript`](https://github.com/microsoft/onnxscript), which we discuss below.
 
-Speaking of brittle, for the following code to run with transformers (`transformers==4.52.4`), you'll require changes from [gh-24857](https://github.com/microsoft/onnxruntime/pull/24857) and unmerged fixes from [gh-25046](https://github.com/microsoft/onnxruntime/pull/25046).
+Speaking of brittle, for the following code to run with transformers (`transformers==4.52.4`), you'll require changes from [onnxruntime/gh-24857](https://github.com/microsoft/onnxruntime/pull/24857) and unmerged fixes from [onnxruntime/gh-25046](https://github.com/microsoft/onnxruntime/pull/25046).
 
 ```python {hl_lines="7-9"}
 import onnxruntime as ort
@@ -153,7 +153,7 @@ Expectedly, attention fusion was performed for both attention layers aside from 
 Next, we verify our newly created graph still yields the same outputs:
 
 ```python
-sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
+sess = ort.InferenceSession("bart_model.onnx", providers=["CPUExecutionProvider"])
 encoder_outs_original = sess.run(["encoder_output"], {"input_ids": input_ids.numpy()})
 
 sess_optimized = ort.InferenceSession(
@@ -177,14 +177,14 @@ That's reasonably close. :100:
 
 As discussed, `onnxruntime` is currently the most evolved solution to perform operator fusion. Let's now look at the new kid on the block, [`onnxscript`](https://github.com/microsoft/onnxscript). `onnxscript` is a way to naturally author onnx functions and models using a subset of python. Useful for our endeavour, it also includes an optimizer to optimize onnx models (do e.g., constant folding) and a rewriter to replace patterns in graph with replacement patterns. It comes with a large set of rewrite rules and we can even author our own rewrite rules.
 
-To get started with the onnx rewriter, I found the [docs](https://microsoft.github.io/onnxscript/tutorial/rewriter/rewrite_patterns.html) to be immense help. We basically define a target pattern we want to match against, a replacement_pattern (i.e., the attention op) and some optional match condition. The match condition lets us perform additional checks for e.g., node attributes or input shapes, if the target pattern matches. We start by defining a custom rewrite rule with a target pattern in `pattern(...)` and a replacement pattern in `rewrite(...)`.
+To get started with the onnx rewriter, I found the [docs](https://microsoft.github.io/onnxscript/tutorial/rewriter/rewrite_patterns.html) to be an immense help. We basically define a target pattern to match against, a replacement_pattern (i.e., the attention op) and some optional match condition. The match condition lets us perform additional checks for e.g., input shapes, if the target pattern matches. We start by defining a custom rewrite rule with a target pattern in `pattern(...)` and a replacement pattern in `rewrite(...)`.
 
-```python
+```python {hl_lines="35-37 50-51 116-118 146-153"}
 import numpy as np
 import onnxscript.ir as ir
 import onnxscript.rewriter as rewriter
 import onnxscript.rewriter.ort_fusions
-from onnxscript.rewriter import pattern
+from onnxscript.rewriter import _ir_utils, common_passes, pattern
 
 
 class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
@@ -270,6 +270,7 @@ class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         sdpa = op.MatMul(logits_softmax, v_transposed)
 
+        # out projection
         shape_unsqueeze = op.Unsqueeze(gathered_shape, op.Constant())
         shape_input = op.Shape(input)
         gather_shape_input = op.Gather(shape_input, op.Constant(), axis=0)
@@ -334,54 +335,56 @@ class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
         )
 ```
 
-```
-    # NOTE: similar to onnxruntime, we retrieve num_heads from q-reshape
-    # https://github.com/KarelZe/onnxruntime/blob/0e52117520508e3b14d8272390449c29ac089647/onnxruntime/python/tools/transformers/fusion_attention.py#L165
-```
+There is a lot going on, so let's focus on the highlights. First, we we are storing the output of the reshaped query matrix in a variable `q_reshaped` in `pattern(...)`. Similar to `onnxruntime` we can thereby auto-detect the number of attention heads based on the shape of the tensor.[^6]
 
-TODO: What is going on here?
+Other than in the original transformer paper, the query and key transpose are scaled separately by `1/sqrt(dim_k)` *before* the `MatMul`. This is often done for numerical stability and prevents values from blowing up, if dims of query and key are large (see [Megatron-DeepSpeed/gh-118](https://github.com/bigscience-workshop/Megatron-DeepSpeed/pull/118)).
 
-```
-    # NOTE: This is custom op Attention!
-    # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
-    # see also:
-    # https://github.com/microsoft/onnxscript/blob/51ecf47523ef079c53b0e620c62d56d70cfd3871/onnxscript/rewriter/ort_fusions/attention.py#L34
-```
+We rewrite to [`Attention`](https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention) node from contributor ops (see `_domain="com.microsoft"`). In order to meet the input shape requirements of the attention node, we first pack the weights and bias terms. In a later example, we look into rewriting to `Attention` from onnx ops.
+
+Let's now apply now put everything to a test:
 
 ```python
-onnx_model = ir.load(onnx_path)
+onnx_model = ir.load("bart_model.onnx")
 
 rule = FuseBARTSDPARule.rule()
-# Apply the rewrite rule to the model
-tracer = pattern.MatchingTracer()
-rule.apply_to_model(onnx_model, tracer=tracer, verbose=4)
-tracer.report()
-# Clean up and run shape inference. Note that you can use the Sequential pass to chain multiple passes together.
+
+onnx_model = onnxscript.optimizer.optimize(onnx_model)
+
 ir.passes.Sequential(
     onnxscript.rewriter.RewritePass([rule]),
     common_passes.RemoveUnusedNodesPass(),
     common_passes.ShapeInferencePass(),
 )(onnx_model)
 
-print(onnx_model)
-
-ir.save(onnx_model, "bart_model_onnxscript_fused_new.onnx")
+ir.save(onnx_model, "bart_model_onnxscript_fused.onnx")
 ```
 
-TODO: we retrieve head dimensions from the graph (q-reshape) similar to onnxruntime.
+We first apply the `optimizer` and then apply our custom rewrite pass, followed by a final clean up and shape inference to determine/check input/output shapes from [`ir-py`](https://onnx.ai/ir-py/api/ir_passes_common.html#onnx_ir.passes.common.ShapeInferencePass). Here, `Sequential(...)` is used to chain together multiple passes.
 
-TODO: Maybe rename to BART self-attention fusion.
+Again, run:
 
-TODO: Explain that rule is written to match against optimized model with `optimizer.optimize(...)`. Verify this.
+```python
+sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
+encoder_outs_original = sess.run(["encoder_output"], {"input_ids": input_ids.numpy()})
 
-TODO: Rename variables in code similar to transformers.
+sess_optimized = ort.InferenceSession(
+    optimized_path, providers=["CPUExecutionProvider"]
+)
+encoder_outs_optimized = sess_optimized.run(
+    ["encoder_output"], {"input_ids": input_ids.numpy()}
+)
 
-## Fusion with standard rules in onnxscript
+abs_diff = np.amax(np.abs(encoder_outs_original[0] - encoder_outs_optimized[0]))
+print("abs difference:", abs_diff)
+```
 
-TODO: Maybe rename this section to SWIN?
-TODO: explain what is special about SWIN self-attention? https://github.com/huggingface/transformers/blob/9487765f07ef4e5500d6ec21cad99aed4a037a3d/src/transformers/models/swin/modeling_swin.py#L439 Explain role of context layer. Explain of dropout in attention mechanism. How do we incorporate context layer in node assembly?
+```
+abs difference: 2.3841858e-07
+```
 
-Now, let's consider a different model: the [SWIN encoder](https://arxiv.org/abs/2103.14030). The SWIN encoder is interesting, as no attention fusion has been implemented in `onnxruntime` and other approaches are required.
+Outputs are identical to our unoptimized model. :100: `onnxscript` has the advantage of defining a pythonic api to rewrite graphs, which makes graph rewrites a chime. Admittedly, our current solution suffers from some of the problems we have seen with `onnxruntime`. Specifically, we do not account for slight variations in the graph layout. We'll address this issue in the next example.
+
+## Export onnx graph of SWIN encoder
 
 ```python
 import requests
@@ -426,6 +429,17 @@ torch.onnx.export(
 )
 print(f"Model exported to {onnx_path}")
 ```
+
+## SWIN attention fusion in onnxruntime
+
+Now, let's consider a different model: the [SWIN encoder](https://arxiv.org/abs/2103.14030).
+
+## Fusion with standard rules in onnxscript
+
+TODO: Maybe rename this section to SWIN?
+TODO: explain what is special about SWIN self-attention? https://github.com/huggingface/transformers/blob/9487765f07ef4e5500d6ec21cad99aed4a037a3d/src/transformers/models/swin/modeling_swin.py#L439 Explain role of context layer. Explain of dropout in attention mechanism. How do we incorporate context layer in node assembly?
+
+The SWIN encoder is interesting, as no attention fusion has been implemented in `onnxruntime` and other approaches are required.
 
 Now let's apply a set of `sdpa_rules` rules.
 
@@ -606,7 +620,17 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
         )
 ```
 
-## Cross-attention with/without kv cache
+## Performance results
+
+```python
+# TODO: add some solid timing code.
+```
+
+Stand up to the test
+
+## Conclusion
+
+Unfortunately, attention fusion is a very brittle process, which lead to the development of initiatives like `onnxscript`.
 
 To keep things simple, our focus till now, was only on SDPA. In practice, we will also have to deal with cross-attention, kv caches,....
 
@@ -649,23 +673,11 @@ graph LR
     Reshape5_2 --> Output
 ```
 
-## Performance results
-
-```python
-# TODO: add some solid timing code.
-```
-
-Stand up to the test
-
-## Conclusion
-
-Unfortunately, attention fusion is a very brittle process, which lead to the development of initiatives like `onnxscript`.
-
 While researching for this blog post, I made several open-source contributions.
 
 ## References:
 
-[^1]: see [https://github.com/justinchuby/diagrams/](https://github.com/justinchuby/diagrams/pull/1/files) for a helpful diagram on the internals of the PyTorch onnx exporter.
+[^1]: see [https://github.com/justinchuby/diagrams/](https://github.com/justinchuby/diagrams/pull/1/files) for a helpful diagram on the internals of the PyTorch ONNX exporter.
 
 [^2]: see [talk on large language model inference with ONNX Runtime by Kunal Vaishnavi](https://youtu.be/jrIJT01E8Xw?feature=shared&t=420)
 
@@ -674,3 +686,5 @@ While researching for this blog post, I made several open-source contributions.
 [^5]: see [fusion code in onnxruntime](https://github.com/microsoft/onnxruntime/blob/82c1bf9ce9dae02aa7ff19c91f4295c7aee8a9a0/onnxruntime/python/tools/transformers/fusion_bart_attention.py#L29)
 
 [^4]: Modelling changes for attention happen more often than you'd think. See e.g., https://github.com/huggingface/transformers/commit/2c47618c1a282f925446506d53108dc6e82d9ef0
+
+[^6]: See [onnxruntime implementation](https://github.com/microsoft/onnxruntime/blob/0e52117520508e3b14d8272390449c29ac089647/onnxruntime/python/tools/transformers/fusion_attention.py#L165)
