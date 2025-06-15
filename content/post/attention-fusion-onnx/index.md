@@ -10,7 +10,7 @@ images:
   - images/thumbnail_attention_fusion.png
 ---
 
-The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism for transformers in onnx graphs. Our focus is on BART and SWIN.
+The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism through fusion in onnx graphs. Our focus is on BART and SWIN transformers.
 
 ## Background
 
@@ -20,11 +20,13 @@ Like the transformers modelling code, the onnx graph will consist of low-level o
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
-In the screenshot above, you can see a typical subgraph of the [scaled-dot-product-attention mechanism (SDPA)](<(https://arxiv.org/abs/1706.03762)>) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix. Quite a large subgraph for a common operation!🥵
+In the screenshot above, you can see a typical subgraph of the [scaled dot-product attention mechanism (SDPA)](<(https://arxiv.org/abs/1706.03762)>) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix in the centre. Quite a large subgraph for a common operation!🥵
 
 ## Core idea of attention fusion
 
-The core idea is now to identify patterns in the onnx graph, that look like the attention mechanism and replace the entire subgraph with the `Attention` op plus required adaptions. Fusing Attention is desirable for three reasons:
+The core idea is now to identify patterns in the onnx graph, that look like the attention mechanism and replace the entire subgraph with the `Attention` op plus required adaptions.
+
+Fusing Attention is desirable for three reasons:
 
 1. It's likely faster. When the onnx graph is executed on a gpu, the model is first loaded into high-bandwidth memory (HBM). Each operator is run as a small kernel (or program) on the gpu and launched into small but fast static RAM (SRAM) and then results are saved back to HBM. Memory transfers are typically slow, so we want to fuse multiple kernels or ops into larger kernels to minimize the number of memory transfers.[^2]
 1. Hardware vendors often implement optimized implementations for ops for their onnx execution providers e.g., `CUDAExecutionProvider`, which will give you an additional performance edge.
@@ -32,7 +34,7 @@ The core idea is now to identify patterns in the onnx graph, that look like the 
 
 ## Export onnx graph of BART encoder
 
-Let's look at a simple bart encoder first. Despite being conceptually simple, it's an interesting example because it's a building block for more complex models like OpenAI's Whisper. We first prepare the model for export. I export via `torch` for ache of flexibility, while you could also use [optimum](https://huggingface.co/docs/optimum/index) if you favour higher level abstractions.
+Let's look at a good old bart encoder first. Despite being conceptually simple, it's an interesting example because it's a building block for more complex models like OpenAI's Whisper. We first prepare the model for export. I export via `torch` for ache of flexibility, while you could also use [optimum](https://huggingface.co/docs/optimum/index) if you favour higher level abstractions.
 
 Let's first setup a venv and require all necessary dependencies:
 
@@ -42,7 +44,7 @@ source .venv
 uv pip install torch onnx onnxscript==0.3.0 transformers==4.52.4
 ```
 
-I strongly advocate to pin at least the dependencies of `transformers` and `onnxscript` due to frequent changes in modelling or fusion.
+I strongly advice to pin at least the dependencies of `transformers` and `onnxscript` due to frequent changes in modelling or fusion.
 
 ```python {hl_lines="16-27 57"}
 import os
@@ -105,25 +107,20 @@ torch.onnx.export(
 )
 ```
 
-Some aspects deserve more explanation (see highlight). We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled-dot product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in PyTorch and function-based rewrites have been removed from `onnxscript`.[^3]
+Some aspects deserve more explanation (see highlight). We wrap the encoder as a class (`EncoderWrapper`) to only retrieve and rearrange inputs and outputs required for later processing. I export the scaled dot-product attention as an onnxscript function for easier fusion. This feature, however, has been deprecated in PyTorch and function-based rewrites have been removed from `onnxscript`.[^3]
 
 ## BART attention fusion with onnxruntime
 
-Hands down, the most easiest way to attempt attention fusion is via `onnxruntime`. Yet it's also the most brittle.
+Hands down, the most easiest way to perform attention fusion is via `onnxruntime`. Yet, it's also the most brittle. In a nutshell, `onnxruntime` tries to fuse attention by locating nodes like normalization layers subsequent to the attention mechanism in the onnx graph and from there pattern matches contiguous paths to parent nodes by their node type and position as a node input. If a suitable subgraph is found, the new attention nodes are added and unused nodes are subsequently removed.[^5]
 
-In a nutshell, `onnxruntime` tries to fuse attention by locating nodes like normalization layers subsequent to the attention mechanism in the onnx graph and from there pattern matches contiguous paths to parent nodes by their node type and position as a node input. If a suitable subgraph is found, the new attention nodes (+ other nodes if needed) are added and unused nodes are subsequently removed.
+This approach to attention fusion is prone to modelling changes or previous optimization passes that affect the onnx graph. [^4] Also, capabilities for matching against alternative paths or node attributes in onnxruntime are limited as we operate on directly on the protobuf. These limitations, ultimately led to the development of [`onnxscript`](https://github.com/microsoft/onnxscript), a powerful alternative, which we discuss below.
 
-This approach to attention fusion is prone to modelling changes in transformers code or previous optimizations that affect the onnx graph. [^4] Also, capabilities for matching against alternative paths or node attributes are limited. These issues, ultimately lead to the development of `onnxscript`, a powerful alternative, which we discuss below.
+Speaking of brittle, for the following code to run with transformers (`transformers==4.52.4`), you'll require changes from [gh-24857](https://github.com/microsoft/onnxruntime/pull/24857) and unmerged fixes from [gh-25046](https://github.com/microsoft/onnxruntime/pull/25046).
 
-Speaking of brittle, ...
-
-```python
+```python {hl_lines="7-9"}
 import onnxruntime as ort
 from onnxruntime.transformers import optimizer
 from onnxruntime.transformers.fusion_options import FusionOptions
-
-optimization_options = FusionOptions("bart")
-optimization_options.enable_attention = True
 
 m = optimizer.optimize_model(
     onnx_path,
@@ -133,7 +130,6 @@ m = optimizer.optimize_model(
     opt_level=2,
     use_gpu=False,
     verbose=True,
-    optimization_options=optimization_options,
     only_onnxruntime=False,
 )
 
@@ -144,11 +140,17 @@ print(f"Optimized ONNX model saved to {optimized_path}")
 print(m.get_fused_operator_statistics())
 ```
 
-TODO: this requires some unreleased nightly or building from source. https://github.com/microsoft/onnxruntime/pull/24857
+Here, we set the model type to be `BART` to apply `BART`-specific fusions. Setting `num_heads=0` and `hidden_size=0` will auto-detect the number of attention heads and the hidden size from the graph (i.e., shape of query matrix). We get:
 
-https://github.com/huggingface/transformers/commit/2c47618c1a282f925446506d53108dc6e82d9ef0
+```
+Please specify parameters of num_heads and hidden_size for model_type bart
+Optimized ONNX model saved to bart_encoder_optimized.onnx
+{'EmbedLayerNormalization': 1, 'Attention': 2, 'MultiHeadAttention': 0, 'Gelu': 0, 'FastGelu': 0, 'BiasGelu': 2, 'GemmFastGelu': 0, 'LayerNormalization': 0, 'SimplifiedLayerNormalization': 0, 'SkipLayerNormalization': 4, 'SkipSimplifiedLayerNormalization': 0, 'RotaryEmbedding': 0, 'QOrderedAttention': 0, 'QOrderedGelu': 0, 'QOrderedLayerNormalization': 0, 'QOrderedMatMul': 0}
+```
 
-Next, we can verify the correctness of our graph:
+Expectedly, attention fusion was performed for both attention layers aside from other fusions. If you'd like to perform specific optimizations only, you can provide a custom config `FusionOptions(...)`.
+
+Next, we verify our newly created graph still yields the same outputs:
 
 ```python
 sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
@@ -161,21 +163,23 @@ encoder_outs_optimized = sess_optimized.run(
     ["encoder_output"], {"input_ids": input_ids.numpy()}
 )
 
-abs_diff = np.amax(encoder_outs_original[0] - encoder_outs_optimized[0])
-print("abs_difference", abs_diff)
+abs_diff = np.amax(np.abs(encoder_outs_original[0] - encoder_outs_optimized[0]))
+print("abs difference:", abs_diff)
 ```
 
-## Fusion with rule in onnxscript
+```
+abs difference: 2.3841858e-07
+```
 
-TODO: Maybe rename to BART self-attention fusion.
-TODO: Explain that rule is written to match against optimized model with `optimizer.optimize(...)`. Verify this.
+That's reasonably close. :100:
 
-TODO: Rename variables in code similar to transformers.
+## BART attention fusion with onnxscript
+
+As discussed, `onnxruntime` is currently the most evolved solution to perform operator fusion. Let's now look at the new kid on the block, [`onnxscript`](https://github.com/microsoft/onnxscript). `onnxscript` is a way to naturally author onnx functions and models using a subset of python. Useful for our endeavour, it also includes an optimizer to optimize onnx models (do e.g., constant folding) and a rewriter to replace patterns in graph with replacement patterns. It comes with a large set of rewrite rules and we can even author our own rewrite rules.
+
+To get started with the onnx rewriter, I found the [docs](https://microsoft.github.io/onnxscript/tutorial/rewriter/rewrite_patterns.html) to be immense help. We basically define a target pattern we want to match against, a replacement_pattern (i.e., the attention op) and some optional match condition. The match condition lets us perform additional checks for e.g., node attributes or input shapes, if the target pattern matches. We start by defining a custom rewrite rule with a target pattern in `pattern(...)` and a replacement pattern in `rewrite(...)`.
 
 ```python
-# example adapted from:
-# https://github.com/justinchuby/onnx-meetup-2025/blob/main/demos.ipynb
-
 import numpy as np
 import onnxscript.ir as ir
 import onnxscript.rewriter as rewriter
@@ -183,7 +187,7 @@ import onnxscript.rewriter.ort_fusions
 from onnxscript.rewriter import pattern
 
 
-class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
+class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
     def pattern(
         self,
         op,
@@ -195,11 +199,9 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         k_bias: ir.Value,
         v_bias: ir.Value,
     ):
+        # query
         q = op.MatMul(input, q_weight)
         q_add = op.Add(q_bias, q)
-
-        k = op.MatMul(input, k_weight)
-        k_add = op.Add(k_bias, k)
 
         shape = op.Shape(input)
         gathered_shape = op.Gather(shape, op.Constant(), axis=0)
@@ -232,6 +234,10 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         q_mul = op.Mul(q_transposed, q_dim_sqrt)
 
+        # key
+        k = op.MatMul(input, k_weight)
+        k_add = op.Add(k_bias, k)
+
         unsqueeze_dim = op.Constant()
         k_unsqueezed_shape = op.Unsqueeze(gathered_shape, unsqueeze_dim)
         k_shape_concat = op.Concat(
@@ -245,9 +251,10 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         k_transposed = op.Transpose(k_reshaped, perm=[0, 2, 3, 1])
         k_mul = op.Mul(k_transposed, k_dim_sqrt)
 
-        logits = op.MatMul(q_mul, k_mul)
-        logits_softmax = op.Softmax(logits, axis=-1)
+        attention_scores = op.MatMul(q_mul, k_mul)
+        logits_softmax = op.Softmax(attention_scores, axis=-1)
 
+        # values
         v = op.MatMul(input, v_weight)
         v_bias = op.Add(v_bias, v)
         v_unsqueezed_shape = op.Unsqueeze(gathered_shape, op.Constant())
@@ -263,7 +270,6 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
 
         sdpa = op.MatMul(logits_softmax, v_transposed)
 
-        # context layer
         shape_unsqueeze = op.Unsqueeze(gathered_shape, op.Constant())
         shape_input = op.Shape(input)
         gather_shape_input = op.Gather(shape_input, op.Constant(), axis=0)
@@ -271,16 +277,81 @@ class FuseSDPARule(rewriter.pattern.RewriteRuleClassBase):
         concat_shape_input = op.Concat(
             shape_unsqueeze, gather_shape_unsqueeze, op.Constant(), axis=0
         )
-
         sdpa_transposed = op.Transpose(sdpa, perm=[0, 2, 1, 3])
         sdpa_reshaped = op.Reshape(sdpa_transposed, concat_shape_input, allowzero=0)
 
         return sdpa_reshaped
 
+    def rewrite(
+        self,
+        op,
+        input: ir.Value,
+        q_weight: ir.Value,
+        k_weight: ir.Value,
+        v_weight: ir.Value,
+        q_bias: ir.Value,
+        k_bias: ir.Value,
+        v_bias: ir.Value,
+        q_reshaped: ir.Value,
+    ):
+        num_heads = _ir_utils.get_dim(q_reshaped, 2)
+        if not isinstance(num_heads, int):
+            return None
 
+        qkv_weight_packed = op.initializer(
+            ir.tensor(
+                np.concatenate(
+                    [
+                        q_weight.const_value.numpy(),
+                        k_weight.const_value.numpy(),
+                        v_weight.const_value.numpy(),
+                    ],
+                    axis=-1,
+                )
+            ),
+            name="qkv_weight",
+        )
+        qkv_bias_packed = op.initializer(
+            ir.tensor(
+                np.concatenate(
+                    [
+                        q_bias.const_value.numpy(),
+                        k_bias.const_value.numpy(),
+                        v_bias.const_value.numpy(),
+                    ],
+                    axis=-1,
+                )
+            ),
+            name="qkv_bias",
+        )
+        return op.Attention(
+            input,
+            qkv_weight_packed,
+            qkv_bias_packed,
+            None,
+            num_heads=num_heads,
+            _domain="com.microsoft",
+        )
+```
+
+```
+    # NOTE: similar to onnxruntime, we retrieve num_heads from q-reshape
+    # https://github.com/KarelZe/onnxruntime/blob/0e52117520508e3b14d8272390449c29ac089647/onnxruntime/python/tools/transformers/fusion_attention.py#L165
+```
+
+TODO: What is going on here?
+
+```
+    # NOTE: This is custom op Attention!
+    # https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention
+    # see also:
+    # https://github.com/microsoft/onnxscript/blob/51ecf47523ef079c53b0e620c62d56d70cfd3871/onnxscript/rewriter/ort_fusions/attention.py#L34
+```
+
+```python
 onnx_model = ir.load(onnx_path)
 
-rule = FuseSDPARule.rule()
+rule = FuseBARTSDPARule.rule()
 # Apply the rewrite rule to the model
 tracer = pattern.MatchingTracer()
 rule.apply_to_model(onnx_model, tracer=tracer, verbose=4)
@@ -298,6 +369,12 @@ ir.save(onnx_model, "bart_model_onnxscript_fused_new.onnx")
 ```
 
 TODO: we retrieve head dimensions from the graph (q-reshape) similar to onnxruntime.
+
+TODO: Maybe rename to BART self-attention fusion.
+
+TODO: Explain that rule is written to match against optimized model with `optimizer.optimize(...)`. Verify this.
+
+TODO: Rename variables in code similar to transformers.
 
 ## Fusion with standard rules in onnxscript
 
@@ -578,6 +655,8 @@ graph LR
 # TODO: add some solid timing code.
 ```
 
+Stand up to the test
+
 ## Conclusion
 
 Unfortunately, attention fusion is a very brittle process, which lead to the development of initiatives like `onnxscript`.
@@ -591,5 +670,7 @@ While researching for this blog post, I made several open-source contributions.
 [^2]: see [talk on large language model inference with ONNX Runtime by Kunal Vaishnavi](https://youtu.be/jrIJT01E8Xw?feature=shared&t=420)
 
 [^3]: see [pytorch docs](https://docs.pytorch.org/docs/stable/onnx_torchscript.html)
+
+[^5]: see [fusion code in onnxruntime](https://github.com/microsoft/onnxruntime/blob/82c1bf9ce9dae02aa7ff19c91f4295c7aee8a9a0/onnxruntime/python/tools/transformers/fusion_bart_attention.py#L29)
 
 [^4]: Modelling changes for attention happen more often than you'd think. See e.g., https://github.com/huggingface/transformers/commit/2c47618c1a282f925446506d53108dc6e82d9ef0

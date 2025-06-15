@@ -9,6 +9,7 @@
         "onnxruntime",
         "onnxscript",
         "SDPA",
+        "SWIN",
         "venv"
     ]
 }
