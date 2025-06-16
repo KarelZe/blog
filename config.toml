@@ -10,11 +10,25 @@ copyright = "cc-by"
 
 [params]
 author = "Markus Bilz"
-description = "Data Scientist. Learner."
+description = "Data Scientist · Learner 🌱"
 profilePicture = "images/profile.jpg"
 keywords = "Bilz, Markus, DHBW, KIT, Atruvia, Computer Science Student, Commercial Computer Scientist, Karlsruhe"
 favicon = "favicons/"
 customCss = ["css/custom.css"]
+
+[params.repository]
+branch = 'master'
+owner = 'KarelZe'
+repo = 'blog'
+service = 'GitHub'
+urlPatternEdit = 'https://github.com/%s/%s/edit/%s/%s'
+urlPatternView = 'https://github.com/%s/%s/blob/%s/%s'
+
+[params.umami]
+serverURL = "insights.alexbilz.com"
+id = "ab202af5-def1-4588-b563-c99e8e695f9d"
+trackerScriptName = "script.js"
+
 
 ## Set as many as you want.
 
