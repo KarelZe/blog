@@ -20,7 +20,7 @@ Like the transformers modelling code, the onnx graph will consist of low-level o
 
 ![scaled-dot-product-attention of an bart encoder visualized in netron](sdpa-bart-encoder.png)
 
-In the screenshot above, you can see a typical subgraph of the [scaled dot-product attention mechanism (SDPA)](<(https://arxiv.org/abs/1706.03762)>) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix in the centre. Quite a large subgraph for a common operation!🥵
+In the screenshot from Netron above, you can see a typical subgraph of the [scaled dot-product attention mechanism (SDPA)](<(https://arxiv.org/abs/1706.03762)>) from a BART encoder. On the left we find the projected value inputs, which get multiplied with the result of the query and key matrix in the centre. Quite a large subgraph for a common operation!🥵
 
 ## Core idea of attention fusion
 
@@ -386,13 +386,22 @@ abs difference: 2.3841858e-07
 
 Outputs are identical to our unoptimized model. :100: `onnxscript` has the advantage of defining a pythonic api to rewrite graphs, which makes graph rewrites a chime. Admittedly, our current solution suffers from some of the problems we have seen with `onnxruntime`. Specifically, we do not account for slight variations in the graph layout. We'll address this issue in the next example.
 
-### Performance results
+### Performance results for BART
 
-```python
-# TODO: Investigate why we see no speedup for CoreMLExecutionProvider. Is attention not implemented?
-```
+I wrote a simple benchmarking script (`TODO: add link`) to measure the performance impact of attention fusion. We compare the unoptimized onnx graph, the graph with fused attention from onnxscript, and the graph from onnxscript incl. other fused ops (i.e., [`SkipLayerNormalization`](https://github.com/microsoft/onnxruntime/blob/rel-1.20.0/docs/ContribOperators.md#commicrosoftskiplayernormalization), [`BiasGelu`](https://github.com/microsoft/onnxruntime/blob/rel-1.20.0/docs/ContribOperators.md#com.microsoft.BiasGelu) etc.).
+
+#### setup
+
+- model `hf-internal-testing/tiny-random-bart`
+- measured on Mac Mini with Apple M2 Pro with `CoreMLExecutionProvider`
+- 512 samples from the [cola dataset](https://huggingface.co/datasets/nyu-mll/glue/viewer/cola?views%5B%5D=cola_train)
+- 5 repeats per sample + 1 warmup step
+
+#### results
 
 ![inference times for bart](inference_times_bart.png)
+
+If we only fuse attention, we get a [speedup](https://en.wikipedia.org/wiki/Speedup) of approx. ×2. If we also enable other operator fusions, as in the onnxruntime case, we se up to ×30 speedups.
 
 ## SWIN encoder
 
@@ -632,7 +641,7 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
         )
 ```
 
-## Performance results
+## Performance results for SWIN
 
 Stand up to the test
 
@@ -642,7 +651,14 @@ Unfortunately, attention fusion is a very brittle process, which lead to the dev
 
 To keep things simple, our focus till now, was only on SDPA. In practice, we will also have to deal with cross-attention, kv caches,....
 
-While researching for this blog post, I made several open-source contributions.
+## Contributions
+
+While researching for this blog post, I contributed smaller fixes, which were a great learning opportunity:
+
+- added support to `BiasGeluFusion` to fuse Gelu from onnx domain and shape validation (see [onnxscript/gh-2364](https://github.com/microsoft/onnxscript/pull/2364/) + [onnxscript/gh-2393](https://github.com/microsoft/onnxscript/pull/2393/))
+- fixed attention fusion for BART with keys and bias term (see [onnxruntime/gh-25046](https://github.com/microsoft/onnxruntime/pull/25046))
+- fixed `SkipLayerNormFusion` in onnxscript for default attributes (see [onnxscript/gh-2378](https://github.com/microsoft/onnxscript/issues/2378))
+- improved docs for function-based rewrites in onnxscript (see [onnscript/gh-2359](https://github.com/microsoft/onnxscript/pull/2359))
 
 ## References:
 
