@@ -23,6 +23,12 @@ service = 'GitHub'
 urlPatternEdit = 'https://github.com/%s/%s/edit/%s/%s'
 urlPatternView = 'https://github.com/%s/%s/blob/%s/%s'
 
+[params.umami]
+serverURL = "insights.alexbilz.com"
+id = "ab202af5-def1-4588-b563-c99e8e695f9d"
+trackerScriptName = "script.js"
+
+
 ## Set as many as you want.
 
 [[params.socialIcons]]
