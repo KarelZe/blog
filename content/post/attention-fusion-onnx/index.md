@@ -175,7 +175,7 @@ abs difference: 2.3841858e-07
 
 That's reasonably close. :100:
 
-### BART attention fusion with onnxscript
+### BART attention fusion with custom rules in onnxscript
 
 As discussed, `onnxruntime` is currently the most evolved solution to perform operator fusion. Let's now look at the new kid on the block, [`onnxscript`](https://github.com/microsoft/onnxscript). `onnxscript` is a way to naturally author onnx functions and models using a subset of python. Useful for our endeavour, it also includes an optimizer to optimize onnx models (do e.g., constant folding) and a rewriter to replace patterns in graph with replacement patterns. It comes with a large set of rewrite rules and we can even author our own rewrite rules.
 
@@ -215,10 +215,9 @@ class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
             op.Constant(),
             op.Constant(),
             axis=0,
+            _outputs=["q_shape"],
         )
-        q_reshaped = op.Reshape(
-            q_add, q_shape_concat, allowzero=0, _outputs=["q_reshaped"]
-        )
+        q_reshaped = op.Reshape(q_add, q_shape_concat, allowzero=0)
 
         q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
 
@@ -295,9 +294,9 @@ class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
         q_bias: ir.Value,
         k_bias: ir.Value,
         v_bias: ir.Value,
-        q_reshaped: ir.Value,
+        q_shape: ir.Value,
     ):
-        num_heads = _ir_utils.get_dim(q_reshaped, 2)
+        num_heads = _ir_utils.get_singleton_value(q_shape.producer().inputs[-2])
         if not isinstance(num_heads, int):
             return None
 
@@ -337,7 +336,7 @@ class FuseBARTSDPARule(rewriter.pattern.RewriteRuleClassBase):
         )
 ```
 
-There is a lot going on, so let's focus on the highlights. First, we we are storing the output of the reshaped query matrix in a variable `q_reshaped` in `pattern(...)`. Similar to `onnxruntime` we can thereby auto-detect the number of attention heads based on the shape of the tensor.[^6]
+There is a lot going on, so let's focus on the highlights. First, we we are storing the shape of the reshaped query matrix in a variable `q_shape` in `pattern(...)`. Similar to `onnxruntime` we can thereby auto-detect the number of attention heads based on the shape of the tensor. In a similar vain, we fallback to inputs from the concat, as e.g., `get_dim(...)` on `op.Reshape(...)` would give dynamic shapes [^6]
 
 Other than in the original transformer paper, the query and key transpose are scaled separately by `1/sqrt(dim_k)` *before* the `MatMul`. This is often done for numerical stability and prevents values from blowing up, if dims of query and key are large.[^7]
 
@@ -401,7 +400,7 @@ I wrote a simple benchmarking script (`TODO: add link`) to measure the performan
 
 ![inference times for bart](inference_times_bart.png)
 
-If we only fuse attention, we get a [speedup](https://en.wikipedia.org/wiki/Speedup) of approx. ×2. If we also enable other operator fusions, as in the onnxruntime case, we se up to ×30 speedups.
+If we fuse attention, we get a [speedup](https://en.wikipedia.org/wiki/Speedup) of approx. ×2.4. If we also enable other operator fusions, as in the onnxruntime case, we se up to ×30 speedups.
 
 ## SWIN encoder
 
@@ -505,9 +504,12 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
             pattern.ANY_VALUE,
             pattern.ANY_VALUE,
             axis=0,
+            _outputs=["q_shape"],
         )
         q_reshaped = op.Reshape(
-            q_add, q_shape_concat, allowzero=0, _outputs=["q_reshaped"]
+            q_add,
+            q_shape_concat,
+            allowzero=0,
         )
         q_transposed = op.Transpose(q_reshaped, perm=[0, 2, 1, 3])
 
@@ -594,7 +596,7 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
         q_bias,
         k_bias,
         v_bias,
-        q_reshaped,
+        q_shape,
     ):
         # Pack the weights and biases for Q, K, V
         qkv_weight_packed = op.initializer(
@@ -623,7 +625,7 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
             ),
             name="qkv_bias",
         )
-        num_heads = _ir_utils.get_dim(q_reshaped, 2)
+        num_heads = _ir_utils.get_singleton_value(q_shape.producer().inputs[-2])
         if not isinstance(num_heads, int):
             return None
         # NOTE: This is custom op Attention!
@@ -641,6 +643,10 @@ class FuseSDPARule(pattern.RewriteRuleClassBase):
         )
 ```
 
+```yaml
+TODO: code still uses custom op. Could be ok.
+```
+
 ## Performance results for SWIN
 
 Stand up to the test
@@ -651,14 +657,17 @@ Unfortunately, attention fusion is a very brittle process, which lead to the dev
 
 To keep things simple, our focus till now, was only on SDPA. In practice, we will also have to deal with cross-attention, kv caches,....
 
+![attention fusion is fun they said](attention_fusion_is_fun.png)
+
 ## Contributions
 
-While researching for this blog post, I contributed smaller fixes, which were a great learning opportunity:
+While researching for this blog post, I contributed some fixes, which posed a great learning opportunity:
 
-- added support to `BiasGeluFusion` to fuse Gelu from onnx domain and shape validation (see [onnxscript/gh-2364](https://github.com/microsoft/onnxscript/pull/2364/) + [onnxscript/gh-2393](https://github.com/microsoft/onnxscript/pull/2393/))
-- fixed attention fusion for BART with keys and bias term (see [onnxruntime/gh-25046](https://github.com/microsoft/onnxruntime/pull/25046))
-- fixed `SkipLayerNormFusion` in onnxscript for default attributes (see [onnxscript/gh-2378](https://github.com/microsoft/onnxscript/issues/2378))
-- improved docs for function-based rewrites in onnxscript (see [onnscript/gh-2359](https://github.com/microsoft/onnxscript/pull/2359))
+1. added support to `BiasGeluFusion` to fuse Gelu from onnx domain and shape validation (see [onnxscript/gh-2364](https://github.com/microsoft/onnxscript/pull/2364/) + [onnxscript/gh-2393](https://github.com/microsoft/onnxscript/pull/2393/))
+1. fixed `SkipLayerNormFusion` in onnxscript for default attributes and handle reversed inputs (see [onnxscript/gh-2396](https://github.com/microsoft/onnxscript/issues/2378))
+1. fixed attention fusion for BART with keys and bias term (see [onnxruntime/gh-25046](https://github.com/microsoft/onnxruntime/pull/25046))
+1. fixed pre-fixing of graphs in onnx helpers, when `rename_inputs=False/rename_outputs=False`(see [onnx/6994](https://github.com/onnx/onnx/pull/6994))
+1. improved docs for function-based rewrites in onnxscript (see [onnscript/gh-2359](https://github.com/microsoft/onnxscript/pull/2359))
 
 ## References:
 
