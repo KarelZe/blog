@@ -666,7 +666,7 @@ While researching for this blog post, I contributed some fixes, which posed a gr
 1. added support to `BiasGeluFusion` to fuse Gelu from onnx domain and shape validation (see [onnxscript/gh-2364](https://github.com/microsoft/onnxscript/pull/2364/) + [onnxscript/gh-2393](https://github.com/microsoft/onnxscript/pull/2393/))
 1. fixed `SkipLayerNormFusion` in onnxscript for default attributes and handle reversed inputs (see [onnxscript/gh-2396](https://github.com/microsoft/onnxscript/issues/2378))
 1. fixed attention fusion for BART with keys and bias term (see [onnxruntime/gh-25046](https://github.com/microsoft/onnxruntime/pull/25046))
-1. fixed pre-fixing of graphs in onnx helpers, when `rename_inputs=False/rename_outputs=False`(see [onnx/6994](https://github.com/onnx/onnx/pull/6994))
+1. fixed pre-fixing of graphs in onnx helpers, when `rename_inputs=False/rename_outputs=False`(see [onnx/gh-6994](https://github.com/onnx/onnx/pull/6994))
 1. improved docs for function-based rewrites in onnxscript (see [onnscript/gh-2359](https://github.com/microsoft/onnxscript/pull/2359))
 
 ## References:
