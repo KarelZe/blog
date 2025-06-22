@@ -8,6 +8,7 @@
         "onnx",
         "onnxruntime",
         "onnxscript",
+        "perfetto",
         "SDPA",
         "SWIN",
         "venv"
