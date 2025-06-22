@@ -10,7 +10,7 @@ images:
   - images/thumbnail_attention_fusion.png
 ---
 
-The attention mechanism is at the core of Transformer-based models. Due to its computational demands, optimizing it for high throughput and low inference times is crucial. This article explores various approaches to optimize the attention mechanism through fusion within ONNX graphs, focusing on BART transformers.
+The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism through fusion in onnx graphs. Our focus is on BART transformers.
 
 ## Background
 
@@ -109,7 +109,7 @@ torch.onnx.export(
 )
 ```
 
-Several aspects warrant further explanation (see highlights). We wrap the encoder in an (`EncoderWrapper`) class to isolate and rearrange the inputs and outputs needed for subsequent processing.~~I export the scaled dot-product attention as an onnxscript function for easier fusion.~~ [^3]
+Several aspects warrant further explanation (see highlights). We wrap the encoder in an (`EncoderWrapper`) class to retrieve and rearrange the inputs and outputs needed for subsequent processing.~~I export the scaled dot-product attention as an onnxscript function for easier fusion.~~ [^3]
 
 ### Attention fusion with onnxruntime for BART encoder
 
@@ -481,7 +481,7 @@ I created a simple [benchmarking script](https://gist.github.com/KarelZe/2b689ad
 We observe a [speedup](https://en.wikipedia.org/wiki/Speedup) of approx. ×2.4. When other operator fusions are enabled, as in the ONNX Runtime case, we see speedups of up to ×30. Admittedly, the the overall inference time is negligible for all our models.
 
 ```YAML
-TODO: verify benchmarking code is correct. Times for model run are approx. the same in perfetto. Session initialization takes most time.
+TODO: verify benchmarking code is correct. Times for model run are approx. the same in perfetto. Session initialization is highly different between both approaches.
 ```
 
 ![screenshot of perfetto with inference times](perfetto_coreml_bart_encoder.png)
@@ -490,10 +490,10 @@ In perfetto (via `chrome://tracing`) we can now see that attention is run as a s
 
 ## BART decoder
 
-So far, we skipped all the good stuff and only a looked at self-attention. This example will look into cross-attention + kv cache.
+So far, we skipped the good stuff and only a looked at self-attention of an encoder. In the next example, we will fuse attention for a BART decoder (with past) with self-attention, cross-attention and a kv cache.🤓
 
 ```YAML
-TODO: verify benchmarking code is correct. Times for model run are approx. the same in perfetto. Session initialization takes most time.
+TODO: add second example.
 ```
 
 `onnxscript` comes with a rich set of features to design more flexible patterns (see [onnxscript/gh-2406](https://github.com/microsoft/onnxscript/pull/2406)):
