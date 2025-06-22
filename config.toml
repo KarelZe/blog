@@ -98,3 +98,7 @@ enable = true
     style = "github-dark"
     codeFences = true
     guessSyntax = false
+
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
