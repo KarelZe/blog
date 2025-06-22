@@ -513,7 +513,7 @@ def rewrite(self, op, query: ir.Value, key: ir.Value, value: ir.Value) -> ir.Val
     return op.Attention(query, key, value, _outputs=1, _version=23, _domain="ai.onnx")
 ```
 
-Be sure to adjust your code for the different inputs and set `_version=23`. The domain defaults to `_domain="ai.onnx"` anyway.You may need to [convert your input model](https://onnx.ai/onnx/api/version_converter.html) to opset 23 first, using:
+Be sure to adjust your code for the different inputs and set `_version=23`. The domain defaults to `_domain="ai.onnx"` anyway.You also may need to [convert your input model](https://onnx.ai/onnx/api/version_converter.html) to opset 23 first, using:
 
 ```python
 import onnx
@@ -523,19 +523,19 @@ onnx_model_lower_opset = onnx.load("bart_encoder.onnx")
 onnx_model = ir.from_proto(convert_version(onnx_model_lower_opset, 23))
 ```
 
-Be aware however that the official versions of `onnxruntime` only ship with support opset `<=22`.
+However, be aware that official ONNX Runtime versions currently only support opset \<=22.
 
 ## Conclusion
 
-In this blog post we studied attention fusion for `onnxruntime`. We've seen that attention fusion is often desirable to max out performance but unfortunately fusing operators can be a cumbersome and brittle process.
+In this blog post, we explored attention fusion for ONNX Runtime. While attention fusion is often crucial for maximizing performance, we've seen that it can be a cumbersome and brittle process.
 
-`onnxscript` has greatly simplified operator fusion and gives us both the tools and flexibility, combined with an api, that just feels right. Despite its early stage, I'm excited about what is possible so far and looking forward their ongoing efforts like [e-graph](https://egraphs-good.github.io/)-based pattern matching (see [gh-2395](https://github.com/microsoft/onnxscript/pull/2395)), which would make pattern matching even more powerful and cut fusion times. What are your thoughts on `onnxscript`? Did you give a try yet?
+ONNX Script has significantly simplified operator fusion, offering both the tools and flexibility through an API that just feels right. Despite its early stage, I'm excited by its current capabilities and look forward to ongoing efforts like [e-graph](https://egraphs-good.github.io/)-based pattern matching (see [gh-2395](https://github.com/microsoft/onnxscript/pull/2395)), which promises to make pattern matching even more powerful and further reduce fusion times. What are your thoughts on ONNX Script? Have you given it a try yet?
 
 <img src="attention_fusion_is_fun.png" alt="attention fusion is fun they said" style="width:512px;">
 
 ## Contributions 🤝
 
-While researching for this blog post, I contributed some fixes, which posed a great learning opportunity:
+While researching this blog post, I contributed several fixes, which proved to be great learning opportunities:
 
 1. added support to `BiasGeluFusion` to fuse Gelu from onnx domain and added shape validation (see [onnxscript/gh-2364](https://github.com/microsoft/onnxscript/pull/2364/) + [onnxscript/gh-2393](https://github.com/microsoft/onnxscript/pull/2393/))
 1. fixed `SkipLayerNormFusion` in onnxscript for default attributes and handle reversed inputs (see [onnxscript/gh-2396](https://github.com/microsoft/onnxscript/issues/2378))
