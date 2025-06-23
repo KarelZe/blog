@@ -10,13 +10,13 @@ images:
   - images/thumbnail_attention_fusion.png
 ---
 
-The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism through fusion in onnx graphs. Our focus is on BART transformers.
+The attention mechanism is the core of Transformer-based models. Due to its computational demands, we often want to optimize it for high throughput and low inference times. This article explores different approaches to optimize attention mechanism through fusion in ONNX graphs. Our focus is on BART transformers.
 
 ## Background
 
 Odds are that when working with Transformers, you come back to huggingface's Transformer package. Transformers utilizes *custom modeling code* for attention layers (see, e.g., [here](https://github.com/huggingface/transformers/blob/ebeec13609b537f9c760292354118c9d1d63f5a0/src/transformers/models/bart/modeling_bart.py#L147)). During export, the PyTorch modeling code is first translated into an [ONNX-IR representation](https://github.com/microsoft/onnxscript/blob/main/onnxscript/function_libs/torch_lib/ops/__init__.py), optionally optimized, and then serialized as a protobuf.[^1]
 
-Similar to the Transformers modeling code, the ONNX graph typically consists of low-level ONNX primitives such as `MatMul`, `Reshape`, and `Concat` to model attention. However, more specialized [`ai.onnx.Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops are available in recent versions of onnx (>= opset 23 🆕) or from contributor ops [`com.microsoft.Attention`](https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention).
+Similar to the Transformers modeling code, the ONNX graph typically consists of low-level ONNX primitives such as `MatMul`, `Reshape`, and `Concat` to model attention. Yet, more specialized [`ai.onnx.Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) ops are available in recent versions of onnx (>= opset 23 🆕) or from contributor ops [`com.microsoft.Attention`](https://github.com/microsoft/onnxruntime/blob/main/docs/ContribOperators.md#com.microsoft.Attention).
 
 ![Scaled Dot-Product Attention of a BART encoder visualized in Netron](sdpa-bart-encoder.png)
 
@@ -30,7 +30,7 @@ Fusing Attention is beneficial for three primary reasons:
 
 1. **Improved Performance:** Executing the ONNX graph on a GPU involves loading the model into high-bandwidth memory (HBM). Each operator is run as a small kernel (or program) on the gpu and launched into small but fast static RAM (SRAM) and then results are saved back to HBM. Memory transfers are typically slow, so we want to fuse multiple kernels or ops into larger kernels to minimize the number of memory transfers.[^2]
 1. **Hardware Optimization:** Hardware vendors often provide optimized implementations for operators within their ONNX execution providers (e.g., `CUDAExecutionProvider`), resulting in additional performance gains.
-1. **Graph Simplification:** Operator fusion streamlines your graphs, appealing to your inner [Marie Kondō](https://knowyourmeme.com/photos/2247427-does-it-spark-joy). 🤓
+1. **Simpler Graphs:** Operator fusion simplifies your graphs, appealing to your inner [Marie Kondō](https://knowyourmeme.com/photos/2247427-does-it-spark-joy). 🤓
 
 ## BART Encoder
 
@@ -43,7 +43,7 @@ First, let's set up a virtual environment and install the required dependencies:
 ```bash
 uvx venv
 source .venv
-uv pip install torch onnx git+[https://github.com/microsoft/onnxscript.git@main](https://github.com/microsoft/onnxscript.git@main) transformers==4.52.4
+uv pip install torch onnx git+https://github.com/microsoft/onnxscript.git@main transformers==4.52.4
 ```
 
 I strongly advice to pin at least the dependencies of `transformers` due to modelling changes in modelling and install `onnxscript` from source due to the frequency of changes.
@@ -113,7 +113,7 @@ Several aspects warrant further explanation (see highlights). We wrap the encode
 
 ### Attention fusion with onnxruntime for BART encoder
 
-The most straightforward approach to perform attention fusion is via is via `onnxruntime`. Yet, it's also the most brittle. In a nutshell, `onnxruntime` tries to fuse attention by locating nodes like normalization layers subsequent to the attention mechanism in the ONNX graph. From there, it pattern-matches contiguous paths to parent nodes based on their node type and position as a node input. If a suitable subgraph is found, new attention nodes are added, and any unused nodes are subsequently removed.[^5]
+The most straightforward approach to perform attention fusion is via `onnxruntime`. Yet, it's also the most brittle. In a nutshell, `onnxruntime` tries to fuse attention by locating nodes like normalization layers subsequent to the attention mechanism in the ONNX graph. From there, it pattern-matches contiguous paths to parent nodes based on their node type and position as a node input. If a suitable subgraph is found, new attention nodes are added, and any unused nodes are subsequently removed.[^5]
 
 This method of attention fusion is susceptible to modeling changes or prior optimization passes that affect the ONNX graph.[^4] Further more, `onnxruntime` has limited capabilities for matching alternative paths, commuted inputs, or node attributes, and we operate directly on the protobuf. These limitations ultimately led to the development of [`onnxscript`](https://github.com/microsoft/onnxscript), which we discuss below.
 
@@ -200,7 +200,7 @@ optimized_model, stats = optimize_for_ort(onnx_model, debug=True)
 print(stats)
 ```
 
-From the stats, we can tell, if attention fusion was successfully applied. Look for `sdpa`, `gqa` (grouped-query-attention) and `mha1`, `mha2`, and `mha_bias` (multi-head-attention), and `attention`.
+From the stats, we can tell, if attention fusion was successfully applied. Look for `sdpa`, `gqa` (grouped-query attention) and `mha1`, `mha2`, and `mha_bias` (multi-head attention), and `attention`.
 
 ```
 {'erf_gelu': 0, 'rms_normalization': 0, 'skip_layer_normalization': 4, 'skip_rms_normalization': 0, 'rotary_embedding': 0, 'partial_rotary_embedding': 0, 'cos_sin_cache': 0, 'sdpa': 0, 'gqa': 0, 'packed_qkv_for_gqa': 0, 'mha1': 0, 'mha2': 0, 'mha_bias': 0, 'attention': 0, 'gelu': 0, 'bias_gelu': 2}
@@ -410,7 +410,7 @@ rule.apply_to_model(onnx_model, tracer=tracer, verbose=4)
 tracer.report()
 ```
 
-Now, let's address the remaining key points in the rewrite code.First, we we are storing the shape of the reshaped query matrix in a variable `q_shape` in `pattern(...)`. Similar to ONNX Runtime this allows us to automatically detect the number of attention heads based on the tensor's shape. We rely on inputs to the concatenation, as using, for example, `get_dim(...)` on `op.Reshape(...)` would give dynamic shapes. [^6]
+Now, let's covert the remaining highlights in the rewrite code. First, we are storing the shape of the reshaped query matrix in a variable `q_shape` in `pattern(...)`. Similar to ONNX Runtime this allows us to automatically detect the number of attention heads based on the tensor's shape. We rely on the inputs to the concatenation, as using, for example, `get_dim(...)` on `op.Reshape(...)` would give dynamic shapes.[^6]
 
 Unlike the original Transformer paper, the query and key transposes are scaled separately by `1/sqrt(dim_k)` *before* the `MatMul`. This is commonly done for numerical stability and prevents values from blowing up, if dims of query and key are large.[^7]
 
@@ -506,7 +506,7 @@ TODO: add second example.
 
 ## Fusing to Attention op from the `onnx.ai` domain
 
-Since opset 23 [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) is available `onnx`. If you are advanterous and want fuse to this op instead, you can do:
+Since opset 23 [`Attention`](https://onnx.ai/onnx/operators/onnx__Attention.html) is available `onnx`. If you are adventurous and want fuse to this op instead, you can do:
 
 ```python
 def rewrite(self, op, query: ir.Value, key: ir.Value, value: ir.Value) -> ir.Value:
@@ -529,7 +529,7 @@ However, be aware that official ONNX Runtime versions currently only support ops
 
 In this blog post, we explored attention fusion for ONNX Runtime. While attention fusion is often crucial for maximizing performance, we've seen that it can be a cumbersome and brittle process.
 
-ONNX Script has significantly simplified operator fusion, offering both the tools and flexibility through an API that just feels right. Despite its early stage, I'm excited by its current capabilities and look forward to ongoing efforts like [e-graph](https://egraphs-good.github.io/)-based pattern matching (see [gh-2395](https://github.com/microsoft/onnxscript/pull/2395)), which promises to make pattern matching even more powerful and further reduce fusion times. What are your thoughts on ONNX Script? Have you given it a try yet?
+ONNX Script has significantly simplified operator fusion, offering both the tools and flexibility through an API that just feels right. Despite its early stage, I'm excited by its current capabilities and excited about their ongoing efforts like [e-graph](https://egraphs-good.github.io/)-based pattern matching (see [gh-2395](https://github.com/microsoft/onnxscript/pull/2395)), which could make pattern matching even more powerful and further reduce fusion times. What are your thoughts on ONNX Script? Have you given it a try yet?
 
 <img src="attention_fusion_is_fun.png" alt="attention fusion is fun they said" style="width:512px;">
 
