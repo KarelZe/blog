@@ -404,7 +404,7 @@ The easiest way to construct the target pattern is often by opening the graph in
 
 ```python
 rule = FuseSDPARule.rule()
-Apply the rewrite rule to the model
+# Apply the rewrite rule to the model
 tracer = rewriter.pattern.MatchingTracer()
 rule.apply_to_model(onnx_model, tracer=tracer, verbose=4)
 tracer.report()
@@ -661,6 +661,10 @@ torch.onnx.export(
     opset_version=20,
 )
 
+onnx_model = ir.load("bart_decoder_init.onnx")
+onnx_model, stats = optimize_for_ort(onnx_model, debug=True)
+print(stats)
+
 decoder_with_past_torch = BartDecoderWithPast(decoder=model.model.decoder)
 
 pkv_in, pkv_out = [], []
@@ -705,22 +709,53 @@ decoder_with_past_outputs = decoder_with_past_torch(*decoder_inputs)
 torch.onnx.export(
     decoder_with_past_torch,
     decoder_inputs,
-    "decoder_with_past.onnx",
+    "bart_decoder_with_past.onnx",
     export_params=True,
     input_names=input_names,
     output_names=output_names,
     dynamic_axes=dynamic_axes,
     opset_version=20,
 )
+
+onnx_model = ir.load("bart_decoder_with_past.onnx")
+onnx_model, stats = optimize_for_ort(onnx_model, debug=True)
+print(stats)
 ```
 
-`onnxscript` comes with a rich set of features to design more flexible patterns (see [onnxscript/gh-2406](https://github.com/microsoft/onnxscript/pull/2406)):
+We get the following outputs:
+
+```
+...
+Graph matching failed: Attribute key_format mismatch: expected BHSd, got BSHd.
+Failure at or around nodes/values:
+Node: 'node_SDPA_119'
+...
+{'erf_gelu': 0, 'rms_normalization': 0, 'skip_layer_normalization': 0, 'skip_rms_normalization': 0, 'rotary_embedding': 0, 'cos_sin_cache': 0, 'partial_rotary_embedding': 0, 'sdpa': 4, 'gqa': 0, 'packed_qkv_for_gqa': 0, 'mha1': 0, 'mha2': 0, 'mha_bias': 0, 'attention': 0, 'gelu': 0, 'bias_gelu': 2}
+...
+------------------------------
+Rule: SDPA
+--------------------------------------------------------------------------------
+Status: CONDITION_FAILED
+Graph matching failed due to failing check condition : query_scale is not a scalar.
+...
+{'erf_gelu': 0, 'rms_normalization': 0, 'skip_layer_normalization': 0, 'skip_rms_normalization': 0, 'rotary_embedding': 0, 'cos_sin_cache': 0, 'partial_rotary_embedding': 0, 'sdpa': 0, 'gqa': 0, 'packed_qkv_for_gqa': 0, 'mha1': 0, 'mha2': 0, 'mha_bias': 0, 'attention': 0, 'gelu': 0, 'bias_gelu': 2}
+```
+
+That is, the default attention fusion rules in ONNX script fail to fuse the attention ops for BART. For the decoder (init), attention is performed into temporary `SDPA(...)` node, which leads to an invalid graph. The tracking issue is [onnxscript/gh-2424](https://github.com/microsoft/onnxscript/issues/2424), for now we we'll write our own custom fusion code.
+
+At best, we'd like to have a *single* pattern, for fusing cross- and self-attention, that applies to both decoder variants. Onnx script comes with a rich set of features to design more flexible patterns (see [onnxscript/gh-2406](https://github.com/microsoft/onnxscript/pull/2406)):
 
 1. check for commuted inputs through `rule.commute()`
 1. allow for optional node inputs `_allow_other_inputs=True`
 1. allow for attributes in nodes like `_allow_other_attributes=True`
 1. match gainst arbitrary values `pattern.ANY_VALUE`
 1. combine multiple alternative patterns through `pattern.OrValue(pattern_1, pattern_2)`.
+
+Let's put them to work:
+
+```
+
+```
 
 ## Fusing to Attention op from the `onnx.ai` domain
 
