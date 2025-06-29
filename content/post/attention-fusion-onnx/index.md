@@ -64,7 +64,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model.eval()
 
 
-class EncoderWrapper(torch.nn.Module):
+class BartEncoder(torch.nn.Module):
     """A wrapper around the BART encoder for onnx export."""
 
     def __init__(self, encoder: torch.nn.Module):
@@ -78,7 +78,7 @@ class EncoderWrapper(torch.nn.Module):
         return outs["last_hidden_state"]
 
 
-model = EncoderWrapper(encoder=model.model.encoder)
+model = BartEncoder(encoder=model.model.encoder)
 print(model)
 
 text = "God bless the internet."
@@ -109,7 +109,7 @@ torch.onnx.export(
 )
 ```
 
-Several aspects warrant further explanation (see highlights). We wrap the encoder in an (`EncoderWrapper`) class to retrieve and rearrange the inputs and outputs needed for subsequent processing.~~I export the scaled dot-product attention as an onnxscript function for easier fusion.~~ [^3]
+Several aspects warrant further explanation (see highlights). We wrap the encoder in an (`BartEncoder`) class to retrieve and rearrange the inputs and outputs needed for subsequent processing.~~I export the scaled dot-product attention as an onnxscript function for easier fusion.~~ [^3]
 
 ### Attention fusion with onnxruntime for BART encoder
 
@@ -490,14 +490,228 @@ In perfetto (via `chrome://tracing`) we can now see that attention is run as a s
 
 ## BART decoder
 
-So far, we skipped the good stuff and only a looked at self-attention of an encoder. In the next example, we will fuse attention for a BART decoder with self-attention, cross-attention and a kv cache.🤓
+So far, we skipped the good stuff and only a looked at self-attention of an encoder. In the next example we will fuse self-/cross-attention for a BART decoder with a kv cache.🤓
 
 > kv caching is a technique to speed up inference by saving the previously generated key and value matrices to memory and reusing it in the estimation of attention scores in all subsequent decoding steps.
 
 As we want to make use of kv caching, we start by exporting two variants of the decoder: one for the initial decoding step (without a pre-populated cache), and a second one for all subsequent steps (with cached keys/values).
 
-```YAML
-TODO: add second example.
+```python
+class BartDecoderInit(torch.nn.Module):
+    """BART decoder for initial decoding step."""
+
+    def __init__(self, decoder: torch.nn.Module):
+        """Init.
+
+        Args:
+            decoder (torch.nn.Module): decoder model.
+        """
+        super().__init__()
+        self.decoder = decoder
+
+    def forward(
+        self, encoder_hidden_states: torch.Tensor, decoder_input_ids: torch.Tensor
+    ) -> tuple[torch.Tensor, ...]:
+        """Forward pass.
+
+        Args:
+            encoder_hidden_states (torch.Tensor): hidden states of encoder.
+            decoder_input_ids (torch.Tensor): input ids for decoder i.e., token IDs of system prompt
+
+        Returns:
+            tuple[torch.Tensor,...]: last_hidden_state, self-attention key 0, self attention value 0, cross-attention key 0, cross-attention value 0, ...
+        """
+        decoder_output = self.decoder(
+            input_ids=decoder_input_ids,
+            encoder_hidden_states=encoder_hidden_states,
+            use_cache=True,
+            return_dict=True,
+        )
+        # flatten layer-wise self-attention key/values and cross-attention key/values.
+        pkv = decoder_output.past_key_values
+        return decoder_output.last_hidden_state, *itertools.chain.from_iterable(pkv)
+
+
+class BartDecoderWithPast(torch.nn.Module):
+    """BartDecoder with past."""
+
+    def __init__(self, decoder: torch.nn.Module):
+        """Init.
+
+        Args:
+            decoder (torch.nn.Module): decoder model.
+        """
+        super().__init__()
+        self.decoder = decoder
+
+    def forward(
+        self,
+        decoder_input_ids: torch.Tensor,
+        encoder_hidden_states: torch.Tensor,
+        past_key_values: tuple[torch.Tensor, ...],
+    ) -> tuple[torch.Tensor, ...]:
+        """Forward pass.
+
+        which requires inputs:
+            decoder_input_ids
+            encoder_hidden_states
+            past_key_self_0, past_value_self_0 (for each self-attention layer)
+            past_key_cross_0, past_value_cross_0 (for each cross-attention layer)
+            ...
+        which outputs:
+            last hidden state,
+            present_key_self_0, present_value_self_0 (for each self-attention layer)
+
+        Args:
+            decoder_input_ids (torch.Tensor): decoder input ids
+            encoder_hidden_states (torch.Tensor): final hidden states of encoder
+            past_key_values (tuple[torch.Tensor, ...]): past key values if previous decoding iteration.
+
+        Returns:
+            tuple[torch.Tensor, ...]: last_hidden_state, self attention tensors
+        """
+        decoder_layers = model.config.decoder_layers
+
+        pkv_in = []
+        for i in range(decoder_layers):
+            pkv_in.append(
+                (
+                    past_key_values[i * 4],
+                    past_key_values[i * 4 + 1],
+                    past_key_values[i * 4 + 2],
+                    past_key_values[i * 4 + 3],
+                )
+            )
+
+        decoder_output = self.decoder(
+            # see transformers docs. If past is used, use only most recent generated input id in decoder.
+            # https://huggingface.co/docs/transformers/v4.49.0/en/model_doc/vision-encoder-decoder#transformers.VisionEncoderDecoderModel
+            input_ids=decoder_input_ids[:, -1:],
+            encoder_hidden_states=encoder_hidden_states,
+            past_key_values=pkv_in,
+            use_cache=True,
+            return_dict=True,
+        )
+        self_att = []
+        pkv = decoder_output.past_key_values
+        # omit cross-attention keys/values as they remain constant.
+        for present_key_self, present_value_self, _, _ in pkv:
+            self_att.extend([present_key_self, present_value_self])
+        return decoder_output.last_hidden_state, *self_att
+
+
+model_name = "hf-internal-testing/tiny-random-bart"
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+config = AutoConfig.from_pretrained(model_name)
+
+model.eval()
+
+encoder = BartEncoder(encoder=model.model.encoder)
+
+# same as above.
+text = "God bless the internet."
+inputs = tokenizer(text, return_tensors="pt")
+input_ids_encoder, attention_mask = inputs["input_ids"], inputs["attention_mask"]
+
+with torch.no_grad():
+    dummy_hidden_states = encoder(input_ids_encoder, attention_mask)
+    len_hidden_states = dummy_hidden_states.shape[1]
+
+decoder_init_torch = BartDecoderInit(decoder=model.model.decoder)
+
+dummy_input_ids_decoder = torch.randint(0, config.vocab_size, (1, 1), dtype=torch.int32)
+with torch.no_grad():
+    decoder_outputs = decoder_init_torch(dummy_hidden_states, dummy_input_ids_decoder)
+input_names = [
+    "encoder_hidden_states",
+    "decoder_input_ids",
+]
+pkv = []
+for i in range(model.config.decoder_layers):
+    pkv.extend(
+        [
+            f"present_key_self_{i}",
+            f"present_value_self_{i}",
+            f"present_key_cross_{i}",
+            f"present_value_cross_{i}",
+        ]
+    )
+
+# dynamic axis
+dynamic_axes = {}
+for p in pkv:
+    dynamic_axes[p] = {
+        2: "encoder_sequence_length_out"
+        if "cross" in p
+        else "past_decoder_sequence_length+1"
+    }
+output_names = ["last_hidden_state", *pkv]
+
+torch.onnx.export(
+    decoder_init_torch,
+    (
+        dummy_hidden_states,
+        dummy_input_ids_decoder,
+    ),
+    "bart_decoder_init.onnx",
+    input_names=input_names,
+    output_names=output_names,
+    dynamic_axes=dynamic_axes,
+    opset_version=20,
+)
+
+decoder_with_past_torch = BartDecoderWithPast(decoder=model.model.decoder)
+
+pkv_in, pkv_out = [], []
+for i in range(model.config.decoder_layers):
+    pkv_in.extend(
+        [
+            f"past_key_self_{i}",
+            f"past_value_self_{i}",
+            f"past_key_cross_{i}",
+            f"past_value_cross_{i}",
+        ]
+    )
+for i in range(model.config.decoder_layers):
+    pkv_out.extend([f"present_key_self_{i}", f"present_value_self_{i}"])
+
+# dynamic axis
+dynamic_axes = {}
+dynamic_axes["last_hidden_state"] = {1: "decoder_sequence_length"}
+
+for p in pkv_in:
+    dynamic_axes[p] = {
+        2: "encoder_sequence_length" if "cross" in p else "past_decoder_sequence_length"
+    }
+for p in pkv_out:
+    dynamic_axes[p] = {2: "past_decoder_sequence_length+1"}
+
+input_names = ["input_ids", "encoder_hidden_states", *pkv_in]
+output_names = ["last_hidden_state", *pkv_out]
+
+dummy_hidden_states = torch.empty(
+    (1, len_hidden_states, 1024), dtype=torch.float32
+).uniform_(0, 1)
+decoder_inputs = (
+    dummy_input_ids_decoder,
+    dummy_hidden_states,
+    decoder_outputs[1:],
+)
+
+decoder_with_past_outputs = decoder_with_past_torch(*decoder_inputs)
+
+
+torch.onnx.export(
+    decoder_with_past_torch,
+    decoder_inputs,
+    "decoder_with_past.onnx",
+    export_params=True,
+    input_names=input_names,
+    output_names=output_names,
+    dynamic_axes=dynamic_axes,
+    opset_version=20,
+)
 ```
 
 `onnxscript` comes with a rich set of features to design more flexible patterns (see [onnxscript/gh-2406](https://github.com/microsoft/onnxscript/pull/2406)):
