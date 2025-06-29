@@ -490,7 +490,11 @@ In perfetto (via `chrome://tracing`) we can now see that attention is run as a s
 
 ## BART decoder
 
-So far, we skipped the good stuff and only a looked at self-attention of an encoder. In the next example, we will fuse attention for a BART decoder (with past) with self-attention, cross-attention and a kv cache.🤓
+So far, we skipped the good stuff and only a looked at self-attention of an encoder. In the next example, we will fuse attention for a BART decoder with self-attention, cross-attention and a kv cache.🤓
+
+> kv caching is a technique to speed up inference by saving the previously generated key and value matrices to memory and reusing it in the estimation of attention scores in all subsequent decoding steps.
+
+As we want to make use of kv caching, we start by exporting two variants of the decoder: one for the initial decoding step (without a pre-populated cache), and a second one for all subsequent steps (with cached keys/values).
 
 ```YAML
 TODO: add second example.
