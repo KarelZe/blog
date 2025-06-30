@@ -1,5 +1,5 @@
 ---
-title: Generating profile pictures with FLUX.1 and LoRA 🌌
+title: Generating profile pictures with FLUX.1 and LoRA🌌
 date: 2025-06-06T08:32:00+02:00
 Description: Generating profile pictures with FLUX.1 and LoRA
 Tags: [profile-picture, flux, LoRA, replicate, deep-fake]
@@ -7,7 +7,7 @@ Categories: [misc]
 DisableComments: false
 ---
 
-Profile pictures are oddly similar to CVs, you need them fairly infrequently and whenever you need them, they inevitably become outdated and require a bit of tweaking. For example, the profile picture I've been using for work and talks recently turned eight years old. Happy birthday!
+Profile pictures are oddly similar to CVs, you need them fairly infrequently and whenever you need them, they inevitably become outdated and require a bit of tweaking. For example, the profile picture I've been using for work and talks recently turned eight years old. Happy birthday!🪅
 
 Instead of going to the photographer, I wanted to take the data science approach and create new profile picture using [FLUX.1 dev](https://huggingface.co/black-forest-labs/FLUX.1-dev) with a [LoRA](https://arxiv.org/abs/2106.09685) adapter trained on my personal images. It seemed like a fun little project and won't break the bank. This article describes how you can do it too.
 

@@ -3,7 +3,20 @@
     "cSpell.words": [
         "Atruvia",
         "Bilz",
+        "CUDA",
+        "Gelu",
         "headshot",
-        "onnxscript"
+        "matmul",
+        "numpy",
+        "onnx",
+        "onnxruntime",
+        "onnxscript",
+        "opset",
+        "perfetto",
+        "SDPA",
+        "Softmax",
+        "SWIN",
+        "unsqueeze",
+        "venv"
     ]
 }

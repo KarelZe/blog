@@ -6,6 +6,7 @@ theme = "anatole"
 summarylength = 10
 enableEmoji = true
 math=true
+copyright = "cc-by"
 
 [params]
 author = "Markus Bilz"
@@ -69,6 +70,9 @@ loading = "lazy"
 enable = true
 use = "katex"
 
+[params.mermaid]
+enable = true
+
 [menu]
 
   [[menu.main]]
@@ -95,5 +99,6 @@ use = "katex"
     codeFences = true
     guessSyntax = false
 
-[mermaid]
-enable = true
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
