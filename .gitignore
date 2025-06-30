@@ -1,5 +1,6 @@
 # Hugo default output directory
-/public
+/public/*
+!/public/images/
 
 ## OS Files
 # Windows
