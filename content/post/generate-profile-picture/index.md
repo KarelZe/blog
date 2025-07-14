@@ -3,7 +3,7 @@ title: Generating profile pictures with FLUX.1 and LoRA 🌌
 date: 2025-06-06T08:32:00+02:00
 Description: Generating profile pictures with FLUX.1 and LoRA
 Tags: [profile-picture, flux, LoRA, replicate, deep-fake]
-Categories: [misc]
+Categories: [ai]
 DisableComments: false
 ---
 
