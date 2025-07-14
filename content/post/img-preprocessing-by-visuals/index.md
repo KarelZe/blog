@@ -1,7 +1,7 @@
 ---
 title: Intern-like image preprocessing by visual example🎒
 date: 2025-07-14T06:32:00+02:00
-Description: Intern-like image preprocessing by visual example🎒
+Description: A visual guide to implementing image preprocessing from the InternLM-XComposer2-4KHD paper with pillow and onnx.
 Tags: [internLM-X-Composer-KHD, phi3vision, pillow, onnx, image-processing, preprocessor, transformers]
 Categories: [ai]
 DisableComments: false
