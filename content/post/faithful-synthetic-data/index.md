@@ -49,10 +49,10 @@ Conceptually, the authors draw on minimum volume sets - sets that contain a spec
 
 Synthetic and real samples are both embedded into hyperspheres, which have the nice property that in this space, typical examples are located in the centre (modes) and outliers are pushed further to the boundary of the sphere. The hyperspheres have spherical-shaped supports, which depend on how we set $\\alpha$ and $\\beta$. If the radius of the hypersphere changes and so does our definition of an outlier. To summarize, a (synthetic or real) sample must lie in the $\\alpha$ or $\\beta$ support of its hypersphere to be considered typical. We dive more into how this setup can be used to our examples in the section on model debugging.
 
-With our newly gained understanding of $\\alpha$ and $\\beta$ as a hyper-parameter to determine the supports of the real and synthetic hypersphere, we are all set for a more precise definition of $\\alpha$-precision and $\\beta$-recall:
+With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter to determine the supports of the real and synthetic hypersphere, we are all set for a more precise definition of $\alpha$-precision and $\beta$-recall:
 
-1. **$\\alpha$-precision:** The probability that a synthetic sample lies within the $\\alpha$-support of the real distribution. Intuitively, $\\alpha$ has an impact on the creativity of the generative models. For small $\\alpha$s the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\\alpha$s or less restrictive outlier definition it becomes more likely that a generated sample sneaks in to the real hypersphere.
-1. **$\\beta$-recall:** It's the fraction of real samples that reside within the $\\beta$-support of the synthetic distribution for a given $\\beta$. Being able to vary $\\beta$, we can control the diversity of samples we allow for.
+1. **$\alpha$-precision:** The probability that a synthetic sample lies within the $\alpha$-support of the real distribution. Intuitively, $\alpha$ has an impact on the creativity of the generative models. For small $\alpha$s the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\alpha$s or less restrictive outlier definition it becomes more likely that a generated sample sneaks into the real hypersphere.
+2. **$\beta$-recall:** The fraction of real samples that reside within the $\beta$-support of the synthetic distribution for a given $\beta$. Being able to vary $\beta$, we can control the diversity of samples we allow for.
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
