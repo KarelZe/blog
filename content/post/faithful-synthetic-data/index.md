@@ -23,6 +23,6 @@ A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level
 
 ## Discussion
 
-Synthetic data is often seen as the holly grail for your data problems.
+Synthetic data is often seen as the holy grail for your data problems.
 
 [^1]: see https://arxiv.org/abs/2102.08921
