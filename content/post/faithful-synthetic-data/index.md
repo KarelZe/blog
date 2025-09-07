@@ -1,5 +1,5 @@
 ---
-title: My thoughts on How Faithful is your Synthetic Data?🛸
+title: My thoughts on How Faithful is Your Synthetic Data?🛸
 date: 2025-09-07T07:52:00+02:00
 Description: My thoughts on the paper titled 'How faithful is your synthetic data?'.
 Tags: [synthetic-data, data-sampling, visual-data, vision-language-models, paper]
