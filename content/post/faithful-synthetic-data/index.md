@@ -96,4 +96,4 @@ TODO:
 
 [^2]: Seems like nobody has coined a name for the metric yet. Feel free to propose
 
-[^3]: Conceptually, this reminded me a bit of the hyperparameter $\epsilon$ in [DBSCAN](https://en.wikipedia.org/wiki/DBSCAN).
+[^3]: Conceptually, this reminded me a bit of the hyperparameter $\\epsilon$ in [DBSCAN](https://en.wikipedia.org/wiki/DBSCAN).
