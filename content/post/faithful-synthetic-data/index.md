@@ -21,7 +21,7 @@ Good synthetic data should fulfill the following three qualities:
 1. **Diversity:** The synthetic dataset should capture the full variability of the real data, including rare edge cases.
 1. **Generalization:** A synthetic dataset should contain truly novel samples, not just mere copies of the data the generative model was trained on. Without this third criterion, a strongly overfitted model could still score high on fidelity and diversity, but its outputs would just be copies, offering no real benefit.
 
-All three aspects seem intuitive at first glance. As it happens, the authors propose a *three-dimensional* metric, $\mathcal{E}$, that maps nicely to these three qualities.🤓[^2] The mapping is as follows: $\alpha$-precision captures *fidelity*, $\beta$-recall captures *diversity*, and *authenticity* assesses *generalization*.
+All three aspects seem intuitive at first glance. As it happens, the authors propose a *three-dimensional* metric, $\\mathcal{E}$, that maps nicely to these three qualities.🤓[^2] The mapping is as follows: $\\alpha$-precision captures *fidelity*, $\\beta$-recall captures *diversity*, and *authenticity* assesses *generalization*.
 
 While $\\alpha$-precision and $\\beta$-recall are generalizations of the classic precision and recall metrics, the concept of *authenticity* is what's truly new here. This focus on generalization versus memorization is one of the paper's key contributions. Let's take a closer look at the metric $\\mathcal{E}$.
 
