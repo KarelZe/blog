@@ -21,7 +21,7 @@ A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level
 
 ## Does it scale?
 
-## discussion
+## Discussion
 
 Synthetic data is often seen as the holly grail for your data problems.
 
