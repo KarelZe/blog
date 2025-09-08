@@ -7,7 +7,7 @@ Categories: [ai]
 DisableComments: false
 ---
 
-Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [atruvia](https://atruvia.de/).
+Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [Atruvia](https://atruvia.de/).
 
 A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"[^1] sheds light on these questions and sparked my interest. More specifically, it introduces a three-dimensional metric to assess the quality of generative models.
 
@@ -56,14 +56,18 @@ With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter 
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
-### A visual explanation $\alpha$-Precision, $\beta$-Recall, and Authenticity
+### A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
 
 ![core-concept](core_concept.png)
 
-The figure above depicts the proposed evaluation metric. The blue sphere correspond to the $\alpha$ support of the real distribution. Likewise, the red sphere is the $\alpha$ support for the generative distributions. For visualization ache, is set to $\alpha=\beta=0.9$.
+The figure above depicts the proposed evaluation metric. The blue sphere correspond to the $\alpha$-support of the real distribution. Likewise, the red sphere is the $\beta$-support for the generative distributions. For visualization ache, $\alpha=\beta=0.9$. The blue and red dots correspond to real and synthetic samples.
+
+The assumption is now, that data falling outside of the blue sphere will look unrealistic or noisy (case a). Overfitted generative models, will produce high-quality data samples, that are unauthentic, because they are blunt copies from the training data (case b). High-quality samples should end up in the blue sphere/the $\alpha$-support.
+
+Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that 10 synthetic samples 9 are typical cat image and 1 is an outlier. Out of 9, 8 also lie within the blue hypersphere. That gives us a $\alpha$-precision of $8/9$. Similarly out of 9 typical synthetic samples, 4 are in the red sphere, this gives a $\beta$-support of $4/9$. Of all synthetic samples generated, only one is unauthentic, which yields an authenticity of $9/10$.
 
 ```yaml
-TODO:
+TODO: It's not clear to my why outliers in the own hypersphere are also excluded. This would mean we both depend on beta and alpha. From the formulas I'd think, that we take *all* synthetic / real samples.
 ```
 
 ### Debugging Failure Modes with the Metric
