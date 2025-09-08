@@ -26,7 +26,7 @@ All three aspects seem intuitive at first glance. As it happens, the authors pro
 While $\alpha$-precision and $\beta$-recall are generalizations of the classic precision and recall metrics, the concept of *authenticity* is what's truly new here. This focus on generalization versus memorization is one of the paper's key contributions. Let's take a closer look at the metric $\mathcal{E}$.
 
 $$
-\mathcal{E} \triangleq(\underbrace{\alpha \text {-Precision }}_{\text {Fidelity }}, \underbrace{\beta \text {-Recall }}_{\text {Diversity }}, \underbrace{\text { Authenticity }}_{\text {Generalization }}) .
+\mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}_{\text {Generalization }}) .
 $$
 
 ### α-Precision, β-Recall, and Authenticity at two levels of understanding
