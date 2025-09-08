@@ -64,7 +64,7 @@ The figure above depicts the proposed evaluation metric. The blue sphere corresp
 
 The assumption is now, that data falling outside of the blue sphere will look unrealistic or noisy (case a). Overfitted generative models, will produce high-quality data samples, that are unauthentic, because they are blunt copies from the training data (case b). High-quality samples should end up in the blue sphere/the $\alpha$-support.
 
-Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that 10 synthetic samples 9 are typical cat image and 1 is an outlier. Out of 9, 8 also lie within the blue hypersphere. That gives us a $\alpha$-precision of $8/9$. Similarly out of 9 typical synthetic samples, 4 are in the red sphere, this gives a $\beta$-support of $4/9$. Of all synthetic samples generated, only one is unauthentic, which yields an authenticity of $9/10$.
+Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that out of 10 synthetic samples, 9 are typical cat images and 1 is an outlier. Out of 9, 8 also lie within the blue hypersphere. That gives us an $\alpha$-precision of $8/9$. Similarly, out of 9 typical synthetic samples, 4 are in the red sphere, this gives a $\beta$-recall of $4/9$. Of all synthetic samples generated, only one is unauthentic, which yields an authenticity of $9/10$.
 
 ```yaml
 TODO: It's not clear to my why outliers in the own hypersphere are also excluded. This would mean we both depend on beta and alpha. From the formulas I'd think, that we take *all* synthetic / real samples.
