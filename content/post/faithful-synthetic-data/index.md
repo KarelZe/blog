@@ -33,7 +33,7 @@ $$
 
 **level 1:**
 
-As we know the metric is 3-dimensional. Informally and from a 10,000ft view, it's dimensions are:
+As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its dimensions are:
 
 1. **$\alpha$-precision:** is the rate at which the generative model produces realistic looking examples.
 1. **$\beta$-recall:** is the fraction of real samples, that are covered by the distribution of synthetic samples.
