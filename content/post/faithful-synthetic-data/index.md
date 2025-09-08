@@ -60,7 +60,7 @@ Let's next look at a practical example from the paper and count some kittens üê
 
 ![core-concept](core_concept.png)
 
-The figure above depicts the proposed evaluation metric. The blue sphere correspond to the $\alpha$-support of the real distribution. Likewise, the red sphere is the $\beta$-support for the generative distributions. For visualization ache, $\alpha=\beta=0.9$. The blue and red dots correspond to real and synthetic samples.
+The figure above depicts the proposed evaluation metric. The blue sphere corresponds to the $\alpha$-support of the real distribution. Likewise, the red sphere is the $\beta$-support for the generative distributions. For visualization sake, $\alpha=\beta=0.9$. The blue and red dots correspond to real and synthetic samples.
 
 The assumption is now, that data falling outside of the blue sphere will look unrealistic or noisy (case a). Overfitted generative models, will produce high-quality data samples, that are unauthentic, because they are blunt copies from the training data (case b). High-quality samples should end up in the blue sphere/the $\alpha$-support.
 
