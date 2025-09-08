@@ -37,7 +37,7 @@ As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its
 
 1. **$\alpha$-precision:** is the rate at which the generative model produces realistic looking examples.
 1. **$\beta$-recall:** is the fraction of real samples, that are covered by the distribution of synthetic samples.
-1. **authenticity:** is the rate at which the model the generative model produces truly new samples. Or put differently, 1 minus the rate of samples being copied form the training set with some noise.
+1. **authenticity:** is the rate at which the generative model produces truly new samples. Or put differently, 1 minus the rate of samples being copied form the training set with some noise.
 
 That was easy, right?
 
