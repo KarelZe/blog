@@ -29,7 +29,7 @@ $$
 \mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}_{\text {Generalization }}) .
 $$
 
-### α-Precision, β-Recall, and Authenticity at two levels of understanding
+### $\alpha$-Precision, $\beta$-Recall, and Authenticity at two levels of understanding
 
 **level 1:**
 
@@ -45,7 +45,7 @@ That was easy, right?
 
 Yet, comparing distributions incl. all data points isn't often desirable. The $\alpha$ and $\beta$ in alpha-precision and beta-recall indicates that we do not necessarily consider all data points within $\mathbb{P}_g$ or $\mathbb{P}_r$ but rather allow for some data points to be *outliers*. Think of $\alpha$ and $\beta$ being the knobs to control outlierness for synthetic and real samples.
 
-Conceptually, the authors draw on minimum volume sets - sets that contain a specified probability mass with the smallest possible volume. We assume that a fraction $1 - \alpha$ for real samples and $1 - \beta$ for synthetic samples are outliers, while $\alpha$ and $\beta$ are typical. $\alpha$ and $\beta$ are varied between 0 and 1 to obtain full recall and precision curves. Thereby, we can also cover all possible definitions of what is considered as an outlier. [^3] I suspect that without this (setting $\alpha=\beta=1$), the approach would be prone to very rare samples in both the real and synthetic dataset.
+Conceptually, the authors draw on minimum volume sets - sets that contain a specified probability mass with the smallest possible volume. We assume that a fraction $1 - \alpha$ for real samples and $1 - \beta$ for synthetic samples are outliers, while $\alpha$ and $\beta$ are typical. $\alpha$ and $\beta$ are varied between 0 and 1 to obtain full recall and precision curves. Thereby, we can also cover all possible definitions of what is considered as an outlier. [^3] Without this (setting $\alpha=\beta=1$), the approach would be prone to very rare samples in both the real and synthetic dataset.
 
 Synthetic and real samples are both embedded into hyperspheres, which have the nice property that in this space, typical examples are located in the centre (modes) and outliers are pushed further to the boundary of the sphere. The hyperspheres have spherical-shaped supports, which depend on how we set $\alpha$ and $\beta$. If the radius of the hypersphere changes and so does our definition of an outlier. To summarize, a (synthetic or real) sample must lie in the $\alpha$ or $\beta$ support of its hypersphere to be considered typical. We dive more into how this setup can be used to our examples in the section on model debugging.
 
@@ -64,7 +64,7 @@ The figure above depicts the proposed evaluation metric. The blue sphere corresp
 
 The assumption is now, that data falling outside of the blue sphere will look unrealistic or noisy (case a). Overfitted generative models, will produce high-quality data samples, that are unauthentic, because they are blunt copies from the training data (case b). High-quality samples should end up in the blue sphere/the $\alpha$-support.
 
-Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that out of 10 synthetic samples, 9 are typical cat images and 1 is an outlier. Out of 9, 8 also lie within the blue hypersphere. That gives us an $\alpha$-precision of $8/9$. Similarly, out of 9 typical synthetic samples, 4 are in the red sphere, this gives a $\beta$-recall of $4/9$. Of all synthetic samples generated, only one is unauthentic, which yields an authenticity of $9/10$.
+Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that out of 10 synthetic samples, 9 are typical cat images and 1 is an outlier. Out of 9, 8 also lie within the blue hypersphere. That gives us an $\alpha$-precision of $8/9$. Similarly, out of 9 typical synthetic samples, 4 are in the red sphere, $\beta$-recall is $4/9$. Of all synthetic samples generated, only one is unauthentic, which yields an authenticity of $9/10$.
 
 ```yaml
 TODO: It's not clear to my why outliers in the own hypersphere are also excluded. This would mean we both depend on beta and alpha. From the formulas I'd think, that we take *all* synthetic / real samples.
@@ -75,6 +75,22 @@ TODO: It's not clear to my why outliers in the own hypersphere are also excluded
 ```yaml
 TODO:
 ```
+
+### Use in evaluation and auditing tasks
+
+Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authenticity to our advantage for  auditing the generative model and evaluating $\mathcal{E}$ on the embedded images.
+
+![evaluation and auditing pipeline](auditing_evaluation_pipeline.png)
+
+The first application (a) lies in *auditing* the generative model. By embedding the input features $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$ into a feature space using an embedding function $\Phi$, we can evaluate $\mathcal{E}$ on the embedded features $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$. Thereby, we can assess the quality of our our synthetic data by the desired qualities and ultimately assess how faithful we can be.
+
+For practitioners an even more interesting application is found in post-hoc model auditing (b) [^3]. As the metric can be estimated on the sample-level, for each sample $X_{g,j}$ in the synthetic dataset $\mathcal{D}_\text {synth}$, we can use the approach to reject samples with low authenticity and/or $\alpha$-precision scores and select (and re-generate) high-quality samples. The auditor thereby acts as a rejection sampler. One nitty detail: for auditing, we don't care about $\beta$-recall. I suspect this is due to the fact that ...
+
+```yaml
+TODO: I'm not quite sure, why they omit beta-recall for rejection sampling. It might have something to do, if we have have access to (all) real samples?
+```
+
+Until now it remains unclear, what approach we can use to generate the embeddings, how we construct the hyperspheres, and how the metrics themselves are calculated over the hyperspheres. Let's tackle this next.
 
 ### From Kittens to a Practical Implementation
 
@@ -100,8 +116,31 @@ TODO:
 TODO:
 ```
 
+$\alpha$-Precision, $\beta$-Recall and Authenticity
+3.1. Definitions and notations
+
+Let $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$ be the embedded real and synthetic data. For simplicity, we will use $\mathbb{P}_r$ and $\mathbb{P}_g$ to refer to distributions over raw and embedded features interchangeably. Let $\mathcal{S}_r=\operatorname{supp}\left(\mathbb{P}_r\right)$ and $\mathcal{S}_g=\operatorname{supp}\left(\mathbb{P}_g\right)$, where $\operatorname{supp}(\mathbb{P})$ is the support of $\mathbb{P}$. Central to our proposed metrics is a more general notion for the support of $\mathbb{P}$, which we dub the $\alpha$-support. We define the $\alpha$-support as the minimum volume subset of $\mathcal{S}=\operatorname{supp}(\mathbb{P})$ that supports a probability mass of $\alpha$ (Polonik, 1997; Scott \& Nowak, 2006), i.e.,
+
+$$
+\mathcal{S}^\alpha \triangleq \min _{s \subseteq \mathcal{S}} V(s), \text { s.t. } \mathbb{P}(s)=\alpha
+$$
+
+where $V(s)$ is the volume (Lebesgue measure) of $s$, and $\alpha \in[0,1]$. One can think of an $\alpha$-support as dividing the full support of $\mathbb{P}$ into "normal" samples concentrated in $\mathcal{S}^\alpha$, and "outliers" residing in $\overline{\mathcal{S}}^\alpha$, where $\mathcal{S}=\mathcal{S}^\alpha \cup \overline{\mathcal{S}}^\alpha$.
+Finally, define $d\left(X, \mathcal{D}_{\text {real }}\right)$ as the distance between $X$ and the closest sample in the training data set $\mathcal{D}_{\text {real }}$, i.e.,
+
+$$
+d\left(X, \mathcal{D}_{r e a l}\right)=\min _{1 \leq i \leq n} d\left(X, X_{r, i}\right)
+$$
+
+where $d$ is a distance metric defined over the input space $\mathcal{X}$.
+
+We denote real and generated data as $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$, respectively, where $X_r, X_g \in \mathcal{X}$, with $\mathbb{P}_r$ and $\mathbb{P}_g$ being the real and generative distributions. The real and synthetic data sets are $\mathcal{D}_{\text {real }}=\left\{X_{r, i}\right\}_{i=1}^n$ and $\mathcal{D}_{\text {synth }}=\left\{X_{g, j}\right\}_{j=1}^m$.
+
+
 [^1]: see https://arxiv.org/abs/2102.08921
 
 [^2]: Seems like nobody has coined a name for the metric yet. Feel free to propose
 
 [^3]: Conceptually, this reminded me to [DBSCAN](https://en.wikipedia.org/wiki/DBSCAN) and its hyperparameter $\epsilon$.
+
+[^4]: Post-hoc means here, that we leave our generative model as-is.
