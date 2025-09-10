@@ -110,7 +110,11 @@ As we can distinguish *typical* samples and *outliers*, we can also use $P_{\alp
 
 ![Interpretation of $P_{$\alpha$}$ and $R_{$\beta$}$ curves](model_debugging.png)
 
-In the graphics above, the real distribution is colored in blue, and the generative distribution is in red.  $\mathbb{P}_r$ is a a multimodal distribution of cat images with two modes -- one for the tabby cat and another one for the Calico cat. The Carcal cat (left most cat) is an outlier for the specific $\alpha$.The shaded areas represent the probability mess covered by $\alpha$ and $\beta$ supports. By definition, the *support* concentrate around the modes. 
+In the graphics above, the real distribution is colored in blue, and the generative distribution is in red.  $\mathbb{P}_r$ is a a multimodal distribution of cat images with two modes -- one for the tabby cat and another one for the Calico cat. The Carcal cat (left most cat) is an outlier for the specific $\alpha$. The shaded areas represent the probability mess covered by $\alpha$ and $\beta$ supports. 
+
+By definition, the *support* concentrate around the modes. 
+
+We can distinguish following cases:
 
 1. A *perfect* generative model would result in a $\alpha$-precision and $\beta$ -recall following the diagonal.
 1. The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as more synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a sub-optimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
@@ -244,38 +248,22 @@ The computational demand is mostly affected by the embedding dimension $d_{\text
 
 ```yaml
 TODO:
-```
 
 $\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{r}}, \boldsymbol{\Sigma}_{\mathrm{r}}\right)$
-
-
+```
 ## Experiments
 
-To validate their metrics, the authors designed four experiments covering model evaluation and auditing.
+To validate their proposed metrics, Alaa and colleagues designed four experiments covering model evaluation and auditing.
 
 *Experiment 1:*
 
-For the *evaluation setting*, they setup a small *ranking challenge*. The generate 4 synthetic, tabular datasets of COVID patient data using Generative Adversarial Networks (GANs), Variational Auto-Encoder (VAEs), and Wasserstein-GANs. Then, they fit a simple logistic regression model and evaluate the performance and derive a ground truth ranking.
+For the *evaluation setting*, they test if evaluation metrics can correctly rank generative models bei their quality. The authors generated four synthetic COVID-19 patient datasets using different generative models and used them to train simple logistic regression models. The real-world performance of these models established a "ground truth" ranking.
 
-Then they try to recover the ground truth ranking through estimating the similarity in terms of Fréchet inception distance (FID), Precision/Recall ($P_1$/$R_1$), Parzen window likelihood, density/coverage ($D$/$C$), as well as their own. In this experiment their integrated $\alpha$-precision and $\beta$-recall is among best to recover the true ranking and achieves among the highest $AUC-ROC$ scores on the real test set.
+They found that their proposed metrics, integrated $\alpha$-Precision ($IR_{\alpha}$) and integrated $\beta$-Recall ($IR_{\beta}$), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall ($P_1/R_1$).
 
-In a second sub-experiment, they demonstrate the performance of their approach as a criterion for finding a weighting-hyperparameter of a privacy-preserving loss function of ADS-GAN. 
+In a second related experiment, they demonstrate the performance of their approach as a criterion for finding a weighting-hyperparameter of a privacy-preserving loss function of ADS-GAN. 
 
-Their third related sub-experiment is concerned about *model auditing*. Their results show that the ADS-GAN achieves a marginally larger AUC-ROC score on audited/pre-filtered samples.
-
-```yaml
-
-TODO:  maybe short? 
-The first experiment tests if the metrics can correctly rank the quality of synthetic data. The authors generated four synthetic COVID-19 patient datasets and used them to train simple models. The real-world performance of these models established a "ground truth" ranking.
-
-They found that their proposed metrics, α-precision (IP 
-α
-​
- ) and β-recall (IR 
-β
-​
- ), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall. The metrics were also effective for hyperparameter tuning and model auditing in two smaller sub-experiments.
-```
+Their third corresponding experiment is concerned with *model auditing*. Their results show that the ADS-GAN achieves a marginally larger $\operatorname{AUC-ROC}$ score on audited/pre-filtered synthetic samples.
 
 *Experiment 2:*
 
@@ -302,9 +290,7 @@ Ultimately, I remain sceptical about their experiments. The experiments demonstr
 
 ## Useful links
 
-![paper-summary](https://www.youtube.com/watch?v=zH1RVLHFr_M)
-
----
+{{< youtube zH1RVLHFr_M >}}
 
 
 [^1]: see https://arxiv.org/abs/2102.08921
