@@ -33,7 +33,7 @@ $$
 
 ## $\alpha$-Precision, $\beta$-Recall, and Authenticity at three levels of understanding
 
-**level 1:**
+### Level 1:
 
 As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its dimensions are:
 
