@@ -91,19 +91,19 @@ TODO: It's not clear to my why outliers in the own hypersphere are also excluded
 
 ### Debugging Failure Modes with the Metric
 
-As we can distinguish *typical* samples and *outliers*, we can also use $P_{\alpha}$ and $R_{\beta}$ for debugging purposes, as we see next. 
+As we can distinguish *typical* samples and *outliers*, we can also use $P_{\alpha}$ and $R_{\beta}$ for debugging purposes, as we see next.
 
 ![Interpretation of $P_{$\alpha$}$ and $R_{$\beta$}$ curves](model_debugging.png)
 
-In the graphics above, the real distribution is colored in blue, and the generative distribution is in red.  $\mathbb{P}_r$ is a a multimodal distribution of cat images with two modes -- one for the tabby cat and another one for the Calico cat. The Carcal cat (left most cat) is an outlier for the specific $\alpha$. The shaded areas represent the probability mess covered by $\alpha$ and $\beta$ supports. 
+In the graphics above, the real distribution is colored in blue, and the generative distribution is in red.  $\mathbb{P}_r$ is a a multimodal distribution of cat images with two modes -- one for the tabby cat and another one for the Calico cat. The Carcal cat (left most cat) is an outlier for the specific $\alpha$. The shaded areas represent the probability mess covered by $\alpha$ and $\beta$ supports.
 
-By definition, the *support* concentrate around the modes. 
+By definition, the *support* concentrate around the modes.
 
 We can distinguish following cases:
 
 1. A *perfect* generative model would result in a $\alpha$-precision and $\beta$ -recall following the diagonal.
 1. The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as more synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a sub-optimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
-1. The model nails support for $\mathbb{P}_r$, and hence achieves a perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Carcal cat/outlier, resulting in a poor $P_{\alpha}$ and $R_{\beta}$ as neither typical synthetic samples nor typical real samples are well covered in the other distribution. 
+1. The model nails support for $\mathbb{P}_r$, and hence achieves a perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Carcal cat/outlier, resulting in a poor $P_{\alpha}$ and $R_{\beta}$ as neither typical synthetic samples nor typical real samples are well covered in the other distribution.
 1. The last case is more subtle. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is best of all three models but will appear inferior to 2 under $P_1$ and $R_1$. This "improvement" is reflected in a improved $P_\alpha$ score and (still) suboptimal $R_\beta$ curve.
 
 It's also possible to summarize performance in a single scalars instead of curves. Based on $P_\alpha$ and $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($IP_{\alpha}$) and *integrated* $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between $\alpha$-precision an $\beta$-recall-curve and the diagonal.
@@ -201,7 +201,7 @@ For the *evaluation setting*, they test if evaluation metrics can correctly rank
 
 They found that their proposed metrics, integrated $\alpha$-Precision ($IR_{\alpha}$) and integrated $\beta$-Recall ($IR_{\beta}$), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall ($P_1/R_1$).
 
-In a second related experiment, they demonstrate the performance of their approach as a criterion for finding a weighting-hyperparameter of a privacy-preserving loss function of ADS-GAN. 
+In a second related experiment, they demonstrate the performance of their approach as a criterion for finding a weighting-hyperparameter of a privacy-preserving loss function of ADS-GAN.
 
 Their third corresponding experiment is concerned with *model auditing*. Their results show that the ADS-GAN achieves a marginally larger $\operatorname{AUC-ROC}$ score on audited/pre-filtered synthetic samples.
 
@@ -217,16 +217,16 @@ The authors demonstrate that their authenticity metric, would have correctly fla
 
 *Experiment 4:*
 
-In the last experiment they evaluate the performance of a StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generate 10,000 samples each, and compare against real samples  by $FID$ and $IP_{\alpha}$ and $IR_{\beta}$. 
+In the last experiment they evaluate the performance of a StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generate 10,000 samples each, and compare against real samples  by $FID$ and $IP_{\alpha}$ and $IR_{\beta}$.
 
 
 ## My Thoughts
 
-The paper is a fresh and novel take on assessing the quality of synthetic data. I particularly like, there's finally a solution for sample-level evaluation and can be applied universally as long as we can input data into evaluation embeddings. 
+The paper is a fresh and novel take on assessing the quality of synthetic data. I particularly like, there's finally a solution for sample-level evaluation and can be applied universally as long as we can input data into evaluation embeddings.
 
 My main concern is about practical applicability. The setup requires multiple parameters like $r$, $\nu$, $\Phi$ for the one-class classifiers, that require tuning and hyper-parameters like $k$ for Mini-Batch $k$-means for constructing the hyperspheres.
 
-Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial, the models are date, and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?  
+Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial, the models are date, and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?
 
 ## Useful links
 
