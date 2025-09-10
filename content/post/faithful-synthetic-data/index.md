@@ -11,7 +11,7 @@ Training AI models on synthetic data is a data scientist's (and management's) dr
 
 A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"[^1] sheds light on these questions and sparked my interest.
 
-More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray 🎉), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets (see video below). Let's see if it holds up to scrutiny.
+More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray ✨), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets (see video below). Let's see if it holds up to scrutiny.
 
 {{< youtube zH1RVLHFr_M >}}
 
@@ -33,7 +33,7 @@ $$
 
 ## $\alpha$-Precision, $\beta$-Recall, and Authenticity at three levels of understanding
 
-### Level 1:
+### Level 1
 
 As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its dimensions are:
 
@@ -43,7 +43,7 @@ As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its
 
 That was easy, right?
 
-**level 2:**
+### Level 2
 
 Yet, comparing distributions incl. all data points isn't often desirable. The $\alpha$ and $\beta$ in alpha-precision and beta-recall indicates that we do not necessarily consider all data points within $\mathbb{P}_g$ or $\mathbb{P}_r$ but rather allow for some data points to be *outliers*. Think of $\alpha$ and $\beta$ being the knobs to control outlierness for synthetic and real samples.
 
@@ -60,21 +60,24 @@ With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter 
 
 Let's get a little bit more formal with our third level of understand.
 
-**level 3:**
+### Level 3
 
-1. The paper defines $\alpha$-precision as the probability:
+1. The paper defines $\alpha$-precision ($P_\alpha$) as the probability:
 
     $$
     P_\alpha \triangleq \mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r^\alpha\right), \text { for } \alpha \in[0,1],
     $$
-    for an embedded, synthetic sample $\widetilde{X}_g=\Phi(X_g)$ to be inside the $\alpha$-support of real samples $\mathcal{S}_r=\operatorname{supp}{(\mathbb{P}_r)}$. By ranging $\alpha$ from 0 to 1, we get full $\alpha$-precision curves✨.
-2. Likewise, $\beta$-recall is formally defined as the probability:
+    for an embedded, synthetic sample $\widetilde{X}_g=\Phi(X_g)$ to be inside the $\alpha$-support of real samples $\mathcal{S}_r=\operatorname{supp}{(\mathbb{P}_r)}$. By ranging $\alpha$ from 0 to 1, we get full $\alpha$-precision curves.
+2. Likewise, $\beta$-recall ($R_\beta$) is formally defined as the probability:
     $$
     R_\beta \triangleq \mathbb{P}\left(\widetilde{X}_r \in \mathcal{S}_g^\beta\right), \text { for } \beta \in[0,1],
     $$
     for the embedded, real sample $\widetilde{X}_r=\Phi(X_r)$ to reside in the $\mathcal{S}_g=\operatorname{supp}{(\mathbb{P}_g)}$.
 
-3. Authenticity is defined as (TODO:).
+3. The authenticity score $A$ is defined as the rate by which the model generates new samples. The generative distribution $\mathbb{P}_g$ is then mixture of the $\mathbb{P}_g^{\prime}$ generative distribution conditioned on the synthetic samples not being copied and of a noisy distribution over the training data $\delta_{g, \epsilon}$ weighted by the *authenticity score*:
+    $$
+    \mathbb{P}_g=A \cdot \mathbb{P}_g^{\prime}+(1-A) \cdot \delta_{g, \epsilon}.
+    $$
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
@@ -109,7 +112,7 @@ We can distinguish following cases:
 1. The model nails support for $\mathbb{P}_r$, and hence achieves a perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Carcal cat/outlier, resulting in a poor $P_{\alpha}$ and $R_{\beta}$ as neither typical synthetic samples nor typical real samples are well covered in the other distribution.
 1. The last case is more subtle to spot. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is best of all three models but will appear inferior to 2 under $P_1$ and $R_1$. This "improvement" is reflected in a improved $P_\alpha$ score and (still) suboptimal $R_\beta$ curve.
 
-It's also possible to summarize performance in a single scalars instead of curves. Based on $P_\alpha$ or $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($IP_{\alpha}$) and *integrated* $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between $\alpha$-precision an $\beta$-recall-curve and the diagonal.
+It's also possible to summarize performance in single scalars instead of curves. Based on $P_\alpha$ or $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($IP_{\alpha}$) and *integrated* $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between $\alpha$-precision an $\beta$-recall-curve and the diagonal.
 
 ## Use in evaluation and auditing tasks
 
