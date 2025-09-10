@@ -29,7 +29,7 @@ $$
 \mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}_{\text {Generalization }}) .
 $$
 
-## $\alpha$-Precision, $\beta$-Recall, and Authenticity at two levels of understanding
+## $\alpha$-Precision, $\beta$-Recall, and Authenticity at three levels of understanding
 
 **level 1:**
 
@@ -53,39 +53,25 @@ With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter 
 
 1. **$\alpha$-precision:** The probability that a synthetic sample lies within the $\alpha$-support of the real distribution. Intuitively, $\alpha$ has an impact on the creativity of the generative models. For small $\alpha$ s the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\alpha$s or a less restrictive outlier definition it becomes more likely that a generated sample sneaks into the real hypersphere.
 1. **$\beta$-recall:** The fraction of real samples that reside within the $\beta$-support of the synthetic distribution for a given $\beta$. Being able to vary $\beta$, we can control the diversity of samples we allow for.
-1. **Authenticity** is a hypothesis test (TODO:XXXX) It tries to prevent *memorization*. Memorization means that the generative model covers regions in the support of the synthetic data distribution, despite that only few data points lie within this region. While conceptually similar to the more common overfitting, a overfitted model would fit the original distribution/histogram. [^5]
+1. **Authenticity** is a hypothesis test to test if a sample is *non-memorized*. *Memorization* means that the generative model covers regions in the support of the synthetic data distribution, despite that only few data points lie within this region. While conceptually similar to the more common overfitting, a overfitted model would fit the original distribution/histogram. [^5]
+
+**level 3:**
+
+1. The paper defines $\alpha$-precision as the probability:
+
+    $$
+    P_\alpha \triangleq \mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r^\alpha\right), \text { for } \alpha \in[0,1],
+    $$
+    for an embedded, synthetic sample $\widetilde{X}_g=\Phi(X_g)$ to be inside the $\alpha$-support of real samples $\mathcal{S}_r=\operatorname{supp}{(\mathbb{P}_r)}$. By ranging $\alpha$ from 0 to 1, we get full $\alpha$-precision curves✨.
+2. Likewise, $\beta$-recall is formally defined as the probability:
+    $$
+    R_\beta \triangleq \mathbb{P}\left(\widetilde{X}_r \in \mathcal{S}_g^\beta\right), \text { for } \beta \in[0,1],
+    $$
+    for the embedded, real sample $\widetilde{X}_r=\Phi(X_r)$ to reside in the $\mathcal{S}_g=\operatorname{supp}{(\mathbb{P}_g)}$.
+
+3. Authenticity is defined as (TODO:).
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
-
-
-```
-Third level of understanding
-
-real distribution, i.e. $\mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r\right)$ (Sajjadi et al., 2018). We propose a more refined measure of sample fidelity, called the $\alpha$-Precision metric ( $P_\alpha$ ), which we define as follows:
-
-$$
-P_\alpha \triangleq \mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r^\alpha\right), \text { for } \alpha \in[0,1] .
-$$
-
-
-That is, $P_\alpha$ is the probability that a synthetic sample resides in the $\alpha$-support of the real distribution.
-$\boldsymbol{\beta}$-Recall. To assess diversity in synthetic data, we propose the $\beta$-Recall metric as a generalization of the conventional Recall metric. Formally, we define the $\beta$-Recall as follows:
-
-$$
-R_\beta \triangleq \mathbb{P}\left(\widetilde{X}_r \in \mathcal{S}_g^\beta\right), \text { for } \beta \in[0,1]
-$$
-
-i.e., $R_\beta$ is the fraction of real samples that reside within the $\beta$-support of the generative distribution.
-
-Generalization is independent of precision and recall since a model can achieve perfect fidelity and diversity without truly generating any samples, simply by resampling training data. Unlike discriminative models for which generalization is easily tested via held-out data, evaluating generalization in generative models is not straightforward (Adlam et al., 2019; Meehan et al., 2020). We propose an authenticity score $A \in [0,1]$ to quantify the rate by which a model generates new samples. To pin down a mathematical definition for $A$, we reformulate $\mathbb{P}_g$ as a mixture of densities as follows:
-
-$$
-\mathbb{P}_g=A \cdot \mathbb{P}_g^{\prime}+(1-A) \cdot \delta_{g, \epsilon}
-$$
-
-where $\mathbb{P}_g^{\prime}$ is the generative distribution conditioned on the synthetic samples not being copied, and $\delta_{g, \epsilon}$ is a noisy distribution over training data. In particular, we define $\delta_{g, \epsilon}$ as $\delta_{g, \epsilon}=\delta_g * \mathcal{N}\left(0, \epsilon^2\right)$, where $\delta_g$ is a discrete distribution
-```
-
 
 ## A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
 
@@ -99,9 +85,6 @@ Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting k
 
 ```yaml
 TODO: It's not clear to my why outliers in the own hypersphere are also excluded. This would mean we both depend on beta and alpha. From the formulas I'd think, that we take *all* synthetic / real samples.
-
-Ah guess, because we have the outlier definition. From Section "Interpreting alpha-precision and beta-recall.
-Interpreting $\boldsymbol{\alpha}$-Precision and $\boldsymbol{\beta}$-Recall. To interpret (4) and (5), we revisit the notion of $\alpha$-support. From (2), we know that an $\alpha$-support hosts the most densely packed probability mass $\alpha$ in a distribution, hence $\mathcal{S}_r^\alpha$ and $\mathcal{S}_g^\beta$ always concentrate around the modes of $\mathbb{P}_r$ and $\mathbb{P}_g$ (Figure 3); samples residing outside of $\mathcal{S}_r^\alpha$ and $\mathcal{S}_g^\beta$ can be thought of as outliers. In this sense, $P_\alpha$ and $R_\beta$ do not count outliers when assessing fidelity and diversity. That is, the $\alpha$-Precision score deems a synthetic sample to be of a high fidelity not only if it looks "realistic", but also if it looks "typical". Similarly, $\beta$-Recall counts a real sample as being covered by $\mathbb{P}_g$ only if it is not an outlier in $\mathbb{P}_g$. By sweeping the values of $\alpha$ and $\beta$ from 0 to 1 , we obtain a varying definition of which samples are typical and which are outliers-this gives us entire $P_\alpha$ and $R_\beta$ curves as illustrated in Figure 3.
 ```
 
 ### Debugging Failure Modes with the Metric
@@ -120,6 +103,8 @@ We can distinguish following cases:
 1. The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as more synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a sub-optimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
 1. The model nails support for $\mathbb{P}_r$, and hence achieves a perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Carcal cat/outlier, resulting in a poor $P_{\alpha}$ and $R_{\beta}$ as neither typical synthetic samples nor typical real samples are well covered in the other distribution. 
 1. The last case is more subtle. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is best of all three models but will appear inferior to 2 under $P_1$ and $R_1$. This "improvement" is reflected in a improved $P_\alpha$ score and (still) suboptimal $R_\beta$ curve.
+
+It's also possible to summarize performance in a single scalars instead of curves. Based on $P_\alpha$ and $R_\beta$ curves and the diagonal,  we can derive the integrated $P_\alpha$ ($IP_{\alpha}$) and integrated $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between $\alpha$-precision an $\beta$-recall-curve and the diagonal.
 
 ## Use in evaluation and auditing tasks
 
@@ -184,53 +169,6 @@ def soft_boundary_loss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) 
 
 ![](separating-hyperplane.png)
 ![](non-linear-mapping.png)
-
-```yaml
-    that places an unknown probability mass on each training data point in $\mathcal{D}_{\text {real }}, \epsilon$ is an arbitrarily small noise variance, and * is the convolution operator. Essentially, (7) assumes that the model flips a (biased coin), pulling off a training sample with probability $1-A$ and adding some noise to it, or innovating a new sample with probability $A$.
-    4. Estimating the Evaluation Metric
-
-    With all the metrics in Section 3 being defined on the sample level, we can obtain an estimate $\widehat{\mathcal{E}}=\left(\widehat{P}_\alpha, \widehat{R}_\beta, \widehat{A}\right)$ of the metric $\mathcal{E}$, for a given $\alpha$ and $\beta$, in a binary classification fashion, by assigning binary scores $\widehat{P}_{\alpha, j}, \widehat{A}_j \in\{0,1\}$ to each synthetic sample $\widetilde{X}_{g, j}$ in $\mathcal{D}_{\text {synth }}$, and $\widehat{R}_{\beta, i} \in\{0,1\}$ to each real sample $\widetilde{X}_{r, i}$ in $\mathcal{D}_{\text {real }}$, then averaging over all samples, i.e., $\widehat{P}_\alpha=\frac{1}{m} \sum_j \widehat{P}_{\alpha, j}, \widehat{R}_\beta=\frac{1}{n} \sum_i \widehat{R}_{\beta, i}, \widehat{A}=\frac{1}{m} \sum_j \widehat{A}_j$. To assign binary scores to individual samples, we construct three binary classifiers $f_P, f_R, f_A: \widetilde{\mathcal{X}} \rightarrow\{0,1\}$, where $\widehat{P}_{\alpha, j}=f_P\left(\widehat{X}_{g, j}\right), \widehat{R}_{\beta, i}=f_R\left(\widehat{X}_{r, i}\right)$ and $\widehat{A}_j=f_A\left(\widehat{X}_{g, j}\right)$. We explain the operation of each classifier in what follows.
-
-    Precision and Recall classifiers ( $f_p$ and $f_R$ ). Based on definitions (4) and (5), both classifiers check if a sample resides in an $\alpha$ - (or $\beta$-) support, i.e., $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \widehat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\widetilde{X}_r\right)=\mathbf{1}\left\{\widetilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. Hence, the main difficulty in
-    implementing $f_P$ and $f_R$ is estimating the supports $\widehat{\mathcal{S}}_r^\alpha$ and $\widehat{\mathcal{S}}_g^\beta$-in fact, even if we know the exact distributions $\mathbb{P}_r$ and $\mathbb{P}_g$, computing their $\alpha$ - and $\beta$-supports is not straightforward as it involves solving the optimization problem in (2).
-
-    To address this challenge, we pre-process the real and synthetic data in a way that renders estimation of $\alpha$-and $\beta$ supports straightforward. The idea is to train the evaluation embedding $\Phi$ so as to cast $\mathcal{S}_r$ into a hypersphere with radius $r$, and cast the distribution $\mathbb{P}_r$ into an isotropic density concentrated around the center $c_r$ of the hypersphere. We achieve this by modeling $\Phi$ as a one-class neural network trained with the following loss function: $L=\sum_i \ell_i$, where
-
-    $$
-    \ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\} .
-    $$
-
-
-    The loss is minimized over the radius $r$ and the parameters of $\Phi$; the output dimensions of $\Phi, c_r$ and $\nu$ are viewed as hyperparameters (see Appendix). The loss in (8) is based on the seminal work on one-class SVMs in (Schölkopf et al., 2001), which is commonly applied to outlier detection problems, e.g., (Ruff et al., 2018). In a nutshell, the evaluation embedding squeezes real data into the minimum-volume hypersphere centered around $c_r$, hence $\mathcal{S}_r^\alpha$ is estimated as:
-
-    $$
-    \widehat{\mathcal{S}}_r^\alpha=\boldsymbol{B}\left(c_r, \widehat{r}_\alpha\right), \widehat{r}_\alpha=\widehat{Q}_\alpha\left\{\left\|\widetilde{X}_{r, i}-c_r\right\|: 1 \leq i \leq n\right\},
-    $$
-
-    -----
-
-    ## 🌵 junk 
-
-    $\alpha$-Precision, $\beta$-Recall and Authenticity
-    3.1. Definitions and notations
-
-    Let $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$ be the embedded real and synthetic data. For simplicity, we will use $\mathbb{P}_r$ and $\mathbb{P}_g$ to refer to distributions over raw and embedded features interchangeably. Let $\mathcal{S}_r=\operatorname{supp}\left(\mathbb{P}_r\right)$ and $\mathcal{S}_g=\operatorname{supp}\left(\mathbb{P}_g\right)$, where $\operatorname{supp}(\mathbb{P})$ is the support of $\mathbb{P}$. Central to our proposed metrics is a more general notion for the support of $\mathbb{P}$, which we dub the $\alpha$-support. We define the $\alpha$-support as the minimum volume subset of $\mathcal{S}=\operatorname{supp}(\mathbb{P})$ that supports a probability mass of $\alpha$ (Polonik, 1997; Scott \& Nowak, 2006), i.e.,
-
-    $$
-    \mathcal{S}^\alpha \triangleq \min _{s \subseteq \mathcal{S}} V(s), \text { s.t. } \mathbb{P}(s)=\alpha
-    $$
-
-    where $V(s)$ is the volume (Lebesgue measure) of $s$, and $\alpha \in[0,1]$. One can think of an $\alpha$-support as dividing the full support of $\mathbb{P}$ into "normal" samples concentrated in $\mathcal{S}^\alpha$, and "outliers" residing in $\overline{\mathcal{S}}^\alpha$, where $\mathcal{S}=\mathcal{S}^\alpha \cup \overline{\mathcal{S}}^\alpha$.
-    Finally, define $d\left(X, \mathcal{D}_{\text {real }}\right)$ as the distance between $X$ and the closest sample in the training data set $\mathcal{D}_{\text {real }}$, i.e.,
-
-    $$
-    d\left(X, \mathcal{D}_{r e a l}\right)=\min _{1 \leq i \leq n} d\left(X, X_{r, i}\right)
-    $$
-
-    where $d$ is a distance metric defined over the input space $\mathcal{X}$.
-
-    We denote real and generated data as $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$, respectively, where $X_r, X_g \in \mathcal{X}$, with $\mathbb{P}_r$ and $\mathbb{P}_g$ being the real and generative distributions. The real and synthetic data sets are $\mathcal{D}_{\text {real }}=\left\{X_{r, i}\right\}_{i=1}^n$ and $\mathcal{D}_{\text {synth }}=\left\{X_{g, j}\right\}_{j=1}^m$.
-````
 
 ```yaml
 TODO:
