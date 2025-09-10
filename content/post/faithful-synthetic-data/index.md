@@ -9,9 +9,11 @@ DisableComments: false
 
 Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [Atruvia](https://atruvia.de/).
 
-A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"[^1] sheds light on these questions and sparked my interest. More specifically, it introduces a three-dimensional metric to assess the quality of generative models.
+A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"[^1] sheds light on these questions and sparked my interest.
 
-This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray 🎉), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets. Let's see if it holds up to scrutiny.
+More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray 🎉), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets (see video below). Let's see if it holds up to scrutiny.
+
+{{< youtube zH1RVLHFr_M >}}
 
 ## What Makes a Good Synthetic Dataset?
 
@@ -47,15 +49,16 @@ Yet, comparing distributions incl. all data points isn't often desirable. The $\
 
 Conceptually, the authors draw on minimum volume sets - sets that contain a specified probability mass with the smallest possible volume. We assume that a fraction $1 - \alpha$ for real samples and $1 - \beta$ for synthetic samples are outliers, while $\alpha$ and $\beta$ are typical. $\alpha$ and $\beta$ are varied between 0 and 1 to obtain full recall and precision curves. Thereby, we can also cover all possible definitions of what is considered as an outlier. [^3] Without this (setting $\alpha=\beta=1$), the approach would be prone to very rare samples in both the real and synthetic dataset.
 
-Synthetic and real samples are both embedded into hydrospheres, which have the nice property that in this space, typical examples are located in the centre (modes) and outliers are pushed further to the boundary of the sphere. The hydrospheres have spherical-shaped supports, which depend on how we set $\alpha$ and $\beta$. If the radius of the hypersphere changes and so does our definition of an outlier. To summarize, a (synthetic or real) sample must lie in the $\alpha$ or $\beta$ support of its hypersphere to be considered typical. We dive more into how this setup can be used to our examples in the section on model debugging.
+Synthetic and real samples are both embedded into hyperspheres, which have the nice property that in this space, typical examples are located in the centre (modes) and outliers are pushed further to the boundary of the sphere. The hyperspheres have spherical-shaped supports, which depend on how we set $\alpha$ and $\beta$. If the radius of the hypersphere changes and so does our definition of an outlier. To summarize, a (synthetic or real) sample must lie in the $\alpha$ or $\beta$ support of its hypersphere to be considered typical. We dive more into how this setup can be used to our examples in the section on model debugging.
 
 With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter to determine the supports of the real and synthetic hypersphere, we are all set for a more precise definition of $\alpha$-precision and $\beta$-recall:
 
 1. **$\alpha$-precision:** The probability that a synthetic sample lies within the $\alpha$-support of the real distribution. Intuitively, $\alpha$ has an impact on the creativity of the generative models. For small $\alpha$ s the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\alpha$s or a less restrictive outlier definition it becomes more likely that a generated sample sneaks into the real hypersphere.
 1. **$\beta$-recall:** The fraction of real samples that reside within the $\beta$-support of the synthetic distribution for a given $\beta$. Being able to vary $\beta$, we can control the diversity of samples we allow for.
-1. **Authenticity** is a hypothesis test to test if a sample is *non-memorized*. *Memorization* means that the generative model covers regions in the support of the synthetic data distribution, despite that only few data points lie within this region. While conceptually similar to the more common overfitting, a overfitted model would fit the original distribution/histogram. [^5]
+1. **Authenticity** is a hypothesis test to test if a sample is *non-memorized*. *Memorization* means that the generative model fails to generalize and closely reassembles the input data in regions of the input space with poor coverage of training samples. While conceptually similar to  *overfitting*, a overfitted model would fit the original distribution/histogram, as visualized below: [^5]
+    ![memorization vs. overfitting](memorization-overfitting.png)
 
-Let's get a little bit more formal.
+Let's get a little bit more formal with our third level of understand.
 
 **level 3:**
 
@@ -104,9 +107,9 @@ We can distinguish following cases:
 1. A *perfect* generative model would result in a $\alpha$-precision and $\beta$ -recall following the diagonal.
 1. The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as more synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a sub-optimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
 1. The model nails support for $\mathbb{P}_r$, and hence achieves a perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Carcal cat/outlier, resulting in a poor $P_{\alpha}$ and $R_{\beta}$ as neither typical synthetic samples nor typical real samples are well covered in the other distribution.
-1. The last case is more subtle. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is best of all three models but will appear inferior to 2 under $P_1$ and $R_1$. This "improvement" is reflected in a improved $P_\alpha$ score and (still) suboptimal $R_\beta$ curve.
+1. The last case is more subtle to spot. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is best of all three models but will appear inferior to 2 under $P_1$ and $R_1$. This "improvement" is reflected in a improved $P_\alpha$ score and (still) suboptimal $R_\beta$ curve.
 
-It's also possible to summarize performance in a single scalars instead of curves. Based on $P_\alpha$ and $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($IP_{\alpha}$) and *integrated* $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between $\alpha$-precision an $\beta$-recall-curve and the diagonal.
+It's also possible to summarize performance in a single scalars instead of curves. Based on $P_\alpha$ or $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($IP_{\alpha}$) and *integrated* $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between $\alpha$-precision an $\beta$-recall-curve and the diagonal.
 
 ## Use in evaluation and auditing tasks
 
@@ -116,7 +119,7 @@ Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authentici
 
 The first application (a) lies in *auditing* the generative model. By embedding the input features $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$ into a feature space using an evaluation embedding function $\Phi$, we can evaluate $\mathcal{E}$ on the embedded features $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$. Thereby, we can assess the quality of our our synthetic data for the desired qualities and ultimately assess how faithful we can be in our synthetic data.
 
-For practitioners an even more interesting application is found in post-hoc model auditing (b) [^3]. As the metric can be estimated on the sample-level, for each sample $X_{g,j}$ in the synthetic dataset $\mathcal{D}_\text {synth}$, we can use the approach to reject samples with low authenticity and/or $\alpha$-precision scores and select (and re-generate) high-quality samples. The auditor thereby acts as a rejection sampler. One nitty detail: for auditing, we don't care about $\beta$-recall. I suspect this is due to the fact that ...
+For practitioners an even more interesting application is found in *post-hoc* model auditing (b) [^3]. As the metric can be estimated on the sample-level, for each sample $X_{g,j}$ in the synthetic dataset $\mathcal{D}_\text {synth}$, we can use the approach to reject samples with low authenticity and/or $\alpha$-precision scores and select (and re-generate) high-quality samples. The auditor thereby acts as a rejection sampler. One nitty detail: for auditing, we don't care about $\beta$-recall. I suspect this is due to the fact that ...
 
 ```yaml
 TODO: I'm not quite sure, why they omit beta-recall for rejection sampling. It might have something to do, if we have have access to (all) real samples?
@@ -182,15 +185,26 @@ Yes, probably? The used datasets from the paper range between 6k to 10k samples.
 
 The computational demand is mostly affected by the embedding dimension $d_{\text{emb}}$; not so much by the input dimension, as both $k$-nearest neighbour for mode estimation and distance computation is done in the embedding space.
 
+## Where existing approaches fall short
 
+Two commonly used techniques to assess the quality of synthetic datasets among practitioners is through visualization or by comparing the distribution of real and synthetic samples.
 
-## Why Existing Metrics Fall Short
+![visualizing synthetic and real samples](visualizing-embeddings.png)
 
-```yaml
-TODO:
+For the visualization of datasets, inputs like images are frequently embedded using encoder like CLIP and then projected into 2 or 3D-space for visualization using dimensionality reduction approaches like $t$-SNE or UMAP. While conceptually simple, this approach allows only for qualitative assessments and heavily relies on the embedding model and the dimensionality reduction. Also, $t$-SNE plots have been deemed mysterious and misleading.[^6] Differently, the Alaa paper does not require another embedding model and uses model- and domain-agnostic feature embeddings.
 
-$\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{r}}, \boldsymbol{\Sigma}_{\mathrm{r}}\right)$
-```
+A second popular approach is to compare real and synthetic datasets with metrics like the [Fréchet inception distance](https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance) (FID).
+
+![frechet inception distance](frechet-inception-distance.png)
+
+For the FID, synthetic and real images are first embedded using the [Inception v3 model](https://en.wikipedia.org/wiki/Inception_(deep_learning_architecture)) and the resulting feature vectors are used to parametrize multivariate distributions for the real dataset and $\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{r}}, \boldsymbol{\Sigma}_{\mathrm{r}}\right)$ and generated dataset $\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{s}}, \boldsymbol{\Sigma}_{\mathrm{s}}\right)$. The discrepancy between both distributions can then be estimated as:
+
+$$
+\operatorname{FID}\left(\mu_r, \Sigma_r, \mu_s, \Sigma_s\right)=\left\|\mu_r-\mu_s\right\|_2^2+\operatorname{Tr}\left(\Sigma_r+\Sigma_s-2\left(\Sigma_r \Sigma_s\right)^{\frac{1}{2}}\right)
+$$
+
+Other than the current paper, FID is only computable at the dataset-level and considers only *diversity* and *fidelity*. Most critically, it would be optimal for a models memorizing the training/real dataset.
+
 ## Experiments
 
 To validate their proposed metrics, Alaa and colleagues designed four experiments covering model evaluation and auditing.
@@ -217,7 +231,7 @@ The authors demonstrate that their authenticity metric, would have correctly fla
 
 *Experiment 4:*
 
-In the last experiment they evaluate the performance of a StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generate 10,000 samples each, and compare against real samples  by $FID$ and $IP_{\alpha}$ and $IR_{\beta}$.
+In the last experiment they evaluate the performance of a StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generate 10,000 samples each, and compare against real samples  by $\operatorname{FID}$ and $IP_{\alpha}$ and $IR_{\beta}$.
 
 
 ## My Thoughts
@@ -226,12 +240,7 @@ The paper is a fresh and novel take on assessing the quality of synthetic data. 
 
 My main concern is about practical applicability. The setup requires multiple parameters like $r$, $\nu$, $\Phi$ for the one-class classifiers, that require tuning and hyper-parameters like $k$ for Mini-Batch $k$-means for constructing the hyperspheres.
 
-Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial, the models are date, and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?
-
-## Useful links
-
-{{< youtube zH1RVLHFr_M >}}
-
+Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial, the models are dated and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?
 
 [^1]: see https://arxiv.org/abs/2102.08921
 
@@ -241,4 +250,6 @@ Ultimately, I remain sceptical about their experiments. The experiments demonstr
 
 [^4]: Post-hoc means here, that we leave our generative model as-is.
 
-[^5]: Explanation adapted from here: https://youtu.be/_EEH9HU2EE0?feature=shared&t=2755
+[^5]: Visualization and distinction adapted from [here.](https://arxiv.org/pdf/2106.03216)
+
+[^6]: See [this distill.pub](https://distill.pub/2016/misread-tsne/) article for using $t$-SNE effectively.
