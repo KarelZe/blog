@@ -1,7 +1,7 @@
 import torch
 
 
-def SoftBoundaryLoss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) -> float:
+def soft_boundary_loss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) -> float:
     """Soft-boundary loss.
 
     Args:
