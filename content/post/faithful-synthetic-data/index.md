@@ -211,7 +211,7 @@ To validate their proposed metrics, Alaa and colleagues designed four experiment
 
 *Experiment 1:*
 
-For the *evaluation setting*, they test if evaluation metrics can correctly rank generative models bei their quality. The authors generated four synthetic COVID-19 patient datasets using different generative models and used them to train simple logistic regression models. The real-world performance of these models established a "ground truth" ranking.
+For the *evaluation setting*, they test if evaluation metrics can correctly rank generative models by their quality. The authors generated four synthetic COVID-19 patient datasets using different generative models and used them to train simple logistic regression models. The real-world performance of these models established a "ground truth" ranking.
 
 They found that their proposed metrics, integrated $\alpha$-Precision ($IR_{\alpha}$) and integrated $\beta$-Recall ($IR_{\beta}$), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall ($P_1/R_1$).
 
