@@ -3,9 +3,13 @@
     "cSpell.words": [
         "Atruvia",
         "Bilz",
+        "DDPM",
         "headshot",
+        "hyperspheres",
         "onnxscript",
         "outlierness",
-        "overfitted"
+        "overfitted",
+        "Parzen",
+        "Wasserstein"
     ]
 }

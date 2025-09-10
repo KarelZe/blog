@@ -13,7 +13,7 @@ A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level
 
 This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray 🎉), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets. Let's see if it holds up to scrutiny.
 
-### What Makes a Good Synthetic Dataset?
+## What Makes a Good Synthetic Dataset?
 
 Good synthetic data should fulfill the following three qualities:
 
@@ -29,7 +29,7 @@ $$
 \mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}_{\text {Generalization }}) .
 $$
 
-### $\alpha$-Precision, $\beta$-Recall, and Authenticity at two levels of understanding
+## $\alpha$-Precision, $\beta$-Recall, and Authenticity at two levels of understanding
 
 **level 1:**
 
@@ -54,7 +54,7 @@ Yet, comparing distributions incl. all data points isn't often desirable. The $\
 
 Conceptually, the authors draw on minimum volume sets - sets that contain a specified probability mass with the smallest possible volume. We assume that a fraction $1 - \alpha$ for real samples and $1 - \beta$ for synthetic samples are outliers, while $\alpha$ and $\beta$ are typical. $\alpha$ and $\beta$ are varied between 0 and 1 to obtain full recall and precision curves. Thereby, we can also cover all possible definitions of what is considered as an outlier. [^3] Without this (setting $\alpha=\beta=1$), the approach would be prone to very rare samples in both the real and synthetic dataset.
 
-Synthetic and real samples are both embedded into hyperspheres, which have the nice property that in this space, typical examples are located in the centre (modes) and outliers are pushed further to the boundary of the sphere. The hyperspheres have spherical-shaped supports, which depend on how we set $\alpha$ and $\beta$. If the radius of the hypersphere changes and so does our definition of an outlier. To summarize, a (synthetic or real) sample must lie in the $\alpha$ or $\beta$ support of its hypersphere to be considered typical. We dive more into how this setup can be used to our examples in the section on model debugging.
+Synthetic and real samples are both embedded into hydrospheres, which have the nice property that in this space, typical examples are located in the centre (modes) and outliers are pushed further to the boundary of the sphere. The hydrospheres have spherical-shaped supports, which depend on how we set $\alpha$ and $\beta$. If the radius of the hypersphere changes and so does our definition of an outlier. To summarize, a (synthetic or real) sample must lie in the $\alpha$ or $\beta$ support of its hypersphere to be considered typical. We dive more into how this setup can be used to our examples in the section on model debugging.
 
 With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter to determine the supports of the real and synthetic hypersphere, we are all set for a more precise definition of $\alpha$-precision and $\beta$-recall:
 
@@ -93,7 +93,7 @@ where $\mathbb{P}_g^{\prime}$ is the generative distribution conditioned on the 
 ```
 
 
-### A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
+## A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
 
 ![core-concept](core_concept.png)
 
@@ -121,7 +121,7 @@ TODO:
 ```
 
 
-### Use in evaluation and auditing tasks
+## Use in evaluation and auditing tasks
 
 Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authenticity to our advantage for  auditing the generative model and evaluating $\mathcal{E}$ on the embedded images.
 
@@ -137,7 +137,7 @@ TODO: I'm not quite sure, why they omit beta-recall for rejection sampling. It m
 
 Until now it remains unclear, what approach we can use to generate the embeddings, how we construct the hyperspheres, how we measure proximity, and how the metrics themselves are calculated over the hyperspheres. Let's tackle this next.
 
-### From Kittens to a Practical Implementation
+## From Kittens to a Practical Implementation
 
 3 binary classifiers
 
@@ -151,14 +151,24 @@ TODO: https://www.analyticsvidhya.com/blog/2024/03/one-class-svm-for-anomaly-det
 *pytorch loss function:*
 
 ```python
-def SoftBoundaryLoss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float):
+import torch
 
-    dist   = torch.sum((emb - c) ** 2, dim=1)
-    scores = dist - r ** 2
-    loss   = r ** 2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
 
-    # scores = dist
-    # loss   = (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
+def soft_boundary_loss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) -> float:
+    """Soft-boundary loss.
+
+    Args:
+        emb (torch.Tensor): embedding
+        r (float): radius
+        c (torch.Tensor): centroid
+        nu (float): weight term
+
+    Returns:
+        float: loss
+    """
+    dist = torch.sum((emb - c) ** 2, dim=1)
+    scores = dist - r**2
+    loss = r**2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
 
     return loss
 ```
@@ -175,33 +185,58 @@ def SoftBoundaryLoss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float):
 ![](separating-hyperplane.png)
 ![](non-linear-mapping.png)
 
-that places an unknown probability mass on each training data point in $\mathcal{D}_{\text {real }}, \epsilon$ is an arbitrarily small noise variance, and * is the convolution operator. Essentially, (7) assumes that the model flips a (biased coin), pulling off a training sample with probability $1-A$ and adding some noise to it, or innovating a new sample with probability $A$.
-4. Estimating the Evaluation Metric
+```yaml
+    that places an unknown probability mass on each training data point in $\mathcal{D}_{\text {real }}, \epsilon$ is an arbitrarily small noise variance, and * is the convolution operator. Essentially, (7) assumes that the model flips a (biased coin), pulling off a training sample with probability $1-A$ and adding some noise to it, or innovating a new sample with probability $A$.
+    4. Estimating the Evaluation Metric
 
-With all the metrics in Section 3 being defined on the sample level, we can obtain an estimate $\widehat{\mathcal{E}}=\left(\widehat{P}_\alpha, \widehat{R}_\beta, \widehat{A}\right)$ of the metric $\mathcal{E}$, for a given $\alpha$ and $\beta$, in a binary classification fashion, by assigning binary scores $\widehat{P}_{\alpha, j}, \widehat{A}_j \in\{0,1\}$ to each synthetic sample $\widetilde{X}_{g, j}$ in $\mathcal{D}_{\text {synth }}$, and $\widehat{R}_{\beta, i} \in\{0,1\}$ to each real sample $\widetilde{X}_{r, i}$ in $\mathcal{D}_{\text {real }}$, then averaging over all samples, i.e., $\widehat{P}_\alpha=\frac{1}{m} \sum_j \widehat{P}_{\alpha, j}, \widehat{R}_\beta=\frac{1}{n} \sum_i \widehat{R}_{\beta, i}, \widehat{A}=\frac{1}{m} \sum_j \widehat{A}_j$. To assign binary scores to individual samples, we construct three binary classifiers $f_P, f_R, f_A: \widetilde{\mathcal{X}} \rightarrow\{0,1\}$, where $\widehat{P}_{\alpha, j}=f_P\left(\widehat{X}_{g, j}\right), \widehat{R}_{\beta, i}=f_R\left(\widehat{X}_{r, i}\right)$ and $\widehat{A}_j=f_A\left(\widehat{X}_{g, j}\right)$. We explain the operation of each classifier in what follows.
+    With all the metrics in Section 3 being defined on the sample level, we can obtain an estimate $\widehat{\mathcal{E}}=\left(\widehat{P}_\alpha, \widehat{R}_\beta, \widehat{A}\right)$ of the metric $\mathcal{E}$, for a given $\alpha$ and $\beta$, in a binary classification fashion, by assigning binary scores $\widehat{P}_{\alpha, j}, \widehat{A}_j \in\{0,1\}$ to each synthetic sample $\widetilde{X}_{g, j}$ in $\mathcal{D}_{\text {synth }}$, and $\widehat{R}_{\beta, i} \in\{0,1\}$ to each real sample $\widetilde{X}_{r, i}$ in $\mathcal{D}_{\text {real }}$, then averaging over all samples, i.e., $\widehat{P}_\alpha=\frac{1}{m} \sum_j \widehat{P}_{\alpha, j}, \widehat{R}_\beta=\frac{1}{n} \sum_i \widehat{R}_{\beta, i}, \widehat{A}=\frac{1}{m} \sum_j \widehat{A}_j$. To assign binary scores to individual samples, we construct three binary classifiers $f_P, f_R, f_A: \widetilde{\mathcal{X}} \rightarrow\{0,1\}$, where $\widehat{P}_{\alpha, j}=f_P\left(\widehat{X}_{g, j}\right), \widehat{R}_{\beta, i}=f_R\left(\widehat{X}_{r, i}\right)$ and $\widehat{A}_j=f_A\left(\widehat{X}_{g, j}\right)$. We explain the operation of each classifier in what follows.
 
-Precision and Recall classifiers ( $f_p$ and $f_R$ ). Based on definitions (4) and (5), both classifiers check if a sample resides in an $\alpha$ - (or $\beta$-) support, i.e., $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \widehat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\widetilde{X}_r\right)=\mathbf{1}\left\{\widetilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. Hence, the main difficulty in
-implementing $f_P$ and $f_R$ is estimating the supports $\widehat{\mathcal{S}}_r^\alpha$ and $\widehat{\mathcal{S}}_g^\beta$-in fact, even if we know the exact distributions $\mathbb{P}_r$ and $\mathbb{P}_g$, computing their $\alpha$ - and $\beta$-supports is not straightforward as it involves solving the optimization problem in (2).
+    Precision and Recall classifiers ( $f_p$ and $f_R$ ). Based on definitions (4) and (5), both classifiers check if a sample resides in an $\alpha$ - (or $\beta$-) support, i.e., $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \widehat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\widetilde{X}_r\right)=\mathbf{1}\left\{\widetilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. Hence, the main difficulty in
+    implementing $f_P$ and $f_R$ is estimating the supports $\widehat{\mathcal{S}}_r^\alpha$ and $\widehat{\mathcal{S}}_g^\beta$-in fact, even if we know the exact distributions $\mathbb{P}_r$ and $\mathbb{P}_g$, computing their $\alpha$ - and $\beta$-supports is not straightforward as it involves solving the optimization problem in (2).
 
-To address this challenge, we pre-process the real and synthetic data in a way that renders estimation of $\alpha$-and $\beta$ supports straightforward. The idea is to train the evaluation embedding $\Phi$ so as to cast $\mathcal{S}_r$ into a hypersphere with radius $r$, and cast the distribution $\mathbb{P}_r$ into an isotropic density concentrated around the center $c_r$ of the hypersphere. We achieve this by modeling $\Phi$ as a one-class neural network trained with the following loss function: $L=\sum_i \ell_i$, where
+    To address this challenge, we pre-process the real and synthetic data in a way that renders estimation of $\alpha$-and $\beta$ supports straightforward. The idea is to train the evaluation embedding $\Phi$ so as to cast $\mathcal{S}_r$ into a hypersphere with radius $r$, and cast the distribution $\mathbb{P}_r$ into an isotropic density concentrated around the center $c_r$ of the hypersphere. We achieve this by modeling $\Phi$ as a one-class neural network trained with the following loss function: $L=\sum_i \ell_i$, where
 
-$$
-\ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\} .
-$$
+    $$
+    \ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\} .
+    $$
 
 
-The loss is minimized over the radius $r$ and the parameters of $\Phi$; the output dimensions of $\Phi, c_r$ and $\nu$ are viewed as hyperparameters (see Appendix). The loss in (8) is based on the seminal work on one-class SVMs in (Schölkopf et al., 2001), which is commonly applied to outlier detection problems, e.g., (Ruff et al., 2018). In a nutshell, the evaluation embedding squeezes real data into the minimum-volume hypersphere centered around $c_r$, hence $\mathcal{S}_r^\alpha$ is estimated as:
+    The loss is minimized over the radius $r$ and the parameters of $\Phi$; the output dimensions of $\Phi, c_r$ and $\nu$ are viewed as hyperparameters (see Appendix). The loss in (8) is based on the seminal work on one-class SVMs in (Schölkopf et al., 2001), which is commonly applied to outlier detection problems, e.g., (Ruff et al., 2018). In a nutshell, the evaluation embedding squeezes real data into the minimum-volume hypersphere centered around $c_r$, hence $\mathcal{S}_r^\alpha$ is estimated as:
 
-$$
-\widehat{\mathcal{S}}_r^\alpha=\boldsymbol{B}\left(c_r, \widehat{r}_\alpha\right), \widehat{r}_\alpha=\widehat{Q}_\alpha\left\{\left\|\widetilde{X}_{r, i}-c_r\right\|: 1 \leq i \leq n\right\},
-$$
+    $$
+    \widehat{\mathcal{S}}_r^\alpha=\boldsymbol{B}\left(c_r, \widehat{r}_\alpha\right), \widehat{r}_\alpha=\widehat{Q}_\alpha\left\{\left\|\widetilde{X}_{r, i}-c_r\right\|: 1 \leq i \leq n\right\},
+    $$
 
+    -----
+
+    ## 🌵 junk 
+
+    $\alpha$-Precision, $\beta$-Recall and Authenticity
+    3.1. Definitions and notations
+
+    Let $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$ be the embedded real and synthetic data. For simplicity, we will use $\mathbb{P}_r$ and $\mathbb{P}_g$ to refer to distributions over raw and embedded features interchangeably. Let $\mathcal{S}_r=\operatorname{supp}\left(\mathbb{P}_r\right)$ and $\mathcal{S}_g=\operatorname{supp}\left(\mathbb{P}_g\right)$, where $\operatorname{supp}(\mathbb{P})$ is the support of $\mathbb{P}$. Central to our proposed metrics is a more general notion for the support of $\mathbb{P}$, which we dub the $\alpha$-support. We define the $\alpha$-support as the minimum volume subset of $\mathcal{S}=\operatorname{supp}(\mathbb{P})$ that supports a probability mass of $\alpha$ (Polonik, 1997; Scott \& Nowak, 2006), i.e.,
+
+    $$
+    \mathcal{S}^\alpha \triangleq \min _{s \subseteq \mathcal{S}} V(s), \text { s.t. } \mathbb{P}(s)=\alpha
+    $$
+
+    where $V(s)$ is the volume (Lebesgue measure) of $s$, and $\alpha \in[0,1]$. One can think of an $\alpha$-support as dividing the full support of $\mathbb{P}$ into "normal" samples concentrated in $\mathcal{S}^\alpha$, and "outliers" residing in $\overline{\mathcal{S}}^\alpha$, where $\mathcal{S}=\mathcal{S}^\alpha \cup \overline{\mathcal{S}}^\alpha$.
+    Finally, define $d\left(X, \mathcal{D}_{\text {real }}\right)$ as the distance between $X$ and the closest sample in the training data set $\mathcal{D}_{\text {real }}$, i.e.,
+
+    $$
+    d\left(X, \mathcal{D}_{r e a l}\right)=\min _{1 \leq i \leq n} d\left(X, X_{r, i}\right)
+    $$
+
+    where $d$ is a distance metric defined over the input space $\mathcal{X}$.
+
+    We denote real and generated data as $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$, respectively, where $X_r, X_g \in \mathcal{X}$, with $\mathbb{P}_r$ and $\mathbb{P}_g$ being the real and generative distributions. The real and synthetic data sets are $\mathcal{D}_{\text {real }}=\left\{X_{r, i}\right\}_{i=1}^n$ and $\mathcal{D}_{\text {synth }}=\left\{X_{g, j}\right\}_{j=1}^m$.
+````
 
 ```yaml
 TODO:
 ```
 
-### Does It Scale?
+## Does It Scale?
 
 Yes, probably?
 
@@ -209,7 +244,7 @@ Yes, probably?
 TODO:
 ```
 
-### Why Existing Metrics Fall Short
+## Why Existing Metrics Fall Short
 
 ```yaml
 TODO:
@@ -217,39 +252,43 @@ TODO:
 
 $\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{r}}, \boldsymbol{\Sigma}_{\mathrm{r}}\right)$
 
-### Final Thoughts
 
-The paper is both novel and has practical applications. Two aspects
+## Experiments
 
-- hyper-parameters all over the place.For clustering, for one-class SVM
+To validate their metrics, the authors designed four experiments covering model evaluation and auditing.
 
-```yaml
-TODO:
-```
+*Experiment 1:*
 
-## paper summary
+For the *evaluation setting*, they setup a small *ranking challenge*. The generate 4 synthetic, tabular datasets of COVID patient data using Generative Adversarial Networks (GANs), Variational Auto-Encoder (VAEs), and Wasserstein-GANs. Then, they fit a simple logistic regression model and evaluate the performance and derive a ground truth ranking.
+
+Then they try to recover the ground truth ranking through estimating the similarity in terms of Fréchet inception distance (FID), Precision/Recall ($P_1$/$R_1$), Parzen window likelihood, density/coverage ($D$/$C$), as well as their own. In this experiment their integrated $\alpha$-precision and $\beta$-recall is among best to recover the true ranking and achieves among the highest $AUC-ROC$ scores on the real test set.
+
+In a second sub-experiment, they demonstrate the performance of their approach as a criterion for finding a weighting-hyperparameter of a privacy-preserving loss function of ADS-GAN. 
+
+Their third related sub-experiment is concerned about *model auditing*. Their results show that the ADS-GAN achieves a marginally larger AUC-ROC score on audited/pre-filtered samples.
+
+*Experiment 2:*
+
+This experiment tackles mode dropping, a common failure where a generative model misses entire categories of data (e.g., a model trained on digits 0-9 fails to generate any '8's). Using a modified MNIST dataset, the authors showed that their $IR_{\beta}$ metric was significantly more sensitive to this problem than baseline approaches  like FID, Precision, and Recall.
+
+*Experiment 3:*
+
+Here, the authors re-evaluated models from a "Hide-and-Seek" challenge focused on generating private synthetic patient data. The original winner -- a simple model that just added noise to real data—scored well on standard metrics but offered poor privacy.
+
+The authors demonstrate that their metrics, especially authenticity, would have correctly flagged this model as low-quality, thereby exposing the privacy risk that other metrics missed.
+
+*Experiment 4:*
+
+In the last experiment they evaluate the performance of a StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generate 10,000 samples each, and compare against real samples  by $FID$ and $IP_{\alpha}$ and $IR_{\beta}$. 
 
 
+## My Thoughts
 
-$\alpha$-Precision, $\beta$-Recall and Authenticity
-3.1. Definitions and notations
+The paper is a fresh and novel take on assessing the quality of synthetic data. I particularly like, there's finally a solution for sample-level evaluation and can be applied universally as long as we can input data into evaluation embeddings. 
 
-Let $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$ be the embedded real and synthetic data. For simplicity, we will use $\mathbb{P}_r$ and $\mathbb{P}_g$ to refer to distributions over raw and embedded features interchangeably. Let $\mathcal{S}_r=\operatorname{supp}\left(\mathbb{P}_r\right)$ and $\mathcal{S}_g=\operatorname{supp}\left(\mathbb{P}_g\right)$, where $\operatorname{supp}(\mathbb{P})$ is the support of $\mathbb{P}$. Central to our proposed metrics is a more general notion for the support of $\mathbb{P}$, which we dub the $\alpha$-support. We define the $\alpha$-support as the minimum volume subset of $\mathcal{S}=\operatorname{supp}(\mathbb{P})$ that supports a probability mass of $\alpha$ (Polonik, 1997; Scott \& Nowak, 2006), i.e.,
+My main concern is about practical applicability. The setup requires multiple parameters like $r$, $\nu$, $\Phi$ for the one-class classifiers, that require tuning and hyper-parameters like $k$ for Mini-Batch $k$-means for constructing the hyperspheres.
 
-$$
-\mathcal{S}^\alpha \triangleq \min _{s \subseteq \mathcal{S}} V(s), \text { s.t. } \mathbb{P}(s)=\alpha
-$$
-
-where $V(s)$ is the volume (Lebesgue measure) of $s$, and $\alpha \in[0,1]$. One can think of an $\alpha$-support as dividing the full support of $\mathbb{P}$ into "normal" samples concentrated in $\mathcal{S}^\alpha$, and "outliers" residing in $\overline{\mathcal{S}}^\alpha$, where $\mathcal{S}=\mathcal{S}^\alpha \cup \overline{\mathcal{S}}^\alpha$.
-Finally, define $d\left(X, \mathcal{D}_{\text {real }}\right)$ as the distance between $X$ and the closest sample in the training data set $\mathcal{D}_{\text {real }}$, i.e.,
-
-$$
-d\left(X, \mathcal{D}_{r e a l}\right)=\min _{1 \leq i \leq n} d\left(X, X_{r, i}\right)
-$$
-
-where $d$ is a distance metric defined over the input space $\mathcal{X}$.
-
-We denote real and generated data as $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$, respectively, where $X_r, X_g \in \mathcal{X}$, with $\mathbb{P}_r$ and $\mathbb{P}_g$ being the real and generative distributions. The real and synthetic data sets are $\mathcal{D}_{\text {real }}=\left\{X_{r, i}\right\}_{i=1}^n$ and $\mathcal{D}_{\text {synth }}=\left\{X_{g, j}\right\}_{j=1}^m$.
+Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?  
 
 
 [^1]: see https://arxiv.org/abs/2102.08921
