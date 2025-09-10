@@ -41,6 +41,13 @@ As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its
 
 That was easy, right?
 
+```yaml
+TODO: there seems to be a fine line between memorization and overfitting https://youtu.be/_EEH9HU2EE0?feature=shared&t=2755
+
+overfitting: model perfectly fits training data/is over-trained. data distribution is basically the histogram
+memorization: generative models covering some region in support of synthetic data, as model saw one training point in this region.
+```
+
 **level 2:**
 
 Yet, comparing distributions incl. all data points isn't often desirable. The $\alpha$ and $\beta$ in alpha-precision and beta-recall indicates that we do not necessarily consider all data points within $\mathbb{P}_g$ or $\mathbb{P}_r$ but rather allow for some data points to be *outliers*. Think of $\alpha$ and $\beta$ being the knobs to control outlierness for synthetic and real samples.
@@ -56,6 +63,36 @@ With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter 
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
+
+```
+Third level of understanding
+
+real distribution, i.e. $\mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r\right)$ (Sajjadi et al., 2018). We propose a more refined measure of sample fidelity, called the $\alpha$-Precision metric ( $P_\alpha$ ), which we define as follows:
+
+$$
+P_\alpha \triangleq \mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r^\alpha\right), \text { for } \alpha \in[0,1] .
+$$
+
+
+That is, $P_\alpha$ is the probability that a synthetic sample resides in the $\alpha$-support of the real distribution.
+$\boldsymbol{\beta}$-Recall. To assess diversity in synthetic data, we propose the $\beta$-Recall metric as a generalization of the conventional Recall metric. Formally, we define the $\beta$-Recall as follows:
+
+$$
+R_\beta \triangleq \mathbb{P}\left(\widetilde{X}_r \in \mathcal{S}_g^\beta\right), \text { for } \beta \in[0,1]
+$$
+
+i.e., $R_\beta$ is the fraction of real samples that reside within the $\beta$-support of the generative distribution.
+
+Generalization is independent of precision and recall since a model can achieve perfect fidelity and diversity without truly generating any samples, simply by resampling training data. Unlike discriminative models for which generalization is easily tested via held-out data, evaluating generalization in generative models is not straightforward (Adlam et al., 2019; Meehan et al., 2020). We propose an authenticity score $A \in [0,1]$ to quantify the rate by which a model generates new samples. To pin down a mathematical definition for $A$, we reformulate $\mathbb{P}_g$ as a mixture of densities as follows:
+
+$$
+\mathbb{P}_g=A \cdot \mathbb{P}_g^{\prime}+(1-A) \cdot \delta_{g, \epsilon}
+$$
+
+where $\mathbb{P}_g^{\prime}$ is the generative distribution conditioned on the synthetic samples not being copied, and $\delta_{g, \epsilon}$ is a noisy distribution over training data. In particular, we define $\delta_{g, \epsilon}$ as $\delta_{g, \epsilon}=\delta_g * \mathcal{N}\left(0, \epsilon^2\right)$, where $\delta_g$ is a discrete distribution
+```
+
+
 ### A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
 
 ![core-concept](core_concept.png)
@@ -68,13 +105,21 @@ Let's now calculate the metrics, for a fixed $\alpha$ and $\beta$. By counting k
 
 ```yaml
 TODO: It's not clear to my why outliers in the own hypersphere are also excluded. This would mean we both depend on beta and alpha. From the formulas I'd think, that we take *all* synthetic / real samples.
+
+Ah guess, because we have the outlier definition. From Section "Interpreting alpha-precision and beta-recall.
+Interpreting $\boldsymbol{\alpha}$-Precision and $\boldsymbol{\beta}$-Recall. To interpret (4) and (5), we revisit the notion of $\alpha$-support. From (2), we know that an $\alpha$-support hosts the most densely packed probability mass $\alpha$ in a distribution, hence $\mathcal{S}_r^\alpha$ and $\mathcal{S}_g^\beta$ always concentrate around the modes of $\mathbb{P}_r$ and $\mathbb{P}_g$ (Figure 3); samples residing outside of $\mathcal{S}_r^\alpha$ and $\mathcal{S}_g^\beta$ can be thought of as outliers. In this sense, $P_\alpha$ and $R_\beta$ do not count outliers when assessing fidelity and diversity. That is, the $\alpha$-Precision score deems a synthetic sample to be of a high fidelity not only if it looks "realistic", but also if it looks "typical". Similarly, $\beta$-Recall counts a real sample as being covered by $\mathbb{P}_g$ only if it is not an outlier in $\mathbb{P}_g$. By sweeping the values of $\alpha$ and $\beta$ from 0 to 1 , we obtain a varying definition of which samples are typical and which are outliers-this gives us entire $P_\alpha$ and $R_\beta$ curves as illustrated in Figure 3.
 ```
 
 ### Debugging Failure Modes with the Metric
 
+As we can distinguish *typical* samples and *outliers*, we can alos
+
+![Interpretation of $P_{$\alpha$}$ and $R_{$\beta$}$ curves](model_debugging.png)
+
 ```yaml
 TODO:
 ```
+
 
 ### Use in evaluation and auditing tasks
 
@@ -82,7 +127,7 @@ Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authentici
 
 ![evaluation and auditing pipeline](auditing_evaluation_pipeline.png)
 
-The first application (a) lies in *auditing* the generative model. By embedding the input features $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$ into a feature space using an embedding function $\Phi$, we can evaluate $\mathcal{E}$ on the embedded features $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$. Thereby, we can assess the quality of our our synthetic data by the desired qualities and ultimately assess how faithful we can be.
+The first application (a) lies in *auditing* the generative model. By embedding the input features $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$ into a feature space using an evaluation embedding function $\Phi$, we can evaluate $\mathcal{E}$ on the embedded features $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$. Thereby, we can assess the quality of our our synthetic data for the desired qualities and ultimately assess how faithful we can be in our synthetic data.
 
 For practitioners an even more interesting application is found in post-hoc model auditing (b) [^3]. As the metric can be estimated on the sample-level, for each sample $X_{g,j}$ in the synthetic dataset $\mathcal{D}_\text {synth}$, we can use the approach to reject samples with low authenticity and/or $\alpha$-precision scores and select (and re-generate) high-quality samples. The auditor thereby acts as a rejection sampler. One nitty detail: for auditing, we don't care about $\beta$-recall. I suspect this is due to the fact that ...
 
@@ -90,15 +135,75 @@ For practitioners an even more interesting application is found in post-hoc mode
 TODO: I'm not quite sure, why they omit beta-recall for rejection sampling. It might have something to do, if we have have access to (all) real samples?
 ```
 
-Until now it remains unclear, what approach we can use to generate the embeddings, how we construct the hyperspheres, and how the metrics themselves are calculated over the hyperspheres. Let's tackle this next.
+Until now it remains unclear, what approach we can use to generate the embeddings, how we construct the hyperspheres, how we measure proximity, and how the metrics themselves are calculated over the hyperspheres. Let's tackle this next.
 
 ### From Kittens to a Practical Implementation
+
+3 binary classifiers
+
+```yaml
+TODO: https://github.com/ahmedmalaa/evaluating-generative-models/blob/main/representations/OneClass.py
+TODO: https://www.analyticsvidhya.com/blog/2024/03/one-class-svm-for-anomaly-detection/
+```
+
+**$\alpha$-precision and $\beta$-recall:**
+
+*pytorch loss function:*
+
+```python
+def SoftBoundaryLoss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float):
+
+    dist   = torch.sum((emb - c) ** 2, dim=1)
+    scores = dist - r ** 2
+    loss   = r ** 2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
+
+    # scores = dist
+    # loss   = (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
+
+    return loss
+```
+
+**Authenticity:**
+
+- https://arxiv.org/pdf/1802.06360
+
+- custom loss function,
+- inspired by outlier detection
+
+- resource on one-class classifiers https://www.analyticsvidhya.com/blog/2024/03/one-class-svm-for-anomaly-detection/
+
+![](separating-hyperplane.png)
+![](non-linear-mapping.png)
+
+that places an unknown probability mass on each training data point in $\mathcal{D}_{\text {real }}, \epsilon$ is an arbitrarily small noise variance, and * is the convolution operator. Essentially, (7) assumes that the model flips a (biased coin), pulling off a training sample with probability $1-A$ and adding some noise to it, or innovating a new sample with probability $A$.
+4. Estimating the Evaluation Metric
+
+With all the metrics in Section 3 being defined on the sample level, we can obtain an estimate $\widehat{\mathcal{E}}=\left(\widehat{P}_\alpha, \widehat{R}_\beta, \widehat{A}\right)$ of the metric $\mathcal{E}$, for a given $\alpha$ and $\beta$, in a binary classification fashion, by assigning binary scores $\widehat{P}_{\alpha, j}, \widehat{A}_j \in\{0,1\}$ to each synthetic sample $\widetilde{X}_{g, j}$ in $\mathcal{D}_{\text {synth }}$, and $\widehat{R}_{\beta, i} \in\{0,1\}$ to each real sample $\widetilde{X}_{r, i}$ in $\mathcal{D}_{\text {real }}$, then averaging over all samples, i.e., $\widehat{P}_\alpha=\frac{1}{m} \sum_j \widehat{P}_{\alpha, j}, \widehat{R}_\beta=\frac{1}{n} \sum_i \widehat{R}_{\beta, i}, \widehat{A}=\frac{1}{m} \sum_j \widehat{A}_j$. To assign binary scores to individual samples, we construct three binary classifiers $f_P, f_R, f_A: \widetilde{\mathcal{X}} \rightarrow\{0,1\}$, where $\widehat{P}_{\alpha, j}=f_P\left(\widehat{X}_{g, j}\right), \widehat{R}_{\beta, i}=f_R\left(\widehat{X}_{r, i}\right)$ and $\widehat{A}_j=f_A\left(\widehat{X}_{g, j}\right)$. We explain the operation of each classifier in what follows.
+
+Precision and Recall classifiers ( $f_p$ and $f_R$ ). Based on definitions (4) and (5), both classifiers check if a sample resides in an $\alpha$ - (or $\beta$-) support, i.e., $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \widehat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\widetilde{X}_r\right)=\mathbf{1}\left\{\widetilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. Hence, the main difficulty in
+implementing $f_P$ and $f_R$ is estimating the supports $\widehat{\mathcal{S}}_r^\alpha$ and $\widehat{\mathcal{S}}_g^\beta$-in fact, even if we know the exact distributions $\mathbb{P}_r$ and $\mathbb{P}_g$, computing their $\alpha$ - and $\beta$-supports is not straightforward as it involves solving the optimization problem in (2).
+
+To address this challenge, we pre-process the real and synthetic data in a way that renders estimation of $\alpha$-and $\beta$ supports straightforward. The idea is to train the evaluation embedding $\Phi$ so as to cast $\mathcal{S}_r$ into a hypersphere with radius $r$, and cast the distribution $\mathbb{P}_r$ into an isotropic density concentrated around the center $c_r$ of the hypersphere. We achieve this by modeling $\Phi$ as a one-class neural network trained with the following loss function: $L=\sum_i \ell_i$, where
+
+$$
+\ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\} .
+$$
+
+
+The loss is minimized over the radius $r$ and the parameters of $\Phi$; the output dimensions of $\Phi, c_r$ and $\nu$ are viewed as hyperparameters (see Appendix). The loss in (8) is based on the seminal work on one-class SVMs in (Schölkopf et al., 2001), which is commonly applied to outlier detection problems, e.g., (Ruff et al., 2018). In a nutshell, the evaluation embedding squeezes real data into the minimum-volume hypersphere centered around $c_r$, hence $\mathcal{S}_r^\alpha$ is estimated as:
+
+$$
+\widehat{\mathcal{S}}_r^\alpha=\boldsymbol{B}\left(c_r, \widehat{r}_\alpha\right), \widehat{r}_\alpha=\widehat{Q}_\alpha\left\{\left\|\widetilde{X}_{r, i}-c_r\right\|: 1 \leq i \leq n\right\},
+$$
+
 
 ```yaml
 TODO:
 ```
 
 ### Does It Scale?
+
+Yes, probably?
 
 ```yaml
 TODO:
@@ -110,11 +215,21 @@ TODO:
 TODO:
 ```
 
+$\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{r}}, \boldsymbol{\Sigma}_{\mathrm{r}}\right)$
+
 ### Final Thoughts
+
+The paper is both novel and has practical applications. Two aspects
+
+- hyper-parameters all over the place.For clustering, for one-class SVM
 
 ```yaml
 TODO:
 ```
+
+## paper summary
+
+
 
 $\alpha$-Precision, $\beta$-Recall and Authenticity
 3.1. Definitions and notations
