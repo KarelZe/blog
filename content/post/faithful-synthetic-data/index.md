@@ -15,7 +15,7 @@ This new metric is both *domain-* and *model-agnostic*. Its novelty lies in bein
 
 ## What Makes a Good Synthetic Dataset?
 
-Good synthetic data should fulfill the following three qualities:
+Good synthetic data should fulfill the following three desirable qualities:
 
 1. **Fidelity:** A high-fidelity synthetic dataset should contain only "realistic" samples—for instance, photorealistic images. So, no [sixth fingers](https://medium.com/@sanderink.ursina/why-do-ai-models-sometimes-produce-images-with-six-fingers-da4cd53f3313) or [pasta-eating nightmares](https://en.wikipedia.org/wiki/Will_Smith_Eating_Spaghetti_test) in your dataset.
 1. **Diversity:** The synthetic dataset should capture the full variability of the real data, including rare edge cases.
@@ -37,16 +37,9 @@ As we know the metric is 3-dimensional. Informally and from a 10,000ft view, its
 
 1. **$\alpha$-precision:** is the rate at which the generative model produces realistic looking examples.
 1. **$\beta$-recall:** is the fraction of real samples, that are covered by the distribution of synthetic samples.
-1. **authenticity:** is the rate at which the generative model produces truly new samples. Or put differently, 1 minus the rate of samples being copied form the training set with some noise.
+1. **authenticity:** is the rate at which the generative model produces truly new samples. Or put differently, 1 minus the rate of samples being copied form the training set with some random noise.
 
 That was easy, right?
-
-```yaml
-TODO: there seems to be a fine line between memorization and overfitting https://youtu.be/_EEH9HU2EE0?feature=shared&t=2755
-
-overfitting: model perfectly fits training data/is over-trained. data distribution is basically the histogram
-memorization: generative models covering some region in support of synthetic data, as model saw one training point in this region.
-```
 
 **level 2:**
 
@@ -58,8 +51,9 @@ Synthetic and real samples are both embedded into hydrospheres, which have the n
 
 With our newly gained understanding of $\alpha$ and $\beta$ as a hyperparameter to determine the supports of the real and synthetic hypersphere, we are all set for a more precise definition of $\alpha$-precision and $\beta$-recall:
 
-1. **$\alpha$-precision:** The probability that a synthetic sample lies within the $\alpha$-support of the real distribution. Intuitively, $\alpha$ has an impact on the creativity of the generative models. For small $\alpha$s the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\alpha$s or a less restrictive outlier definition it becomes more likely that a generated sample sneaks into the real hypersphere.
+1. **$\alpha$-precision:** The probability that a synthetic sample lies within the $\alpha$-support of the real distribution. Intuitively, $\alpha$ has an impact on the creativity of the generative models. For small $\alpha$ s the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\alpha$s or a less restrictive outlier definition it becomes more likely that a generated sample sneaks into the real hypersphere.
 1. **$\beta$-recall:** The fraction of real samples that reside within the $\beta$-support of the synthetic distribution for a given $\beta$. Being able to vary $\beta$, we can control the diversity of samples we allow for.
+1. **Authenticity** is a hypothesis test (TODO:XXXX) It tries to prevent *memorization*. Memorization means that the generative model covers regions in the support of the synthetic data distribution, despite that only few data points lie within this region. While conceptually similar to the more common overfitting, a overfitted model would fit the original distribution/histogram. [^5]
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
@@ -112,14 +106,16 @@ Interpreting $\boldsymbol{\alpha}$-Precision and $\boldsymbol{\beta}$-Recall. To
 
 ### Debugging Failure Modes with the Metric
 
-As we can distinguish *typical* samples and *outliers*, we can alos
+As we can distinguish *typical* samples and *outliers*, we can also use $P_{\alpha}$ and $R_{\beta}$ for debugging purposes, as we see next. 
 
 ![Interpretation of $P_{$\alpha$}$ and $R_{$\beta$}$ curves](model_debugging.png)
 
-```yaml
-TODO:
-```
+In the graphics above, the real distribution is colored in blue, and the generative distribution is in red.  $\mathbb{P}_r$ is a a multimodal distribution of cat images with two modes -- one for the tabby cat and another one for the Calico cat. The Carcal cat (left most cat) is an outlier for the specific $\alpha$.The shaded areas represent the probability mess covered by $\alpha$ and $\beta$ supports. By definition, the *support* concentrate around the modes. 
 
+1. A *perfect* generative model would result in a $\alpha$-precision and $\beta$ -recall following the diagonal.
+1. The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as more synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a sub-optimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
+1. The model nails support for $\mathbb{P}_r$, and hence achieves a perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Carcal cat/outlier, resulting in a poor $P_{\alpha}$ and $R_{\beta}$ as neither typical synthetic samples nor typical real samples are well covered in the other distribution. 
+1. The last case is more subtle. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is best of all three models but will appear inferior to 2 under $P_1$ and $R_1$. This "improvement" is reflected in a improved $P_\alpha$ score and (still) suboptimal $R_\beta$ curve.
 
 ## Use in evaluation and auditing tasks
 
@@ -238,11 +234,11 @@ TODO:
 
 ## Does It Scale?
 
-Yes, probably?
+Yes, probably? The used datasets from the paper range between 6k to 10k samples.
 
-```yaml
-TODO:
-```
+The computational demand is mostly affected by the embedding dimension $d_{\text{emb}}$; not so much by the input dimension, as both $k$-nearest neighbour for mode estimation and distance computation is done in the embedding space.
+
+
 
 ## Why Existing Metrics Fall Short
 
@@ -267,15 +263,29 @@ In a second sub-experiment, they demonstrate the performance of their approach a
 
 Their third related sub-experiment is concerned about *model auditing*. Their results show that the ADS-GAN achieves a marginally larger AUC-ROC score on audited/pre-filtered samples.
 
+```yaml
+
+TODO:  maybe short? 
+The first experiment tests if the metrics can correctly rank the quality of synthetic data. The authors generated four synthetic COVID-19 patient datasets and used them to train simple models. The real-world performance of these models established a "ground truth" ranking.
+
+They found that their proposed metrics, α-precision (IP 
+α
+​
+ ) and β-recall (IR 
+β
+​
+ ), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall. The metrics were also effective for hyperparameter tuning and model auditing in two smaller sub-experiments.
+```
+
 *Experiment 2:*
 
 This experiment tackles mode dropping, a common failure where a generative model misses entire categories of data (e.g., a model trained on digits 0-9 fails to generate any '8's). Using a modified MNIST dataset, the authors showed that their $IR_{\beta}$ metric was significantly more sensitive to this problem than baseline approaches  like FID, Precision, and Recall.
 
 *Experiment 3:*
 
-Here, the authors re-evaluated models from a "Hide-and-Seek" challenge focused on generating private synthetic patient data. The original winner -- a simple model that just added noise to real data—scored well on standard metrics but offered poor privacy.
+Here, the authors re-evaluated models from a "Hide-and-Seek" challenge focused on generating private synthetic patient data. The original winner -- a simple model that just added noise to real data -- scored well on standard metrics but offered poor privacy.
 
-The authors demonstrate that their metrics, especially authenticity, would have correctly flagged this model as low-quality, thereby exposing the privacy risk that other metrics missed.
+The authors demonstrate that their authenticity metric, would have correctly flagged this model as low-quality, thereby exposing the privacy risk that other metrics missed.
 
 *Experiment 4:*
 
@@ -288,7 +298,13 @@ The paper is a fresh and novel take on assessing the quality of synthetic data. 
 
 My main concern is about practical applicability. The setup requires multiple parameters like $r$, $\nu$, $\Phi$ for the one-class classifiers, that require tuning and hyper-parameters like $k$ for Mini-Batch $k$-means for constructing the hyperspheres.
 
-Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?  
+Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial, the models are date, and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?  
+
+## Useful links
+
+![paper-summary](https://www.youtube.com/watch?v=zH1RVLHFr_M)
+
+---
 
 
 [^1]: see https://arxiv.org/abs/2102.08921
@@ -298,3 +314,5 @@ Ultimately, I remain sceptical about their experiments. The experiments demonstr
 [^3]: Conceptually, this reminded me to [DBSCAN](https://en.wikipedia.org/wiki/DBSCAN) and its hyperparameter $\epsilon$.
 
 [^4]: Post-hoc means here, that we leave our generative model as-is.
+
+[^5]: Explanation adapted from here: https://youtu.be/_EEH9HU2EE0?feature=shared&t=2755
