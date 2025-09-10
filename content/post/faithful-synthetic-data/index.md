@@ -240,7 +240,7 @@ The paper is a fresh and novel take on assessing the quality of synthetic data. 
 
 My main concern is about practical applicability. The setup requires multiple parameters like $r$, $\nu$, $\Phi$ for the one-class classifiers, that require tuning and hyper-parameters like $k$ for Mini-Batch $k$-means for constructing the hyperspheres.
 
-Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seem superficial, the models are dated and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?
+Ultimately, I remain sceptical about their experiments. The experiments demonstrate the applicability for various modalities (image, tabular etc.),  but the selection seems superficial, the models are dated and partly lacks quantitative evaluation e.g., their final experiment would have benefitted from an arena-like human eval compared to the metrics. A view that is shared by some reviewers on [openreview.net](https://openreview.net/forum?id=8qWazUd8Jm). What are your thoughts?
 
 [^1]: see https://arxiv.org/abs/2102.08921
 
