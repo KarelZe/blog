@@ -131,7 +131,7 @@ Let's next see what is needed to implement the approach practically.
     $$
     \ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\}
     $$
-    This formula deserves some more explanation. We first map the inputs $X_{r,i}$ into the embedding space, where typical data points and outliers are more easily separable from the origin. We then try to find an optimal separating hyperplane/decision boundary. $\nu$ controls the fraction of outliers/tolerance that may violate the decision boundary. The paper sets $\nu=0.1$. The max-term penalizes for larger margin violations. $c_r$ is the centre from which the Euclidean distance between the sample and the centroid is measured. 
+    This formula deserves some more explanation. We first map the inputs $X_{r,i}$ into the embedding space, where typical data points and outliers are more easily separable from the origin. We then try to find an optimal separating hyperplane/decision boundary. $\nu$ controls the fraction of outliers/tolerance that may violate the decision boundary. The paper sets $\nu=0.1$. The max-term penalizes for larger margin violations. $c_r$ is the centre from which the Euclidean distance between the sample and the centroid is measured.
     ![visualization of soft boundary](non-linear-mapping.png)The loss is minimized over the radius $r$ and the parameters of $\Phi$. The embedding dimension, centroids, and $\nu$ are hyperparameters that potentially require tuning.
 
     A pytorch implementation of the soft-boundary loss would look like this:
