@@ -89,9 +89,9 @@ The figure above depicts the proposed evaluation metric. The blue sphere corresp
 
 The assumption is that data falling outside of the blue sphere will look unrealistic or noisy (case a). Overfitted generative models will produce high-quality data samples that are unauthentic because they are blunt copies from the training data (case b). High-quality samples should end up in the blue sphere/the $\alpha$-support.
 
-Let's now calculate the metrics for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that out of 10 synthetic samples, 8 lie within the blue hypersphere (the $\alpha$-support of real data). This gives us an $\alpha$-precision of $8/10 = 0.8$. Similarly, out of 10 real samples, 4 lie within the red sphere (the $\beta$-support of synthetic data), giving us a $\beta$-recall of $4/10 = 0.4$. Of all synthetic samples generated, let's assume 9 are determined to be authentic (non-memorized), which yields an authenticity score of $9/10 = 0.9$.
+Let's now calculate the metrics for a fixed $\alpha$ and $\beta$. By counting kittens, we observe that out of 10 synthetic samples, 8 lie within the blue hypersphere (the $\alpha$-support of real data). This gives us an $\alpha$-precision of $8/10 = 0.8$. Similarly, out of 10 real samples, 4 lie within the red sphere (the $\beta$-support of synthetic data), giving us a $\beta$-recall of $4/10 = 0.4$. Of all synthetic samples generated, 9 are determined to be authentic (non-memorized), which yields an authenticity score of $9/10 = 0.9$.
 
-### Debugging Failure Modes with the Metric
+### Debugging failure modes with the metric
 
 Since we can distinguish *typical* samples from *outliers*, we can also use $P_{\alpha}$ and $R_{\beta}$ for debugging purposes, as we see next.
 
@@ -122,16 +122,17 @@ Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authentici
 
 Until now it remains unclear what approach we can use to generate the embeddings, how we construct the hyperspheres, how we measure proximity, and how the metrics themselves are calculated over the hyperspheres. Let's tackle this next.
 
-## From Kittens to a Practical Implementation
+## From kittens to practical implementation
 
 Let's next see what is needed to implement the approach practically.
 
-1. **Evaluation embeddings:** Evaluation embeddings are learned using a *one-class* neural network with a loss function inspired *one-class* support-vector machines (SVMs). The *soft-boundary loss function* is given by $L=\sum_i \ell_i$ where:
+1. **Evaluation embeddings:** Evaluation embeddings are learned using a simple *one-class* neural network with a loss function inspired *one-class* support-vector machines (SVMs). The neural networks is rather simplistic with 2 to 3 layers, ahidden dimension of 32 to 128, and a good old ReLU activation. We learn the parameters on *real samples*. The *soft-boundary loss function* is given by $L=\sum_i \ell_i$ where:
 
     $$
     \ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\}
     $$
-    This aspect deserves some more explanation.
+    This formula deserves some more explanation. We first map the inputs $X_{r,i}$ into the embedding space, where typical data points and outliers are more easily separable from the origin. We then try to find an optimal separating hyperplane/decision boundary. $\nu$ controls the fraction of outliers/tolerance that may violate the decision boundary. The paper sets $\nu=0.1$. The max-term penalizes for larger margin violations. $c_r$ is the centre from which the Euclidean distance between the sample and the centroid is measured. 
+    ![visualization of soft boundary](non-linear-mapping.png)The loss is minimized over the radius $r$ and the parameters of $\Phi$. The embedding dimension, centroids, and $\nu$ are hyperparameters that potentially require tuning.
 
     A pytorch implementation of the soft-boundary loss would look like this:
 
@@ -157,33 +158,15 @@ Let's next see what is needed to implement the approach practically.
         return loss
     ```
 
-2. **Precision and Recall:** Just like we counted and averaged the samples within/outside the hypersphere above, they use a an [indicator function](https://en.wikipedia.org/wiki/Indicator_function) ($\mathbf{1}$) to first assign binary scores for all synthetic and real samples respectively, whether the sample resides in $\alpha$ or ($\beta$)-support for a given $\alpha$ or $\beta$ and calculate the mean over all samples in the dataset to obtain the final scores. Hence, their binary classifiers are: $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \hat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\tilde{X}_r\right)=\mathbf{1}\left\{\tilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. The hats here indicate that we work on estimates.
+2. **Precision and Recall:** Just like we counted and averaged the samples within/outside the hypersphere above, an [indicator function](https://en.wikipedia.org/wiki/Indicator_function) ($\mathbf{1}$) is first used to assign binary scores for all synthetic and real samples respectively, whether the sample resides in $\alpha$ or $\beta$-support for a given $\alpha$ or $\beta$ and calculate the mean over all samples in the dataset to obtain the final scores. Hence, their binary classifiers are: $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \hat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\tilde{X}_r\right)=\mathbf{1}\left\{\tilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. The hats here indicate that we work on estimates.
 
-**Authenticity:**
+3. **Authenticity:** the authenticity classifier is modelled as a hypothesis test that tests if a synthetic sample is non-memorized using a *likelihood ratio statistic*. Practically, we test if the distance between a synthetic sample and its **closest real training sample** is smaller than the distance between the closest real sample to its nearest real sample (other than itself). Again, an indicator function is used to assign binary scores and the final score is averaged from all synthetic samples.
 
-**supports/minimum-volume hypersphere:** The radius and centres of
+4. **supports/minimum-volume hypersphere:** The centres are external hyperparameters.
 
-
-The practical implementation relies on three binary classifiers trained using one-class classification techniques. Here's how it works:
-
-**$\alpha$-precision and $\beta$-recall:**
-
-For these metrics, the authors use one-class Support Vector Machines (SVMs) to learn the boundaries of the $\alpha$ and $\beta$ supports. The one-class SVM finds a hyperplane that separates the typical samples (those within the support) from the outliers.
-
-*PyTorch loss function for the soft-boundary approach:*
-
-
-**Authenticity:**
-
-For authenticity, the approach uses a different one-class classifier that's trained to distinguish between samples that are likely memorized (too close to training data) versus those that represent genuine novel generation. This is inspired by outlier detection techniques where memorized samples are treated as outliers in the context of novel generation.
-
-The one-class SVM approach works by:
-1. Mapping data to a high-dimensional feature space using a kernel function
-2. Finding a hyperplane that separates the origin from the data points
-3. Maximizing the margin between the hyperplane and the origin
-
-![](separating-hyperplane.png)
-![](non-linear-mapping.png)
+```yaml
+TODO: its unclear to me, what the k-nn is used for.
+```
 
 ## Does It Scale?
 

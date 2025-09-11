@@ -15,6 +15,6 @@ def soft_boundary_loss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) 
     """
     dist = torch.sum((emb - c) ** 2, dim=1)
     scores = dist - r**2
-    loss = r**2 + (1 / nu) * torch.mean(torch.relu(scores))
+    loss = r**2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
 
     return loss
