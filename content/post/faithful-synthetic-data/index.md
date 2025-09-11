@@ -25,7 +25,7 @@ Good synthetic data should fulfill the following three desirable qualities:
 
 All three aspects seem intuitive at first glance. Conveniently, the authors propose a *three-dimensional* metric, $\mathcal{E}$, that maps nicely to these three qualities.🤓[^2] The mapping is as follows: $\alpha$-precision captures *fidelity*, $\beta$-recall captures *diversity*, and *authenticity* assesses *generalization*.
 
-While $\alpha$-precision and $\beta$-recall are generalizations of the classic precision and recall metrics, denoted by $R_1$ and $P_1$, the concept of *authenticity* is what's truly new here. This emphasis on distinguishing generalization from memorization represents one of the paper's key contributions. Let's take a closer look at the metric $\mathcal{E}$.
+While $\alpha$-precision and $\beta$-recall are generalizations of the classic precision and recall metrics, denoted by $P_1$ and $R_1$, the concept of *authenticity* is what's truly new here. This emphasis on distinguishing generalization from memorization represents one of the paper's key contributions. Let's take a closer look at the metric $\mathcal{E}$.
 
 $$
 \mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}_{\text {Generalization }}) .
@@ -45,7 +45,7 @@ That was easy, right?
 
 ### Level 2
 
-Yet, comparing distributions including all data points isn't often desirable. The $\alpha$ and $\beta$ in alpha-precision and beta-recall indicate that we do not necessarily consider all data points within $\mathbb{P}_g$ or $\mathbb{P}_r$ but rather allow for some data points to be *outliers*. Think of $\alpha$ and $\beta$ as the knobs to control outlierness for real and synthetic samples respectively.
+Yet, comparing distributions including all data points isn't often desirable. The $\alpha$ and $\beta$ in alpha-precision and beta-recall indicate that we do not necessarily consider all data points within the real and generated distribution but rather allow for some data points to be *outliers*. Think of $\alpha$ and $\beta$ as the knobs to control outlierness for real and synthetic samples respectively.
 
 Conceptually, the authors draw on minimum volume sets—regions that contain a specified probability mass while occupying the smallest possible volume. We assume that a fraction $1 - \alpha$ of the real distribution and $1 - \beta$ of the synthetic distribution represent outliers, while $\alpha$ and $\beta$ correspond to typical samples. $\alpha$ and $\beta$ are varied between 0 and 1 to obtain full recall and precision curves. This allows us to cover all possible definitions of what is considered an outlier.[^3] Without this flexibility (setting $\alpha=\beta=1$), the approach would be prone to contamination by very rare samples in both the real and synthetic datasets.
 
@@ -67,14 +67,14 @@ Let's get a little bit more formal with our third level of understanding.
     $$
     P_\alpha \triangleq \mathbb{P}\left(\widetilde{X}_g \in \mathcal{S}_r^\alpha\right), \text { for } \alpha \in[0,1],
     $$
-    for an embedded synthetic sample $\widetilde{X}_g=\Phi(X_g)$ to be inside the $\alpha$-support of real samples $\mathcal{S}_r=\operatorname{supp}{(\mathbb{P}_r)}$. By ranging $\alpha$ from 0 to 1, we get full $\alpha$-precision curves.
+    for an embedded synthetic sample $\widetilde{X}_g=\Phi(X_g)$ embedded with $\Phi$ to be inside the $\alpha$-support of real samples $\mathcal{S}_r=\operatorname{supp}{(\mathbb{P}_r)}$. $\mathbb{P}_r$ is the generative distribution. $\Phi$ is an embedding function that maps input data to a feature space suitable for comparison. For a formal definition of the support please refer to the paper. By ranging $\alpha$ from 0 to 1, we get full $\alpha$-precision curves.
 2. Likewise, $\beta$-recall ($R_\beta$) is formally defined as the probability:
     $$
     R_\beta \triangleq \mathbb{P}\left(\widetilde{X}_r \in \mathcal{S}_g^\beta\right), \text { for } \beta \in[0,1],
     $$
-    for the embedded real sample $\widetilde{X}_r=\Phi(X_r)$ to reside in the $\mathcal{S}_g=\operatorname{supp}{(\mathbb{P}_g)}$.
+    for the embedded real sample $\widetilde{X}_r=\Phi(X_r)$ to reside in the support of the generative distribution ($\mathcal{S}_g=\operatorname{supp}{(\mathbb{P}_g)}$).
 
-3. The authenticity score $A$ is defined as the rate by which the model generates new samples. The generative distribution $\mathbb{P}_g$ is then a mixture of the $\mathbb{P}_g^{\prime}$ generative distribution conditioned on the synthetic samples not being copied and of a noisy distribution over the training data $\delta_{g, \epsilon}$ weighted by the *authenticity score*:
+3. The authenticity score $A$ is defined as the rate by which the model generates new samples. The generative distribution is then a mixture of the generative distribution conditioned on the synthetic samples ($\mathbb{P}_g^{\prime}$) not being copied and of a noisy distribution over the training data ($\delta_{g, \epsilon}$) weighted by the *authenticity score*:
     $$
     \mathbb{P}_g=A \cdot \mathbb{P}_g^{\prime}+(1-A) \cdot \delta_{g, \epsilon}.
     $$
@@ -103,12 +103,12 @@ By definition, the *support* concentrates around the modes.
 
 We can distinguish the following cases:
 
-1. A *perfect* generative model would result in $\alpha$-precision and $\beta$-recall curves following the diagonal.
-2. The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as fewer synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a suboptimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
-3. The model captures the support for $\mathbb{P}_r$ well, and hence achieves perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Caracal cat/outlier, resulting in poor $P_{\alpha}$ and $R_{\beta}$ scores as neither typical synthetic samples nor typical real samples are well covered in the other distribution.
-4. The last case is more subtle to spot. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is the best of all three models but will appear inferior to model 2 under $P_1$ and $R_1$. This "improvement" is reflected in an improved $P_\alpha$ score and a (still) suboptimal $R_\beta$ curve.
+1. **Optimal case:** A *perfect* generative model would result in $\alpha$-precision and $\beta$-recall curves following the diagonal.
+2. **Mode collapse:** The model $\mathbb{P}_g$ exhibits *mode collapse*, as it fails to represent all modes (mode for Calico cat missing). We'd get a suboptimal, concave $\alpha$-precision curve, as fewer synthetic samples are in the $\alpha$-support than there should be. Because it does not cover all modes, the model will have a suboptimal (below diagonal) $R_\beta$ curve. The same model would achieve perfect precision scores ($P_1$), but poor recall ($R_1$).
+3. **Mode invention:** The model captures the support for $\mathbb{P}_r$ well, and hence achieves perfect recall/precision ($P_1=R_1=1$) as the entire distribution is covered by support. The generative model, however, invents a new mode for the Caracal cat/outlier, resulting in poor $P_{\alpha}$ and $R_{\beta}$ scores as neither typical synthetic samples nor typical real samples are well covered in the other distribution.
+4. **Density shift:** The last case is more subtle to spot. The model realizes both types of cats but estimates a slightly shifted support and density. Intuitively, the model is the best of all three models but will appear inferior to model 2 under classical precision and recall. This "improvement", however, is reflected in an improved $P_\alpha$ score and a (still) suboptimal $R_\beta$ curve.
 
-It's also possible to summarize performance using single scalars instead of curves. Based on $P_\alpha$ or $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($IP_{\alpha}$) and *integrated* $R_\beta$ $(IR_{\beta})$, which is simply the area enclosed between the $\alpha$-precision and $\beta$-recall curves and the diagonal.
+It's also possible to summarize performance using single scalars instead of curves. Based on $P_\alpha$ or $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($\operatorname{IP}_{\alpha}$) and *integrated* $R_\beta$ $(\operatorname{IR}_{\beta})$, which is simply the $1 - 2 \times$ the area enclosed between the $\alpha$-precision and $\beta$-recall curves and the diagonal.
 
 ## Use in evaluation and auditing tasks
 
@@ -116,13 +116,53 @@ Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authentici
 
 ![evaluation and auditing pipeline](auditing_evaluation_pipeline.png)
 
-The first application (a) lies in *auditing* the generative model. By embedding the input features $X_r \sim \mathbb{P}_r$ and $X_g \sim \mathbb{P}_g$ into a feature space using an evaluation embedding function $\Phi$, we can evaluate $\mathcal{E}$ on the embedded features $\widetilde{X}_r=\Phi\left(X_r\right)$ and $\widetilde{X}_g=\Phi\left(X_g\right)$. This allows us to assess the quality of our synthetic data for the desired qualities and ultimately determine how much faith we can place in our synthetic data.
+**Evaluation pipeline:** The first application lies in *evaluation* the generative model. By embedding the input features into a feature space, we can evaluate $\mathcal{E}$ on the embedded real/generated features. This allows us to assess the quality of our synthetic data for the desired qualities and ultimately determine how much faith we can place in our synthetic data.
 
-For practitioners, an even more interesting application is found in *post-hoc* model auditing (b).[^4] Since the metric can be estimated at the sample level, for each sample $X_{g,j}$ in the synthetic dataset $\mathcal{D}_\text{synth}$, we can use the approach to reject samples with low authenticity and/or $\alpha$-precision scores and select (and regenerate) high-quality samples. The auditor thereby acts as a rejection sampler. One important detail: for auditing purposes, we don't focus on $\beta$-recall since we're primarily concerned with the quality of individual synthetic samples rather than coverage of the real distribution.
+**Auditing pipeline:** For practitioners, an even more interesting application is found in *post-hoc* model auditing.[^4] Since the metric can be estimated at the sample level, for each sample $X_{g,j}$ in the synthetic dataset $\mathcal{D}_\text{synth}$, we can use the approach to reject samples with low authenticity and/or $\alpha$-precision scores and select (and regenerate) high-quality samples. The auditor thereby acts as a rejection sampler. One important detail: for auditing purposes, we don't focus on $\beta$-recall since we're primarily concerned with the quality of individual synthetic samples rather than coverage of the real distribution.
 
 Until now it remains unclear what approach we can use to generate the embeddings, how we construct the hyperspheres, how we measure proximity, and how the metrics themselves are calculated over the hyperspheres. Let's tackle this next.
 
 ## From Kittens to a Practical Implementation
+
+Let's next see what is needed to implement the approach practically.
+
+1. **Evaluation embeddings:** Evaluation embeddings are learned using a *one-class* neural network with a loss function inspired *one-class* support-vector machines (SVMs). The *soft-boundary loss function* is given by $L=\sum_i \ell_i$ where:
+
+    $$
+    \ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left\|\Phi\left(X_{r, i}\right)-c_r\right\|^2-r^2\right\}
+    $$
+    This aspect deserves some more explanation.
+
+    A pytorch implementation of the soft-boundary loss would look like this:
+
+    ```python
+    import torch
+
+    def soft_boundary_loss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) -> float:
+        """Soft-boundary loss.
+
+        Args:
+            emb (torch.Tensor): embedding
+            r (float): radius
+            c (torch.Tensor): centroid
+            nu (float): weight term
+
+        Returns:
+            float: loss
+        """
+        dist = torch.sum((emb - c) ** 2, dim=1)
+        scores = dist - r**2
+        loss = r**2 + (1 / nu) * torch.mean(torch.nn.ReLU(scores))
+
+        return loss
+    ```
+
+2. **Precision and Recall:** Just like we counted and averaged the samples within/outside the hypersphere above, they use a an [indicator function](https://en.wikipedia.org/wiki/Indicator_function) ($\mathbf{1}$) to first assign binary scores for all synthetic and real samples respectively, whether the sample resides in $\alpha$ or ($\beta$)-support for a given $\alpha$ or $\beta$ and calculate the mean over all samples in the dataset to obtain the final scores. Hence, their binary classifiers are: $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \hat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\tilde{X}_r\right)=\mathbf{1}\left\{\tilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. The hats here indicate that we work on estimates.
+
+**Authenticity:**
+
+**supports/minimum-volume hypersphere:** The radius and centres of
+
 
 The practical implementation relies on three binary classifiers trained using one-class classification techniques. Here's how it works:
 
@@ -132,28 +172,6 @@ For these metrics, the authors use one-class Support Vector Machines (SVMs) to l
 
 *PyTorch loss function for the soft-boundary approach:*
 
-```python
-import torch
-
-
-def soft_boundary_loss(emb: torch.Tensor, r: float, c: torch.Tensor, nu: float) -> float:
-    """Soft-boundary loss.
-
-    Args:
-        emb (torch.Tensor): embedding
-        r (float): radius
-        c (torch.Tensor): centroid
-        nu (float): weight term
-
-    Returns:
-        float: loss
-    """
-    dist = torch.sum((emb - c) ** 2, dim=1)
-    scores = dist - r**2
-    loss = r**2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
-
-    return loss
-```
 
 **Authenticity:**
 
@@ -185,10 +203,10 @@ A second popular approach is to compare real and synthetic datasets with metrics
 
 ![frechet inception distance](frechet-inception-distance.png)
 
-For the FID, synthetic and real images are first embedded using the [Inception v3 model](https://en.wikipedia.org/wiki/Inception_(deep_learning_architecture)) and the resulting feature vectors are used to parameterize multivariate distributions for the real dataset $\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{r}}, \boldsymbol{\Sigma}_{\mathrm{r}}\right)$ and generated dataset $\mathcal{N}\left(\boldsymbol{\mu}_{\mathrm{s}}, \boldsymbol{\Sigma}_{\mathrm{s}}\right)$. The discrepancy between both distributions can then be estimated as:
+For the FID, synthetic and real images are first embedded using the [Inception v3 model](https://en.wikipedia.org/wiki/Inception_(deep_learning_architecture)) and the resulting feature vectors are used to parameterize multivariate distributions for the real dataset $\mathcal{N}\left(\boldsymbol{\mu}_{r}, \boldsymbol{\Sigma}_{r}\right)$ and generated dataset $\mathcal{N}\left(\boldsymbol{\mu}_{s}, \boldsymbol{\Sigma}_{s}\right)$. The discrepancy between both distributions can then be estimated as:
 
 $$
-\operatorname{FID}\left(\mu_r, \Sigma_r, \mu_s, \Sigma_s\right)=\left\|\mu_r-\mu_s\right\|_2^2+\operatorname{Tr}\left(\Sigma_r+\Sigma_s-2\left(\Sigma_r \Sigma_s\right)^{\frac{1}{2}}\right)
+\operatorname{FID}\left(\boldsymbol{\mu}_r, \boldsymbol{\Sigma}_r, \boldsymbol{\mu}_s, \boldsymbol{\Sigma}_s\right)=\left\|\boldsymbol{\mu}_r-\boldsymbol{\mu}_s\right\|_2^2+\operatorname{Tr}\left(\boldsymbol{\Sigma}_r+\boldsymbol{\Sigma}_s-2\left(\boldsymbol{\Sigma}_r \boldsymbol{\Sigma}_s\right)^{\frac{1}{2}}\right)
 $$
 
 Unlike the current paper, FID is only computable at the dataset level and considers only *diversity* and *fidelity*. Most critically, it would assign optimal scores to a model that simply memorizes the training/real dataset.
@@ -201,7 +219,7 @@ To validate their proposed metrics, Alaa and colleagues designed four experiment
 
 For the *evaluation setting*, they tested whether evaluation metrics can correctly rank generative models by their quality. The authors generated four synthetic COVID-19 patient datasets using different generative models and used them to train simple logistic regression models. The real-world performance of these models established a "ground truth" ranking.
 
-They found that their proposed metrics, integrated $\alpha$-precision ($IR_{\alpha}$) and integrated $\beta$-recall ($IR_{\beta}$), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall ($P_1/R_1$).
+They found that their proposed metrics, integrated $\alpha$-precision ($\operatorname{IP}_{\alpha}$) and integrated $\beta$-recall ($\operatorname{IR}_{\beta}$), successfully reproduced this ground truth ranking, outperforming most standard metrics like FID and Precision/Recall.
 
 In a second related experiment, they demonstrated the performance of their approach as a criterion for finding a weighting hyperparameter of a privacy-preserving loss function for ADS-GAN.
 
@@ -209,7 +227,7 @@ Their third corresponding experiment focused on *model auditing*. Their results 
 
 *Experiment 2:*
 
-This experiment tackled mode dropping, a common failure where a generative model misses entire categories of data (e.g., a model trained on digits 0-9 fails to generate any '8's). Using a modified MNIST dataset, the authors showed that their $IR_{\beta}$ metric was significantly more sensitive to this problem than baseline approaches like FID, Precision, and Recall.
+This experiment tackled mode dropping, a common failure where a generative model misses entire categories of data (e.g., a model trained on digits 0-9 fails to generate any '8's). Using a modified MNIST dataset, the authors showed that their $\operatorname{IR}_{\beta}$ metric was significantly more sensitive to this problem than baseline approaches like FID, Precision, and Recall.
 
 *Experiment 3:*
 
@@ -219,7 +237,7 @@ The authors demonstrated that their authenticity metric would have correctly fla
 
 *Experiment 4:*
 
-In the last experiment, they evaluated the performance of StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generated 10,000 samples each, and compared against real samples using FID and $IP_{\alpha}$ and $IR_{\beta}$.
+In the last experiment, they evaluated the performance of StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generated 10,000 samples each, and compared against real samples using FID and $\operatorname{IP}_{\alpha}$ and $\operatorname{IR}_{\beta}$.
 
 ## My Thoughts
 
