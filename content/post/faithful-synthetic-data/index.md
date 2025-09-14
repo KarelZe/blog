@@ -12,7 +12,7 @@ images:
 
 Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [Atruvia](https://atruvia.de/).
 
-A paper by Alaa et al. titled "How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"[^1] sheds light on these questions and caught my attention.
+A paper by Alaa et al. titled *"How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"*[^1] sheds light on these questions and caught my attention.
 
 More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray ✨), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets (see video below). Let's examine whether it lives up to its promise.
 
@@ -161,7 +161,311 @@ Let's next see what is needed to implement the approach practically.
         return loss
     ```
 
+```python
+# one-class network code from: https://github.com/KarelZe/evaluating-generative-models/blob/main/representations/OneClass.py
+# TODO: Simplify into simple train-val loop. Use MNIST Fashion dataset.
+
+# Copyright (c) 2021, Ahmed M. Alaa
+# Licensed under the BSD 3-clause license (see LICENSE.txt)
+
+"""
+
+  -----------------------------------------
+  One-class representations
+  -----------------------------------------
+
+"""
+
+from __future__ import absolute_import, division, print_function
+
+import numpy as np
+import sys
+
+import logging
+import torch
+import torch.nn as nn
+
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
+
+from representations.networks import *
+
+from torch.autograd import Variable
+
+# One-class loss functions
+# ------------------------
+
+
+def OneClassLoss(outputs, c):
+
+    dist   = torch.sum((outputs - c) ** 2, dim=1)
+    loss   = torch.mean(dist)
+
+    return loss
+
+
+def SoftBoundaryLoss(outputs, R, c, nu):
+
+    dist   = torch.sum((outputs - c) ** 2, dim=1)
+    scores = dist - R ** 2
+    loss   = R ** 2 + (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
+
+    scores = dist
+    loss   = (1 / nu) * torch.mean(torch.max(torch.zeros_like(scores), scores))
+
+    return loss
+
+
+LossFns    = dict({"OneClass": OneClassLoss, "SoftBoundary": SoftBoundaryLoss})
+
+# Base network
+# ---------------------
+
+class BaseNet(nn.Module):
+
+    """Base class for all neural networks."""
+
+    def __init__(self):
+
+        super().__init__()
+
+        self.logger  = logging.getLogger(self.__class__.__name__)
+        self.rep_dim = None  # representation dimensionality, i.e. dim of the last layer
+
+    def forward(self, *input):
+
+        """Forward pass logic
+
+        :return: Network output
+        """
+        raise NotImplementedError
+
+    def summary(self):
+
+        """Network summary."""
+
+        net_parameters = filter(lambda p: p.requires_grad, self.parameters())
+        params         = sum([np.prod(p.size()) for p in net_parameters])
+
+        self.logger.info('Trainable parameters: {}'.format(params))
+        self.logger.info(self)
+
+
+def get_radius(dist:torch.Tensor, nu:float):
+
+    """Optimally solve for radius R via the (1-nu)-quantile of distances."""
+
+    return np.quantile(np.sqrt(dist.clone().data.float().numpy()), 1 - nu)
+
+class OneClassLayer(BaseNet):
+
+    def __init__(self, params=None, hyperparams=None):
+
+        super().__init__()
+
+        # set all representation parameters - remove these lines
+
+        self.rep_dim        = params["rep_dim"]
+        self.input_dim      = params["input_dim"]
+        self.num_layers     = params["num_layers"]
+        self.num_hidden     = params["num_hidden"]
+        self.activation     = params["activation"]
+        self.dropout_prob   = params["dropout_prob"]
+        self.dropout_active = params["dropout_active"]
+        self.loss_type      = params["LossFn"]
+        self.train_prop     = params['train_prop']
+        self.learningRate   = params['lr']
+        self.epochs         = params['epochs']
+        self.warm_up_epochs = params['warm_up_epochs']
+        self.weight_decay   = params['weight_decay']
+        if torch.cuda.is_available():
+            self.device     = torch.device('cuda') # Make this an option
+        else:
+            self.device     = torch.device('cpu')
+        # set up the network
+
+        self.model          = build_network(network_name="feedforward", params=params).to(self.device)
+
+        # create the loss function
+
+        self.c              = hyperparams["center"].to(self.device)
+        self.R              = hyperparams["Radius"]
+        self.nu             = hyperparams["nu"]
+
+        self.loss_fn        = LossFns[self.loss_type]
+
+
+    def forward(self, x):
+
+        x                   = self.model(x)
+
+        return x
+
+
+    def fit(self, x_train, verbosity=True):
+
+
+        self.optimizer      = torch.optim.AdamW(self.model.parameters(), lr=self.learningRate, weight_decay = self.weight_decay)
+        self.X              = torch.tensor(x_train.reshape((-1, self.input_dim))).float()
+
+        if self.train_prop != 1:
+            x_train, x_val = x_train[:int(self.train_prop*len(x_train))], x_train[int(self.train_prop*len(x_train)):]
+            inputs_val = Variable(torch.from_numpy(x_val).to(self.device)).float()
+
+        self.losses         = []
+        self.loss_vals       = []
+
+
+        for epoch in range(self.epochs):
+
+            # Converting inputs and labels to Variable
+
+            inputs = Variable(torch.from_numpy(x_train)).to(self.device).float()
+
+            self.model.zero_grad()
+
+            self.optimizer.zero_grad()
+
+            # get output from the model, given the inputs
+            outputs = self.model(inputs)
+
+            # get loss for the predicted output
+
+            if self.loss_type=="SoftBoundary":
+
+                self.loss = self.loss_fn(outputs=outputs, R=self.R, c=self.c, nu=self.nu)
+
+            elif self.loss_type=="OneClass":
+
+                self.loss = self.loss_fn(outputs=outputs, c=self.c)
+
+
+            #self.c    = torch.mean(torch.tensor(outputs).float(), dim=0)
+
+            # get gradients w.r.t to parameters
+            self.loss.backward(retain_graph=True)
+            self.losses.append(self.loss.detach().cpu().numpy())
+
+            # update parameters
+            self.optimizer.step()
+
+            if (epoch >= self.warm_up_epochs) and (self.loss_type=="SoftBoundary"):
+
+                dist   = torch.sum((outputs - self.c) ** 2, dim=1)
+                #self.R = torch.tensor(get_radius(dist, self.nu))
+
+            if self.train_prop != 1.0:
+                with torch.no_grad():
+
+                    # get output from the model, given the inputs
+                    outputs = self.model(inputs_val)
+
+                    # get loss for the predicted output
+
+                    if self.loss_type=="SoftBoundary":
+
+                        loss_val = self.loss_fn(outputs=outputs, R=self.R, c=self.c, nu=self.nu)
+
+                    elif self.loss_type=="OneClass":
+
+                        loss_val = self.loss_fn(outputs=outputs, c=self.c).detach.cpu().numpy()
+
+                    self.loss_vals.append(loss_val)
+
+
+
+
+            if verbosity:
+                if self.train_prop == 1:
+                    print('epoch {}, loss {}'.format(epoch, self.loss.item()))
+                else:
+                    print('epoch {:4}, train loss {:.4e}, val loss {:.4e}'.format(epoch, self.loss.item(),loss_val))
+
+```
+
+
 2. **Precision and Recall:** Just like we counted and averaged the samples within/outside the hypersphere above, an [indicator function](https://en.wikipedia.org/wiki/Indicator_function) ($\mathbf{1}$) is first used to assign binary scores for all synthetic and real samples respectively, whether the sample resides in $\alpha$ or $\beta$-support for a given $\alpha$ or $\beta$ and calculate the mean over all samples in the dataset to obtain the final scores. Hence, their binary classifiers are: $f_P\left(\tilde{X}_g\right)=\mathbf{1}\left\{\tilde{X}_g \in \hat{\mathcal{S}}_r^\alpha\right\}$ and $f_R\left(\tilde{X}_r\right)=\mathbf{1}\left\{\tilde{X}_r \in \widehat{\mathcal{S}}_g^\beta\right\}$. The hats here indicate that we work on estimates.
+
+```python
+# adapted from: https://github.com/KarelZe/evaluating-generative-models/blob/main/metrics/evaluation.py
+# TODO: simplify.
+from __future__ import absolute_import, division, print_function
+
+import numpy as np
+import sys
+from sklearn.neighbors import NearestNeighbors
+
+import logging
+import torch
+import scipy
+
+if not sys.warnoptions:
+    import warnings
+    warnings.simplefilter("ignore")
+
+device = 'cpu' # matrices are too big for gpu
+
+
+def compute_alpha_precision(real_data, synthetic_data, emb_center):
+
+
+    emb_center = torch.tensor(emb_center, device=device)
+
+    n_steps = 30
+    nn_size = 2
+    alphas  = np.linspace(0, 1, n_steps)
+
+
+    Radii   = np.quantile(torch.sqrt(torch.sum((torch.tensor(real_data).float() - emb_center) ** 2, dim=1)), alphas)
+
+    synth_center          = torch.tensor(np.mean(synthetic_data, axis=0)).float()
+
+    alpha_precision_curve = []
+    beta_coverage_curve   = []
+
+    synth_to_center       = torch.sqrt(torch.sum((torch.tensor(synthetic_data).float() - emb_center) ** 2, dim=1))
+
+
+    nbrs_real = NearestNeighbors(n_neighbors = 2, n_jobs=-1, p=2).fit(real_data)
+    real_to_real, _       = nbrs_real.kneighbors(real_data)
+
+    nbrs_synth = NearestNeighbors(n_neighbors = 1, n_jobs=-1, p=2).fit(synthetic_data)
+    real_to_synth, real_to_synth_args = nbrs_synth.kneighbors(real_data)
+
+    # Let us find closest real point to any real point, excluding itself (therefore 1 instead of 0)
+    real_to_real          = torch.from_numpy(real_to_real[:,1].squeeze())
+    real_to_synth         = torch.from_numpy(real_to_synth.squeeze())
+    real_to_synth_args    = real_to_synth_args.squeeze()
+
+    real_synth_closest    = synthetic_data[real_to_synth_args]
+
+    real_synth_closest_d  = torch.sqrt(torch.sum((torch.tensor(real_synth_closest).float()- synth_center) ** 2, dim=1))
+    closest_synth_Radii   = np.quantile(real_synth_closest_d, alphas)
+
+
+
+    for k in range(len(Radii)):
+        precision_audit_mask = (synth_to_center <= Radii[k]).detach().float().numpy()
+        alpha_precision      = np.mean(precision_audit_mask)
+
+        beta_coverage        = np.mean(((real_to_synth <= real_to_real) * (real_synth_closest_d <= closest_synth_Radii[k])).detach().float().numpy())
+
+        alpha_precision_curve.append(alpha_precision)
+        beta_coverage_curve.append(beta_coverage)
+
+
+    # See which one is bigger
+
+    authen = real_to_real[real_to_synth_args] < real_to_synth
+    authenticity = np.mean(authen.numpy())
+
+    Delta_precision_alpha = 1 - 2 * np.sum(np.abs(np.array(alphas) - np.array(alpha_precision_curve))) * (alphas[1] - alphas[0])
+    Delta_coverage_beta  = 1 - 2 * np.sum(np.abs(np.array(alphas) - np.array(beta_coverage_curve))) * (alphas[1] - alphas[0])
+
+    return alphas, alpha_precision_curve, beta_coverage_curve, Delta_precision_alpha, Delta_coverage_beta, authenticity
+```
+
 
 3. **Authenticity:** the authenticity classifier is modelled as a hypothesis test that tests if a synthetic sample is non-memorized using a *likelihood ratio statistic*. Practically, we test if the distance between a synthetic sample and its **closest real training sample** is smaller than the distance between the closest real sample to its nearest real sample (other than itself). Again, an indicator function is used to assign binary scores and the final score is averaged from all synthetic samples.
 
