@@ -466,6 +466,12 @@ def compute_alpha_precision(real_data, synthetic_data, emb_center):
     return alphas, alpha_precision_curve, beta_coverage_curve, Delta_precision_alpha, Delta_coverage_beta, authenticity
 ```
 
+{{< canvas-figure caption="The sphere in three dimensions - or the hypersphere in higher dimensions - with a red plane for testing." >}}
+<canvas id="canvas-tangent-space" width="660" height="371" style="width: 660px; height: 371.25px;"></canvas>
+<script src="/js/tangent.js"></script>
+<canvas width="660" height="371" style="position: absolute; top: 0px; left: 0px; width: 660px; height: 371.25px; pointer-events: none;"></canvas>
+{{< /canvas-figure >}}
+
 
 3. **Authenticity:** the authenticity classifier is modelled as a hypothesis test that tests if a synthetic sample is non-memorized using a *likelihood ratio statistic*. Practically, we test if the distance between a synthetic sample and its **closest real training sample** is smaller than the distance between the closest real sample to its nearest real sample (other than itself). Again, an indicator function is used to assign binary scores and the final score is averaged from all synthetic samples.
 
