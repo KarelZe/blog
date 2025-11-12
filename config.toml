@@ -13,7 +13,7 @@ description = "Data Scientist · Learner 🌱"
 profilePicture = "images/profile.jpg"
 keywords = "Bilz, Markus, DHBW, KIT, Atruvia, Computer Science Student, Commercial Computer Scientist, Karlsruhe"
 favicon = "favicons/"
-customCss = ["css/custom.css"]
+customCss = ["css/custom.css", "css/fonts.css"]
 
 [params.repository]
 branch = 'master'
