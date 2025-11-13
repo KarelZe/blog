@@ -16,13 +16,11 @@ A paper by Alaa et al. titled *"How Faithful is Your Synthetic Data? Sample-Leve
 
 More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray ✨), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets (see video below). Let's examine whether it lives up to its promise.
 
-{{< youtube zH1RVLHFr_M >}}
-
 ## What Makes a Good Synthetic Dataset?
 
 Good synthetic data should fulfill the following three desirable qualities:
 
-1. **Fidelity:** A high-fidelity synthetic dataset should contain only "realistic" samples—for instance, photorealistic images. So, no [sixth fingers](https://medium.com/@sanderink.ursina/why-do-ai-models-sometimes-produce-images-with-six-fingers-da4cd53f3313) or [pasta-eating nightmares](https://en.wikipedia.org/wiki/Will_Smith_Eating_Spaghetti_test) in your dataset.
+1. **Fidelity:** A high-fidelity synthetic dataset should contain only "realistic" samples—for instance, photorealistic images. So, no [sixth fingers](https://medium.com/@sanderink.ursina/why-do-ai-models-sometimes-produce-images-with-six-fingers-da4cd53f3313) or [pasta-eating nightmares](https://en.wikipedia.org/wiki/Will_Smith_Eating_Spaghetti_test) and butchered texts in your dataset.
 2. **Diversity:** The synthetic dataset should capture the full variability of the real data, including rare edge cases.
 3. **Generalization:** A synthetic dataset should contain truly novel samples, not just mere copies of the data the generative model was trained on. Without this third criterion, a strongly overfitted model could still score high on fidelity and diversity, but its outputs would just be copies, offering no real benefit.
 
@@ -58,8 +56,9 @@ Now that we have this understanding of $\alpha$ and $\beta$ as hyperparameters t
 
 1. **$\alpha$-precision:** The probability that a synthetic sample lies within the $\alpha$-support of the real distribution. Intuitively, $\alpha$ has an impact on the creativity allowed for generative models. For small $\alpha$ values, the generative model must produce samples closest to the most typical examples to lie within the support. For larger $\alpha$ values or a less restrictive outlier definition, it becomes more likely that a generated sample falls within the real hypersphere.
 2. **$\beta$-recall:** The fraction of real samples that reside within the $\beta$-support of the synthetic distribution for a given $\beta$. By varying $\beta$, we can control the diversity of samples we allow for.
-3. **Authenticity** is a hypothesis test to determine if a sample is *non-memorized*. *Memorization* means that the generative model fails to generalize and closely resembles the input data in regions of the input space with poor coverage of training samples. While conceptually similar to *overfitting*, an overfitted model would fit the original distribution/histogram, as visualized below:[^5]
-    ![memorization vs. overfitting](memorization-overfitting.png)
+3. **Authenticity** is a hypothesis test to determine if a sample is *non-memorized*. *Memorization* means that the generative model fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples. While conceptually similar to *overfitting*, an overfitted model would fit the training distribution too precisely including noise and idiosyncrasies and perform poorly on the true underlying distribution.
+
+{{< youtube zH1RVLHFr_M >}}
 
 Let's get a little bit more formal with our third level of understanding.
 
@@ -85,6 +84,12 @@ Let's get a little bit more formal with our third level of understanding.
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
 ## A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
+
+{{< canvas-figure caption="The sphere in three dimensions - or the hypersphere in higher dimensions - with a red plane for testing." >}}
+<canvas id="canvas-spheres" width="660" height="371" style="width: 660px; height: 371.25px;"></canvas>
+<script src="/js/dots.js"></script>
+<canvas width="660" height="371" style="position: absolute; top: 0px; left: 0px; width: 660px; height: 371.25px; pointer-events: none;"></canvas>
+{{< /canvas-figure >}}
 
 ![core-concept](core_concept.png)
 
@@ -493,11 +498,19 @@ Two commonly used techniques to assess the quality of synthetic datasets among p
 
 ![visualizing synthetic and real samples](visualizing-embeddings.png)
 
+```yaml
+TODO: translate + make a svg
+```
+
 For dataset visualization, inputs like images are frequently embedded using encoders like CLIP and then projected into 2D or 3D space for visualization using dimensionality reduction approaches like $t$-SNE or UMAP. While conceptually simple, this approach allows only for qualitative assessments and heavily relies on the embedding model and the dimensionality reduction technique. Additionally, $t$-SNE plots have been deemed mysterious and misleading.[^6] In contrast, the Alaa paper does not require another embedding model and uses model- and domain-agnostic feature embeddings.
 
 A second popular approach is to compare real and synthetic datasets with metrics like the [Fréchet Inception Distance](https://en.wikipedia.org/wiki/Fr%C3%A9chet_inception_distance) (FID).
 
 ![frechet inception distance](frechet-inception-distance.png)
+
+```yaml
+TODO: translate + make a svg
+```
 
 For the FID, synthetic and real images are first embedded using the [Inception v3 model](https://en.wikipedia.org/wiki/Inception_(deep_learning_architecture)) and the resulting feature vectors are used to parameterize multivariate distributions for the real dataset $\mathcal{N}\left(\boldsymbol{\mu}_{r}, \boldsymbol{\Sigma}_{r}\right)$ and generated dataset $\mathcal{N}\left(\boldsymbol{\mu}_{s}, \boldsymbol{\Sigma}_{s}\right)$. The discrepancy between both distributions can then be estimated as:
 
@@ -535,6 +548,12 @@ The authors demonstrated that their authenticity metric would have correctly fla
 
 In the last experiment, they evaluated the performance of StyleGAN and diffusion probabilistic models (DDPM) pre-trained on the CIFAR-10 dataset, generated 10,000 samples each, and compared against real samples using FID and $\operatorname{IP}_{\alpha}$ and $\operatorname{IR}_{\beta}$.
 
+## What similarity metrics won't tell you
+
+This approach won't tell you, whether training a generator model and sampling synthetic samples provides any benefits over training an a subset of upstream samples directly. This quetion has been addressed by more recent papers. [^7]
+
+
+
 ## My Thoughts
 
 The paper presents a fresh and novel take on assessing the quality of synthetic data. I particularly appreciate that there's finally a solution for sample-level evaluation that can be applied universally as long as we can input data into evaluation embeddings.
@@ -551,6 +570,8 @@ Ultimately, I remain skeptical about their experiments. While the experiments de
 
 [^4]: Post-hoc means here that we leave our generative model as-is.
 
-[^5]: Visualization and distinction adapted from [here.](https://arxiv.org/pdf/2106.03216)
+[^5]: See: https://arxiv.org/pdf/2106.03216
 
 [^6]: See [this distill.pub](https://distill.pub/2016/misread-tsne/) article for using $t$-SNE effectively.
+
+[^7]: See: https://arxiv.org/pdf/2406.05184
