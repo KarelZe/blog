@@ -85,7 +85,7 @@ Let's next look at a practical example from the paper and count some kittens ğŸ
 
 ## A visual guide to $\alpha$-Precision, $\beta$-Recall, and Authenticity
 
-{{< canvas-figure caption="The sphere in three dimensions - or the hypersphere in higher dimensions - with a red plane for testing." >}}
+{{< canvas-figure caption="The sphere in three dimensions - or the hypersphere in higher dimensions. Red small dots represent synthetic samples. Blue dots real samples. The large blue sphere enclosing most of the real samples represents the $\alpha$-support. Similarly, the $\beta$-support is in red." >}}
 <canvas id="canvas-spheres" width="660" height="371" style="width: 660px; height: 371.25px;"></canvas>
 <script src="/js/dots.js"></script>
 <canvas width="660" height="371" style="position: absolute; top: 0px; left: 0px; width: 660px; height: 371.25px; pointer-events: none;"></canvas>

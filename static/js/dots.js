@@ -1,11 +1,10 @@
-(function() {
+        (function() {
             const canvas = document.getElementById('canvas-spheres');
             const scene = new THREE.Scene();
-            // scene.background = new THREE.Color(0xf5f5f5);
 
             // Set canvas dimensions to fit within text column
             const aspectRatio = 16 / 9;
-            let canvasWidth = Math.min(800, canvas.parentElement.clientWidth || 800); // Max width 800px
+            let canvasWidth = Math.min(800, canvas.parentElement.clientWidth || 800);
             let canvasHeight = canvasWidth / aspectRatio;
             const camera = new THREE.PerspectiveCamera(75, aspectRatio, 0.1, 1000);
             camera.position.set(0, 0, 10);
@@ -19,7 +18,7 @@
                 antialias: true,
                 alpha: true
             });
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3)); // Cap pixel ratio
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 3));
             renderer.setSize(canvasWidth, canvasHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -42,24 +41,15 @@
             const ctx = overlayCanvas.getContext('2d');
             ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-            let cueOpacity = 0;
-            let targetOpacity = 0;
-            let hasInteracted = false;
-
             function drawCue() {
                 ctx.save();
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
                 ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
 
-                if (cueOpacity < 0.01) {
-                    ctx.restore();
-                    return;
-                }
-
                 const centerX = canvasWidth / 2;
-                arrowY = canvasHeight * 0.94;
-                textY = canvasHeight * 0.97;
+                const arrowY = canvasHeight * 0.94;
+                const textY = canvasHeight * 0.97;
 
                 ctx.save();
                 ctx.strokeStyle = '#888888';
@@ -68,20 +58,16 @@
                 ctx.font = '14px system-ui, -apple-system, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.globalAlpha = cueOpacity;
 
                 // Left arrow
                 ctx.save();
                 ctx.translate(centerX - 55, arrowY);
                 ctx.beginPath();
-                //const leftStartX = -25, leftStartY = -2;
-                // const leftEndX = -5, leftEndY = 8;
-                // const leftControlX = -18, leftControlY = 4;
                 const leftStartX = -25;
                 const leftStartY = -2;
                 const leftEndX = -5;
                 const leftEndY = 8;
-                const leftControlX = -18;  // Control point for curve
+                const leftControlX = -18;
                 const leftControlY = 4;
                 ctx.moveTo(leftStartX, leftStartY);
                 ctx.quadraticCurveTo(leftControlX, leftControlY, leftEndX, leftEndY);
@@ -104,23 +90,17 @@
                 ctx.restore();
                 ctx.restore();
 
-                ctx.globalAlpha = cueOpacity * 0.8;
                 ctx.fillText('click & drag', centerX, textY);
-                ctx.globalAlpha = cueOpacity;
 
                 // Right arrow
                 ctx.save();
                 ctx.translate(centerX + 55, arrowY);
                 ctx.beginPath();
-                // const rightStartX = 25, rightStartY = -2;
-                // const rightEndX = 5, rightEndY = 8;
-                // const rightControlX = 18, rightControlY = 4;
-
                 const rightStartX = 25;
                 const rightStartY = -2;
                 const rightEndX = 5;
                 const rightEndY = 8;
-                const rightControlX = 18;   // Control point for curve
+                const rightControlX = 18;
                 const rightControlY = 4;
 
                 ctx.moveTo(rightStartX, rightStartY);
@@ -144,18 +124,68 @@
                 ctx.restore();
 
                 ctx.restore();
+
+                // Annotations
+                ctx.save();
+                ctx.strokeStyle = '#888888';
+                ctx.fillStyle = '#888888';
+                ctx.lineWidth = 1.5;
+                ctx.font = '12px system-ui, -apple-system, sans-serif';
+
+                // "Outliers" annotation - pointing to left side
+                const outlierX = canvasWidth * 0.15;
+                const outlierY = canvasHeight * 0.25;
+                ctx.textAlign = 'left';
+                ctx.fillText('Outliers', outlierX + 15, outlierY);
+
+                ctx.beginPath();
+                ctx.moveTo(outlierX, outlierY);
+                ctx.lineTo(outlierX + 10, outlierY);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(outlierX, outlierY, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // "Noisy synthetic samples" annotation - pointing to overlap region
+                const noisyX = canvasWidth * 0.5;
+                const noisyY = canvasHeight * 0.15;
+                ctx.textAlign = 'center';
+                ctx.fillText('Noisy synthetic', noisyX, noisyY - 10);
+                ctx.fillText('samples', noisyX, noisyY + 5);
+
+                ctx.beginPath();
+                ctx.moveTo(noisyX, noisyY + 15);
+                ctx.lineTo(noisyX, noisyY + 25);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(noisyX, noisyY + 28, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // "Authentic synthetic samples" annotation - pointing to right side
+                const authX = canvasWidth * 0.85;
+                const authY = canvasHeight * 0.4;
+                ctx.textAlign = 'right';
+                ctx.fillText('Authentic synthetic', authX - 15, authY - 7);
+                ctx.fillText('samples', authX - 15, authY + 7);
+
+                ctx.beginPath();
+                ctx.moveTo(authX, authY);
+                ctx.lineTo(authX - 10, authY);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(authX, authY, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
             }
 
 
-            canvas.addEventListener('mouseenter', () => {
-                if (!hasInteracted) {
-                    targetOpacity = 1;
-                }
-            });
+            canvas.addEventListener('mouseenter', () => {});
 
-            canvas.addEventListener('mouseleave', () => {
-                targetOpacity = 0;
-            });
+            canvas.addEventListener('mouseleave', () => {});
 
             // Lighting
             const ambientLight = new THREE.AmbientLight(0x303030);
@@ -170,7 +200,6 @@
             directionalLight.shadow.camera.right = 10;
             directionalLight.shadow.camera.top = 10;
             directionalLight.shadow.camera.bottom = -10;
-            // Improve shadow quality
             directionalLight.shadow.mapSize.width = 2048;
             directionalLight.shadow.mapSize.height = 2048;
             directionalLight.shadow.normalBias = 0.02;
@@ -184,28 +213,26 @@
             const rotationGroup = new THREE.Group();
             scene.add(rotationGroup);
 
-            // Create blue sphere (left)
+            // Create blue sphere (left) - FIXED: removed side: THREE.DoubleSide
             const radius = 4;
             const blueGeometry = new THREE.SphereGeometry(radius, 64, 64);
             const blueMaterial = new THREE.MeshPhongMaterial({
                 color: 0x5dade2,
                 transparent: true,
                 opacity: 0.7,
-                shininess: 30,
-                side: THREE.DoubleSide
+                shininess: 30
             });
             const blueSphere = new THREE.Mesh(blueGeometry, blueMaterial);
             blueSphere.position.set(-2, 0, 0);
             rotationGroup.add(blueSphere);
 
-            // Create red sphere (right)
-            const redGeometry = new THREE.SphereGeometry(radius, 64, 64);
+            // Create red sphere (right) - FIXED: removed side: THREE.DoubleSide
+            const redGeometry = new THREE.SphereGeometry(radius * 0.7, 64, 64);
             const redMaterial = new THREE.MeshPhongMaterial({
                 color: 0xe74c3c,
                 transparent: true,
                 opacity: 0.7,
-                shininess: 30,
-                side: THREE.DoubleSide
+                shininess: 30
             });
             const redSphere = new THREE.Mesh(redGeometry, redMaterial);
             redSphere.position.set(2, 0, 1);
@@ -290,11 +317,7 @@
                 rotationGroup.add(dot);
             }
 
-            // Add coordinate axes
-            // const axesHelper = new THREE.AxesHelper(8);
-            // rotationGroup.add(axesHelper);
-
-            // Mouse controls
+            // Mouse controls - FIXED: centered rotation
             let mouseDown = false;
             let lastMouseX = 0;
             let lastMouseY = 0;
@@ -302,13 +325,8 @@
             canvas.addEventListener('mousedown', (event) => {
                 mouseDown = true;
                 const rect = canvas.getBoundingClientRect();
-                lastMouseX = (event.clientX - rect.left - rect.width / 2) * 0.005;
-                lastMouseY = (event.clientY - rect.top - rect.height / 2) * 0.005;
-
-                if (!hasInteracted) {
-                    hasInteracted = true;
-                    targetOpacity = 0;
-                }
+                lastMouseX = event.clientX - rect.left;
+                lastMouseY = event.clientY - rect.top;
             });
 
             canvas.addEventListener('mouseup', () => mouseDown = false);
@@ -317,11 +335,14 @@
             canvas.addEventListener('mousemove', (event) => {
                 if (mouseDown) {
                     const rect = canvas.getBoundingClientRect();
-                    const mouseX = (event.clientX - rect.left - rect.width / 2) * 0.005;
-                    const mouseY = (event.clientY - rect.top - rect.height / 2) * 0.005;
+                    const mouseX = event.clientX - rect.left;
+                    const mouseY = event.clientY - rect.top;
 
-                    rotationGroup.rotation.y += (mouseX - lastMouseX);
-                    rotationGroup.rotation.x += (mouseY - lastMouseY);
+                    const deltaX = (mouseX - lastMouseX) * 0.01;
+                    const deltaY = (mouseY - lastMouseY) * 0.01;
+
+                    rotationGroup.rotation.y += deltaX;
+                    rotationGroup.rotation.x += deltaY;
 
                     lastMouseX = mouseX;
                     lastMouseY = mouseY;
@@ -329,10 +350,10 @@
             });
 
             window.addEventListener('resize', () => {
-            const newWidth = Math.min(800, canvas.parentElement.clientWidth || 800);
-            const newHeight = newWidth / aspectRatio;
+                const newWidth = Math.min(800, canvas.parentElement.clientWidth || 800);
+                const newHeight = newWidth / aspectRatio;
 
-            camera.aspect = aspectRatio;
+                camera.aspect = aspectRatio;
                 camera.updateProjectionMatrix();
                 renderer.setSize(newWidth, newHeight);
 
@@ -347,23 +368,14 @@
                 canvasWidth = newWidth;
                 canvasHeight = newHeight;
 
-                if (cueOpacity > 0.01) drawCue();
+                drawCue();
             });
-
-            // Set initial rotation
-            // rotationGroup.rotation.x = -0.2;
-            // rotationGroup.rotation.y = 0.3;
 
             function animate() {
                 requestAnimationFrame(animate);
-
-                if (Math.abs(cueOpacity - targetOpacity) > 0.01) {
-                    cueOpacity += (targetOpacity - cueOpacity) * 0.1;
-                    drawCue();
-                }
-
                 renderer.render(scene, camera);
             }
 
+            drawCue();
             animate();
         })();
