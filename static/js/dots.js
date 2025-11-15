@@ -125,59 +125,59 @@
 
                 ctx.restore();
 
-                // Annotations
-                ctx.save();
-                ctx.strokeStyle = '#888888';
-                ctx.fillStyle = '#888888';
-                ctx.lineWidth = 1.5;
-                ctx.font = '12px system-ui, -apple-system, sans-serif';
+                // // Annotations
+                // ctx.save();
+                // ctx.strokeStyle = '#888888';
+                // ctx.fillStyle = '#888888';
+                // ctx.lineWidth = 1.5;
+                // ctx.font = '12px system-ui, -apple-system, sans-serif';
 
-                // "Outliers" annotation - pointing to left side
-                const outlierX = canvasWidth * 0.15;
-                const outlierY = canvasHeight * 0.25;
-                ctx.textAlign = 'left';
-                ctx.fillText('Outliers', outlierX + 15, outlierY);
+                // // "Outliers" annotation - pointing to left side
+                // const outlierX = canvasWidth * 0.15;
+                // const outlierY = canvasHeight * 0.25;
+                // ctx.textAlign = 'left';
+                // ctx.fillText('Outliers', outlierX + 15, outlierY);
 
-                ctx.beginPath();
-                ctx.moveTo(outlierX, outlierY);
-                ctx.lineTo(outlierX + 10, outlierY);
-                ctx.stroke();
+                // ctx.beginPath();
+                // ctx.moveTo(outlierX, outlierY);
+                // ctx.lineTo(outlierX + 10, outlierY);
+                // ctx.stroke();
 
-                ctx.beginPath();
-                ctx.arc(outlierX, outlierY, 3, 0, Math.PI * 2);
-                ctx.fill();
+                // ctx.beginPath();
+                // ctx.arc(outlierX, outlierY, 3, 0, Math.PI * 2);
+                // ctx.fill();
 
-                // "Noisy synthetic samples" annotation - pointing to overlap region
-                const noisyX = canvasWidth * 0.5;
-                const noisyY = canvasHeight * 0.15;
-                ctx.textAlign = 'center';
-                ctx.fillText('Noisy synthetic', noisyX, noisyY - 10);
-                ctx.fillText('samples', noisyX, noisyY + 5);
+                // // "Noisy synthetic samples" annotation - pointing to overlap region
+                // const noisyX = canvasWidth * 0.5;
+                // const noisyY = canvasHeight * 0.15;
+                // ctx.textAlign = 'center';
+                // ctx.fillText('Noisy synthetic', noisyX, noisyY - 10);
+                // ctx.fillText('samples', noisyX, noisyY + 5);
 
-                ctx.beginPath();
-                ctx.moveTo(noisyX, noisyY + 15);
-                ctx.lineTo(noisyX, noisyY + 25);
-                ctx.stroke();
+                // ctx.beginPath();
+                // ctx.moveTo(noisyX, noisyY + 15);
+                // ctx.lineTo(noisyX, noisyY + 25);
+                // ctx.stroke();
 
-                ctx.beginPath();
-                ctx.arc(noisyX, noisyY + 28, 3, 0, Math.PI * 2);
-                ctx.fill();
+                // ctx.beginPath();
+                // ctx.arc(noisyX, noisyY + 28, 3, 0, Math.PI * 2);
+                // ctx.fill();
 
-                // "Authentic synthetic samples" annotation - pointing to right side
-                const authX = canvasWidth * 0.85;
-                const authY = canvasHeight * 0.4;
-                ctx.textAlign = 'right';
-                ctx.fillText('Authentic synthetic', authX - 15, authY - 7);
-                ctx.fillText('samples', authX - 15, authY + 7);
+                // // "Authentic synthetic samples" annotation - pointing to right side
+                // const authX = canvasWidth * 0.85;
+                // const authY = canvasHeight * 0.4;
+                // ctx.textAlign = 'right';
+                // ctx.fillText('Authentic synthetic', authX - 15, authY - 7);
+                // ctx.fillText('samples', authX - 15, authY + 7);
 
-                ctx.beginPath();
-                ctx.moveTo(authX, authY);
-                ctx.lineTo(authX - 10, authY);
-                ctx.stroke();
+                // ctx.beginPath();
+                // ctx.moveTo(authX, authY);
+                // ctx.lineTo(authX - 10, authY);
+                // ctx.stroke();
 
-                ctx.beginPath();
-                ctx.arc(authX, authY, 3, 0, Math.PI * 2);
-                ctx.fill();
+                // ctx.beginPath();
+                // ctx.arc(authX, authY, 3, 0, Math.PI * 2);
+                // ctx.fill();
 
                 ctx.restore();
             }

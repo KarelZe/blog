@@ -14,7 +14,7 @@ Training AI models on synthetic data is a data scientist's (and management's) dr
 
 A paper by Alaa et al. titled *"How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"*[^1] sheds light on these questions and caught my attention.
 
-More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray ✨), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets (see video below). Let's examine whether it lives up to its promise.
+More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray ✨), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets. Let's examine whether it lives up to its promise.
 
 ## What Makes a Good Synthetic Dataset?
 
@@ -118,11 +118,15 @@ We can distinguish the following cases:
 
 It's also possible to summarize performance using single scalars instead of curves. Based on $P_\alpha$ or $R_\beta$ curves and the diagonal, we can derive the *integrated* $P_\alpha$ ($\operatorname{IP}_{\alpha}$) and *integrated* $R_\beta$ $(\operatorname{IR}_{\beta})$, which is simply the $1 - 2 \times$ the area enclosed between the $\alpha$-precision and $\beta$-recall curves and the diagonal.
 
+```yaml
+TODO: add d3.js plot and visualize how IP and IR changes.
+```
+
 ## Use in evaluation and auditing tasks
 
 Let's next see how we can use $\alpha$-precision, $\beta$-recall, and authenticity to our advantage for auditing the generative model and evaluating $\mathcal{E}$ on the embedded images.
 
-![evaluation and auditing pipeline](auditing_evaluation_pipeline.png)
+![evaluation and auditing pipeline](auditing_evaluation_pipeline.svg)
 
 **Evaluation pipeline:** The first application lies in *evaluation* the generative model. By embedding the input features into a feature space, we can evaluate $\mathcal{E}$ on the embedded real/generated features. This allows us to assess the quality of our synthetic data for the desired qualities and ultimately determine how much faith we can place in our synthetic data.
 
