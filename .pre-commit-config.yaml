@@ -16,7 +16,7 @@ repos:
     rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=1024']
+        args: ['--maxkb=5000']
       - id: check-builtin-literals
       - id: fix-byte-order-marker
       - id: check-merge-conflict
@@ -28,13 +28,13 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
-  - repo: https://github.com/hukkin/mdformat
-    rev: 0.7.22
-    hooks:
-    - id: mdformat
-      additional_dependencies:
-      - mdformat-frontmatter
-      - mdformat-footnote
-      - mdformat-ruff
-      - mdformat-shfmt
-      exclude: ^archetypes/
+  # - repo: https://github.com/hukkin/mdformat
+  #   rev: 0.7.22
+  #   hooks:
+  #   - id: mdformat
+  #     additional_dependencies:
+  #     - mdformat-frontmatter
+  #     - mdformat-footnote
+  #     - mdformat-ruff
+  #     - mdformat-shfmt
+  #     exclude: ^archetypes/

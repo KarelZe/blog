@@ -1,0 +1,28 @@
+{{ $match := .Get "match" | default "*" }}
+{{ $group := .Get "group" | default "gallery" }}
+{{ $images := .Page.Resources.Match $match }}
+<style>
+    .image-gallery {overflow: auto; margin-left: -1%!important;}
+    .image-gallery li {float: left; display: block; margin: 0 0 1% 1%; width: 19%;}
+    .image-gallery li a {text-align: center; text-decoration: none!important; color: #777;}
+    .image-gallery li a span {display: block; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding: 3px 0;}
+    .image-gallery li a img {width: 100%; display: block;}
+</style>
+<ul class="image-gallery">
+  {{ range $images }}
+    {{ if in (slice ".jpg" ".jpeg" ".png" ".gif" ".webp") (path.Ext .Name) }}
+      {{- $imagetitle := index (split .Name ".") 0 -}}
+      <li>
+        <a href="{{ (.Fit "1600x1600 q50").Permalink }}"
+           title="{{ $imagetitle }}"
+           class="lightbox-image"
+           data-lightbox="{{ $group }}">
+          <img src="{{ (.Fill "300x300 q50").Permalink }}"
+               alt="{{ $imagetitle }}"
+               title="{{ $imagetitle }}"
+               loading="lazy">
+        </a>
+      </li>
+    {{ end }}
+  {{ end }}
+</ul>
