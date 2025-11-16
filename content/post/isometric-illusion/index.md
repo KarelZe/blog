@@ -5,9 +5,9 @@ Description: Creating monument valley-like images in Blender
 Tags: [blender, art, ustwo, monument valley, blendernation]
 Categories: [art]
 DisableComments: false
-thumbnail: images/thumbnail_monument_valley.jpg
+thumbnail: images/thumbnail_monument_valley.png
 images:
-  - images/thumbnail_monument_valley.jpg
+  - images/thumbnail_monument_valley.png
 ---
 
 While doing my attractors project, I accidentally came across the drawings by [M.C. Escher](http://www.mcescher.com/). I have seen some of his drawings earlier at a friend’s house, but didn’t realize that they were actually created by him. I stuck with the idea of creating impossible objects in Blender by myself but couldn’t think of a proper scene setup.

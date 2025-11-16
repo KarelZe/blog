@@ -5,6 +5,9 @@ Description: Timelapse of writing a thesis
 Tags: [academia, thesis, making-of, timelapse]
 Categories: [academia]
 DisableComments: false
+thumbnail: images/thumbnail_writing_thesis.png
+images:
+  - images/thumbnail_writing_thesis.png
 ---
 
 While procrastinating on my thesis research, I came across [a timelapse of a research paper in the making](https://youtu.be/hNENiG7LAnc?feature=shared) by Tim Weninger. I wanted to create a video similar to his but for my own thesis.🥳
