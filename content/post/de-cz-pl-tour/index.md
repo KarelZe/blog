@@ -88,7 +88,7 @@ The journey taught me practical wisdom: you can never have enough spare tubes. A
 
 ## Coming Home
 
-From Opole I took a Flixbus back to Karlsruhe. The connection is direct, takes bikes [^1], and runs through the breathtaking [Giant Mountains](__https://en.wikipedia.org/wiki/Giant_Mountains__). I plan to come back to the Giant Mountains for a new adventure. What's going to be your next adventure?
+From Opole I took a Flixbus back to Karlsruhe. The connection is direct, takes bikes [^1], and runs through the breathtaking [Giant Mountains](https://en.wikipedia.org/wiki/Giant_Mountains). I plan to come back to the Giant Mountains for a new adventure. What's going to be your next adventure?
 
 [^2]: I hadn't known the exact address at the beginning of the trip, as I only new the address from my grandma's birth certificate from the early 30s. Read more about this in a later section.
 
