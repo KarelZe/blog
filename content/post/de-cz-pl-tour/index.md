@@ -44,7 +44,7 @@ I crossed paths with the Camino de Santiago and spotted my daily record of 14 ro
 
 The Czech forest tracks, however, demanded respect. What looked like paths on the map often turned into obstacle courses: coarse gravel that rattled every bolt, deep furrows carved by harvesters and tractors, and puddles so massive that they deserved their own names. I dubbed the first one Lake Gambrinus [^3]. Some were inhabited by frogs and required using my bike as a walking frame to wade through. On particularly waterlogged sections, I'd prop myself against the handlebars like an improvised rollator. Practice for old age, I suppose 👵🏻.
 
-{{< gallery match="czech\_\*.jpg" group="czech republic" size="300x300" quality="q60" >}}
+{{< gallery match="czech*.jpg" group="czech republic" size="300x300" quality="q60" >}}
 
 ## Listening to Your Body
 
