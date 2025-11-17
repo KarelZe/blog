@@ -37,4 +37,5 @@ repos:
   #     - mdformat-footnote
   #     - mdformat-ruff
   #     - mdformat-shfmt
+  #     - mdformat-gfm # GitHub Flavored Markdown
   #     exclude: ^archetypes/
