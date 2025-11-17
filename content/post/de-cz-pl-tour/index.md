@@ -34,7 +34,7 @@ At the Czech border, I crossed the [EuroVelo 13](https://de.eurovelo.com/ev13) (
 
 ## Calendar Picture Country
 
-The Czech landscape unfolded like calendar pictures. Rolling through Mariánské Lázně and toward Pilsen (home to the Pilsner, cheers 🍻), I encountered some of the trip's finest moments: the spectacular hanging bridge crossing over the Mže River, fields that looked like Windows XP wallpapers, and villages structured exactly as in grandmother's picture books-a pond, a chapel, a bus stop. For the first time in my live, I've a
+The Czech landscape unfolded like calendar pictures. Rolling through Mariánské Lázně and toward Pilsen (home to the Pilsner, cheers 🍻), I encountered some of the trip's finest moments: the spectacular hanging bridge crossing over the Mže River, fields that looked like Windows XP wallpapers, and villages structured exactly as in grandmother's picture books-a pond, a chapel, a bus stop.
 
 The Czechs are pragmatic about roads and cycle paths. A yellow sign with a cyclist means it's both, shared peacefully when traffic is light. Throughout my entire trip I only encountered few other cyclists. The dogs, however, bark their souls out as you pass. In vain.
 
@@ -80,9 +80,9 @@ The technical team at castle Moszna came to my rescue the next morning, arrangin
 
 This wasn't just a bike tour; it was an free masterclass in resilience, problem-solving, and self-awareness. I learned that progress is progress, no matter how small. On long stretches, I motivated myself by celebrating every 10 kilometers or round number - at 50 km, imagining it's just 1.5 hours in a gym; at 14 km, thinking it's twice my commute to work. Altogether I rode 1,160 km with 14,181 m in elevation.
 
-As I pushed further, I wondered what lessons translate to daily life. I've achieved more than I seriously thought possible. I solved problems as they arose. Perhaps in my daily life, I'm my own highest mountain and should seek more adventures there too.
+As I pushed further, I wondered what lessons translate to daily life. I've achieved more than I seriously thought possible. Perhaps in my daily life, I'm my own highest mountain and should seek more adventures there too.
 
-But more importantly, it showed me I often rush - a person who can't sit long at breakfast or in restaurants, always needing to progress on the route. I want to savor the moments more in the future.🙇
+But more importantly, it showed me I often rush. I'm a person who can't sit long at breakfast or in restaurants, always needing to progress on the route. I want to savor the moments more in the future.🙇
 
 The journey taught me practical wisdom: you can never have enough spare tubes. Amen.
 

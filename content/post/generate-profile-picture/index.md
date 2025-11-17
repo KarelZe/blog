@@ -5,6 +5,9 @@ Description: Generating profile pictures with FLUX.1 and LoRA
 Tags: [profile-picture, flux, LoRA, replicate, deep-fake]
 Categories: [misc]
 DisableComments: false
+thumbnail: images/thumbnail_headshot_flux_lora.png
+images:
+  - images/thumbnail_headshot_flux_lora.png
 ---
 
 Profile pictures are oddly similar to CVs, you need them fairly infrequently and whenever you need them, they inevitably become outdated and require a bit of tweaking. For example, the profile picture I've been using for work and talks recently turned eight years old. Happy birthday!
