@@ -1,10 +1,19 @@
 {
     "cSpell.language": "en,en-GB",
     "cSpell.words": [
+        "Alaa",
         "Atruvia",
         "bikepacking",
         "Bilz",
+        "DDPM",
         "headshot",
-        "onnxscript"
+        "hyperparameters",
+        "hyperspheres",
+        "onnxscript",
+        "outlierness",
+        "overfitted",
+        "overfitting",
+        "Parzen",
+        "Wasserstein"
     ]
 }

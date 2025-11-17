@@ -66,9 +66,7 @@ theme = "dark"
 lang = "en"
 loading = "lazy"
 
-[params.math]
-enable = true
-use = "katex"
+
 
 [menu]
 
@@ -95,6 +93,13 @@ use = "katex"
     style = "github-dark"
     codeFences = true
     guessSyntax = false
+  [markup.goldmark]
+    [markup.goldmark.extensions]
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)'], ['$', '$']]
 
 [mermaid]
 enable = true
