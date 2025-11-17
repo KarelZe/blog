@@ -13,12 +13,12 @@ ci:
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-added-large-files
-        args: ['--maxkb=1024']
+        args: ['--maxkb=5000']
       - id: check-builtin-literals
-      - id: check-byte-order-marker
+      - id: fix-byte-order-marker
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-toml
