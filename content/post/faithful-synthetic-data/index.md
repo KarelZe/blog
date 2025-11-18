@@ -8,7 +8,7 @@ DisableComments: false
 thumbnail: images/thumbnail_cat_hypersphere.png
 images:
   - images/thumbnail_cat_hypersphere.png
-draft: "true"
+draft: true
 ---
 
 Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [Atruvia](https://atruvia.de/).
