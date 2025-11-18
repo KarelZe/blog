@@ -1,5 +1,5 @@
 ---
-title: My thoughts on Nested Tokenization for Larger Context in Large Images 🪚
+title: My thoughts on Nested Tokenization for Larger Context in Large Images ✂️
 date: 2025-11-16T20:00:00+02:00
 description: My thoughts on the paper "Nested Tokenization for Larger Context in Large Images".
 tags: [tokenization, vision understanding, visual data, vision-language-models, paper]
@@ -9,3 +9,52 @@ thumbnail: images/thumbnail_nested_tokenization.png
 images:
   - images/thumbnail_nested_tokenization.png
 ---
+
+## Ressources
+
+- blog: https://bair.berkeley.edu/blog/2024/03/21/xt/
+- open review: https://openreview.net/revisions?id=km5IHr5vFv
+- Some ai-generated review: https://www.themoonlight.io/en/review/xt-nested-tokenization-for-larger-context-in-large-images
+- project website: https://ai-climate.berkeley.edu/xt-website/
+- github
+
+Paper addresses the following problem:
+- images needing to be handled by ai models are getting larger. E.g., compare the latest iPhone 17 Pro shooting images @ 45 MP that might be input to your vision-language model. On the other hand, handling large-scale images is typically sub-optimal. It either uses down-sampling, or cropping. Generally, we face a quadratic increase in memory usage as a function of image size.
+- *comment:* Guess this is due to the fact that images are rectangular but also due to the fact that attention is quadratic and that a token sequence of a larger image becomes longer?
+- *comment*: cropping is often done with global thumbnails from my experience.
+- Both cropping and down-sampling have several down-sights. Context or information gets lost (cp. classical cropping/down-sampling.)
+- The authors draw an analogy from soccer. For spectators it would not be enough to watch the game in low resolutions or see only the crops with the ball itself. Mare practically, to diagnose tiny patches of cancer every detail matters.
+- *comment:* take care on your down-sampling strategy. Add some notes on pillows / common down-sampling algorithms.
+- *comment:* We face similar challenges at work. Uploads get quickly shot with phone camera, but what matters most are details like punctuation, diacritics etc. which are much harder to see on gigantic images.
+- They introduce $xT$, a framework to model large images end-to-end to contemporary GPUS while
+
+## Core idea
+
+- *analogy:* solve a giant jigsaw puzzle. Look at individual pieces smaller sections first, then figure out how they fit into a bigger picture. $xT$ chops large images into smaller pieces hierarchically and learn how they relate on a larger scale.
+- Authors call it *nested tokenization*: Basically, an image is chopped into individual pieces, which map to tokens. The process is hierarchical/nested. That is, an image is split into regions, and each region can than be further subdivided into smaller regions,  depending on the resolution of the vision backbone (which is called *region encoder* in the paper) before being patchified and processed by the region encoder.
+- The nested/hierarchical approach allows to extract features at different scales on a local level.
+- *comment:* Explain how this is different from:
+	- what is done in classical vision towers
+	- how window attention and swin relates. What ideas are similar, what are different. Probably that swin only sees cropped images.
+- To encode both context and process regions the architecture features two components:
+	- **region encoder:** convert independent regions into detailed representations i.e., extract image features. Might be a CNN or some transformer-based model like Swin
+	- **context encoder:** take independent region encodings and stich them together so that insights from one token are considered int he context of other tokens. Can be *any* long sequence model. Authors use Transformer- and state-space-based models.
+	- *Note:* Architectures were generally made for language, but authors demonstrate they are also suitable for this vision task (use in context encoders.)
+- Combination of region and context encoders maintains the fidelty of original image's details while integrating long-distance context
+
+![architectural overview xt](architectural_overview_xt.png)
+The receptive field of vision backbones:
+
+![receptive field](xt-receptive-field.png)
+
+## Experiments
+
+- classification (iNaturalist) of animals, context-dependent segmentation and object detection in context tasks
+- In their experiment smaller models (fewer parameters) achieve higher accuracy on all downstream tasks, while consuming much less memory.
+- Images as large as $29,000x25,000$ px can be processed on 40 GB A100s. Pretty impressive.
+
+## Impact
+
+In their blog they write:
+
+> We’re stepping into a new era where we don’t have to compromise on the clarity or breadth of our vision. xT is our big leap towards models that can juggle the intricacies of large-scale images without breaking a sweat.
