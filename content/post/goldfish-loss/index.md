@@ -1,5 +1,5 @@
 ---
-title: "My thoughts on Be like a Goldfish, Don’t Memorize!🐠"
+title: "My thoughts on »Be like a Goldfish, Don’t Memorize!«"
 date: 2025-12-02T07:52:00+02:00
 description: "My thoughts on the paper 'Be like a Goldfish, Don’t Memorize!' and how it mitigates memorization in LLMs."
 Tags: ["causal-language-modelling", "llm", "memorization", "paper", "ml"]
