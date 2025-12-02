@@ -2,7 +2,7 @@
 title: My thoughts on How Faithful is Your Synthetic Data?🛸
 date: 2025-09-07T07:52:00+02:00
 description: My thoughts on the paper "How Faithful is Your Synthetic Data?".
-Tags: [synthetic-data, data-sampling, visual-data, vision-language-models, paper]
+Tags: [synthetic-data, data-sampling, visual-data, vision-language-models, paper, ml]
 Categories: [ai]
 DisableComments: false
 thumbnail: images/thumbnail_cat_hypersphere.png

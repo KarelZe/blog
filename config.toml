@@ -77,8 +77,15 @@ loading = "lazy"
   url = "/"
 
   [[menu.main]]
-  name = "CV"
+  name = "Travel"
   weight = 300
+  identifier = "travel"
+  url = "/tags/travel/"
+
+
+  [[menu.main]]
+  name = "CV"
+  weight = 350
   identifier = "cv"
   url = "/documents/cv_en.pdf"
 

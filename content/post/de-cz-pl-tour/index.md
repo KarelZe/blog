@@ -2,7 +2,7 @@
 title: Cycling to Heřmánky nad Odru📍
 date: 2025-11-15T07:00:00+02:00
 Description: In autumn I went on a gravel bike trip to Silesia. This blog post collects some of the best images and thoughts on the trip.
-Tags: [cycling, adventure, bikepacking, germany, czech republic, poland, gravel biking]
+Tags: [cycling, adventure, bikepacking, germany, czech republic, poland, gravel biking, travel]
 Categories: [travel]
 DisableComments: false
 thumbnail: images/thumbnail_gravel_autumn.png
