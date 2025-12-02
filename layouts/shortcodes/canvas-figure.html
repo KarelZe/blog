@@ -1,0 +1,12 @@
+<figure {{ with .Get "class" }} class="{{ . }}"{{ end }}>
+    {{/* Three.js MUST be loaded first */}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    {{/* The content between the shortcode tags is inserted as safe HTML */}}
+    {{ .Inner | safeHTML }}
+
+    {{/* The figcaption is passed as a parameter */}}
+    {{ with .Get "caption" }}
+        <figcaption>{{ . }}</figcaption>
+    {{ end }}
+</figure>
