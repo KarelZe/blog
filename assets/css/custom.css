@@ -1,6 +1,29 @@
 .post__thumbnail {
     height: 25em !important;
 }
+
+/* Custom Styles */
+
+/* Add rounded corners to code blocks to match visualization */
+pre, code {
+    border-radius: 6px;
+}
+
+/* Ensure inline code also has rounded corners */
+code {
+    border-radius: 4px;
+}
+
+/* Style for block code (pre + code) */
+pre code {
+    border-radius: 0; /* Remove inner radius since pre already has it */
+}
+
+/* Smaller border radius for inline code */
+p code, li code, td code {
+    border-radius: 3px;
+}
+
 .theme--light .post__thumbnail-wrapper,
 .theme--dark .post__thumbnail-wrapper {
     box-shadow: none !important;
