@@ -1,6 +1,6 @@
 ---
 title: My thoughts on How Faithful is Your Synthetic Data?🛸
-date: 2025-09-07T07:52:00+02:00
+date: 2025-12-01T07:52:00+02:00
 description: My thoughts on the paper "How Faithful is Your Synthetic Data?".
 Tags: [synthetic-data, data-sampling, visual-data, vision-language-models, paper]
 Categories: [ai]
@@ -8,7 +8,7 @@ DisableComments: false
 thumbnail: images/thumbnail_cat_hypersphere.png
 images:
   - images/thumbnail_cat_hypersphere.png
-draft: true
+draft: false
 ---
 
 Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [Atruvia](https://atruvia.de/).

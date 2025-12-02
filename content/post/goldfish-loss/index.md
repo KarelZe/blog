@@ -5,9 +5,9 @@ description: "My thoughts on the paper 'Be like a Goldfish, Don’t Memorize!' a
 Tags: ["causal-language-modelling", "llm", "memorization", "paper", "ml"]
 Categories: ["ai"]
 DisableComments: false
-thumbnail: images/goldfish_loss_diagram.png
+thumbnail: images/thumbnail_goldfish_loss.png
 images:
-  - images/goldfish_loss_diagram.png
+  - images/thumbnail_goldfish_loss.png
 ---
 
 Training AI models on vast datasets is a double-edged sword. While we want them to learn general patterns, we desperately want to avoid them memorizing sensitive data or copyrighted material verbatim. A recent paper titled **"Be like a Goldfish, Don’t Memorize!"** introduces a strikingly simple yet effective technique to tackle this: the **Goldfish Loss**.
