@@ -2,7 +2,7 @@ baseURL = "https://blog.markusbilz.com/"
 languageCode = "en"
 DefaultContentLanguage = "en"
 title = "I'm Markus Bilz"
-theme = ["anatole", "hugo-cite"]
+theme = ["anatole"]
 summarylength = 10
 enableEmoji = true
 math=true
@@ -13,7 +13,7 @@ description = "Data Scientist · Learner 🌱"
 profilePicture = "images/profile.jpg"
 keywords = "Bilz, Markus, DHBW, KIT, Atruvia, Computer Science Student, Commercial Computer Scientist, Karlsruhe"
 favicon = "favicons/"
-customCss = ["css/custom.css", "css/lightbox.css", "css/hugo-cite.css"]
+customCss = ["css/custom.css", "css/lightbox.css"]
 customJs = ["js/lightbox.js"]
 
 [params.repository]

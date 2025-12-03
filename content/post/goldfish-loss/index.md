@@ -11,7 +11,7 @@ images:
 bibFile: bib.json
 ---
 
-Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" {{< cite "tyen2024goldfish" >}} introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
+Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" (TODO: citation) introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
 The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This effectively forces the model to learn generalizable patterns instead of relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
@@ -82,7 +82,7 @@ For very large values of $k$, the goldfish loss approaches the standard CLM obje
 
 ![meme on forgetful dory from finding nemo](meme-dory.jpg)
 
-As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different (wait for the Section on limitations).[^9] Applying the same mask prevents the model from peeking for duplicates or inconsistent masking if the model is trained for several epochs. We will discuss in the next section how to arrive at such a mask.
+As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different (wait for the Section on limitations).[^9] We will discuss in the next section how to arrive at such a mask.
 
 For now, I'd like to stress the following aspects:
 
@@ -126,19 +126,47 @@ def compute_goldfish_loss(logits: torch.tensor, tokens: torch.tensor, mask: torc
 
 ### The Hashed Mask
 
-You might wonder: "Why not just drop random tokens?"
-If you use a truly random mask (like a coin flip), the model might see the same text multiple times across epochs with *different* masks. Eventually, it would see (and learn) every token.
+Let's now focus on the token mask; the second
+main contribution of the paper.
 
-To prevent this, the authors use a **Hashed Mask**. The decision to mask a token $x_i$ is deterministic based on its preceding context (the previous $h$ tokens).
+Recall that most language models are trained on the internet corpus and the internet is a fuzzy place[^10]. Texts may copied around the web, may be embedded into larger texts (buzzfeed in mean you) or restructured and data curation makes up for a large part of the effort spent on LLM training.
+
+Ideally, we'd like to mask the same passages identically to prevent leakage.
+
+Naive approaches, like masking every $k$-th character (referred in the paper as *static mask*) don't help here much, as the mask would aligned to the pre-training sequence and deviate if text was chunked differently or prefixed differently. Eventually, the model could see (and learn) every token. Feel free to experiment with the downsides of *static masking* in the interactive visualization.
+
+Another layman's idea could be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), however, the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
+
+That's why, we need a mask, that is:
+
+- deterministic
+- independent from the absolute position of a sequence within longer sequence
+
+Hence, the author's propose a *localized hashed mask*. The decision to mask a token $x_i$ is deterministic based on its immediate preceding context (the previous $h$ tokens) and the output hash function $\operatorname{hash}:|V|^h \rightarrow \mathbb{R}$. We mask $x_i$ if:
 $$
-\text{hash}(x_{i-h}, \dots, x_{i-1}) \mod k == 0 \implies \text{Mask } x_i
+\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{Mask } x_i
 $$
-This ensures that whenever the model encounters the specific phrase "The cat sat on the...", it *always* skips learning the word "mat". It's a "pseudo-random" mask that is consistent across training epochs.
+
+Note, that with the context width $h$ we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". Definitely unsatisfying. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation the context widht defaults to $h=4$.
+
+```yaml
+TODO: comment on masking the beginning of sequences.
+```
+
+Now it's your turn to play. Adjust the slider below to see how the parameter $k$ affects which tokens are masked. Adjust the text and suffixes. You can also switch between *Static Mask* and *Hashed Mask*. I'd also recommend to add vary punctuation to see how it affects masking.
+
+{{< goldfish-slider >}}
+
+Here's a simple python implementation. The authors reference implementation is slightly different as it uses a hash-table-based approach, which is both performant and mostly collision-free [^11].
+
+```yaml
+TODO: maybe adapt the implementation of the authors.
+```
 
 ```python
-# Hashed Mask Generation (PyTorch)
-import torch
 import hashlib
+
+import torch
 
 def generate_hashed_mask(tokens, k, context_width=1):
     """Generate deterministic mask based on context hash.
@@ -194,18 +222,11 @@ def generate_hashed_mask_batch(token_ids, k, context_width=1):
     return torch.stack(masks)
 ```
 
-> [!NOTE]
-> **True vs. Pseudo-Randomness**: This distinction is vital. In cryptography, we need true randomness (like Cloudflare using **lava lamps** to generate entropy). Here, we *want* determinism disguised as randomness to ensure consistent masking.
 
-### Interactive Visualization
-
-Adjust the slider below to see how the parameter $k$ affects which tokens are masked. You can also switch between **Static Mask** (masking every $k$-th token) and **Hashed Mask** (masking based on the hash of the context).
-
-{{< goldfish-slider >}}
 
 ## Experiments & Results
 
-The authors tested Goldfish Loss against standard training using **"Extractable Memorization"** {{< cite "carlini2023quantifying" >}} (defined as the ability to reproduce a training example given a prefix).
+The authors tested Goldfish Loss against standard training using **"Extractable Memorization"** (TODO: citation)  (defined as the ability to reproduce a training example given a prefix).
 
 ### Extreme Setup
 They trained a LLaMA-2-7B model for **100 epochs** on a small set of Wikipedia articles—a recipe for disaster (memorization).
@@ -234,7 +255,6 @@ However, I remain slightly skeptical about the "copyright compliance" angle. Whi
 
 ## References
 
-{{< bibliography >}}
 
 
 [^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
@@ -246,3 +266,5 @@ However, I remain slightly skeptical about the "copyright compliance" angle. Whi
 [^7]: You can play around with different tokenizers on [tiktokenizer.vercel.app](https://tiktokenizer.vercel.app/?model=gpt-4). It's also a nifty tool, if your models need to run on a tight budget.
 [^8]: see e.g., the [FT-Transformer paper](https://arxiv.org/pdf/2106.11959)
 [^9]: In this context, pseudo-random doesn't refer to pseudo-random number generators, which are the most common variant in modern computers, but rather to the fact, that masking of tokens is done randomly and identical sequences will be masked identically. If you are interested in true random number generators, you can read [this article](https://blog.cloudflare.com/lavarand-in-production-the-nitty-gritty-technical-details/) on a creative approach to generate truly random numbers using lava lamps at cloudflare.
+[^10]: For some interesting infographics see this [nature article](https://www.nature.com/articles/d41586-024-03990-2)
+[^11]: For original source code see: http://burtleburtle.net/bob/hash/integer.html,
