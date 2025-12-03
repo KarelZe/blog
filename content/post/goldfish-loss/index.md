@@ -76,9 +76,9 @@ $$
 \mathcal{L}_{\text{goldfish}}(\theta)=-\frac{1}{|G|} \sum_{i=1}^L G_i \log P\left(x_i \mid x_{<i} ; \theta\right)
 $$
 
-where $G_i \in \{0, 1\}$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise. By intuition, hyperparameter $k$ controls the aggressiveness of masking.
+where $G_i \in \{0, 1\}$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise.
 
-For very large values of $k$, the goldfish loss approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
+By intuition, hyperparameter $k$ controls the aggressiveness of masking. For very large values of $k$, the goldfish loss approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
 
 ![meme on forgetful dory from finding nemo](meme-dory.jpg)
 
@@ -144,7 +144,7 @@ That's why, we need a mask, that is:
 
 Hence, the author's propose a *localized hashed mask*. The decision to mask a token $x_i$ is deterministic based on its immediate preceding context (the previous $h$ tokens) and the output hash function $\operatorname{hash}:|V|^h \rightarrow \mathbb{R}$. We mask $x_i$ if:
 $$
-\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{Mask } x_i
+\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{G}_i = 1
 $$
 
 Note, that with the context width $h$ we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". Definitely unsatisfying. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation the context widht defaults to $h=4$.
@@ -153,7 +153,7 @@ Note, that with the context width $h$ we introduce another hyperparameter that n
 TODO: comment on masking the beginning of sequences.
 ```
 
-Now it's your turn to play. Adjust the slider below to see how the parameter $k$ affects which tokens are masked. Adjust the text and suffixes. You can also switch between *Static Mask* and *Hashed Mask*. I'd also recommend to add vary punctuation to see how it affects masking.
+Now it's your turn to play. Adjust the slider below to see how the parameter $k$ affects which tokens are masked. Adjust the text and suffixes. You can also switch between *Static Mask* and the *Hashed Mask*. I'd also recommend to add vary punctuation to see how it affects masking.
 
 {{< goldfish-slider >}}
 
@@ -223,7 +223,6 @@ def generate_hashed_mask_batch(token_ids, k, context_width=1):
 ```
 
 
-
 ## Experiments & Results
 
 The authors tested Goldfish Loss against standard training using **"Extractable Memorization"** (TODO: citation)  (defined as the ability to reproduce a training example given a prefix).
@@ -236,26 +235,33 @@ They trained a LLaMA-2-7B model for **100 epochs** on a small set of Wikipedia a
 ### Standard Setup
 On a more realistic setup (TinyLLaMA-1.1B, single epoch), Goldfish Loss still significantly reduced the model's ability to reproduce training sequences compared to standard CLM.
 
+NOTE: It would have been interesting to see how the standard CLM model with different temperatures would have compared against the goldfish models.
+
 > [!NOTE]
 > **Dropout vs. Goldfish Loss**: While both are regularization techniques, they differ fundamentally. **Dropout** randomly disables neurons (architecture) to prevent feature co-adaptation. **Goldfish Loss** disables loss computation for specific data points (objective) to prevent verbatim recall.
 
 ## Limitations
 
-There is no free lunch.
-1.  **Training Efficiency:** Since you are ignoring $1/k$ of the signals, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model.
-2.  **Near-Duplicates:** If the training data contains near-duplicates (e.g., the same article with a slightly different header), the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies.
+There are some caveats though:
+
+1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on the RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss (see Fig. 5 in paper).
+2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. E.g., small rewrites or some added punctuation or different different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies. (see Sec. 6.3 in paper)
 
 ## Conclusion
 
-Goldfish Loss is a clever, lightweight intervention that can be easily dropped into existing training pipelines. It offers a promising path for training powerful models that respect privacy and copyright by design, rather than by post-hoc filtering.
+Goldfish loss is a clever, lightweight adaption of the CLM that can be easily dropped into existing training recipes. This is a big plus for practitioners with limited resources.
 
-> We hope that goldfish loss paves the way for aiding copyright compliance rather than serving as a means to misuse private data maliciously.
+It offers a promising alternative for training powerful models that respect privacy-by-design, rather than relying on complex machine unlearning strategies. I agree with the authors, that its most It's most useful on high-risk sources or late phases of training e.g., fine-tuning.
 
-However, I remain slightly skeptical about the "copyright compliance" angle. While it prevents *verbatim* reproduction, the model still learns the *information* and *style* from the copyrighted works. Is a paraphrased copy compliant? That's a question for the courts, not the loss function.
+Practically, the positive effects from the *goldfish loss* will only as good as the engineering that went into filtering and removal of near-duplicates of the training corpus. Common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds need to be rethought, as both would impede consistent masking. [^13]
+
+Lastly, I remain slightly skeptical about their copyright compliance angle:
+
+> We hope that goldfish loss paves the way for aiding copyright compliance rather than serving as a means to misuse private data maliciously. (Sec. 7)
+
+While their loss function prevents *verbatim* reproduction, the model still learns the *information* and *style* from the copyrighted works. Is a paraphrased text more copyrighted-compliant? That's a question for the courts, not the loss function.
 
 ## References
-
-
 
 [^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
 [^2]: While conceptually similar to overfitting, an overfitted model would fit the training distribution too precisely including noise and idiosyncrasies and perform poorly on the true underlying distribution.
@@ -267,4 +273,5 @@ However, I remain slightly skeptical about the "copyright compliance" angle. Whi
 [^8]: see e.g., the [FT-Transformer paper](https://arxiv.org/pdf/2106.11959)
 [^9]: In this context, pseudo-random doesn't refer to pseudo-random number generators, which are the most common variant in modern computers, but rather to the fact, that masking of tokens is done randomly and identical sequences will be masked identically. If you are interested in true random number generators, you can read [this article](https://blog.cloudflare.com/lavarand-in-production-the-nitty-gritty-technical-details/) on a creative approach to generate truly random numbers using lava lamps at cloudflare.
 [^10]: For some interesting infographics see this [nature article](https://www.nature.com/articles/d41586-024-03990-2)
-[^11]: For original source code see: http://burtleburtle.net/bob/hash/integer.html,
+[^11]: For original source code see [here.](https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html)
+[^13]: See e.g, the [technical report of Phi-4](https://arxiv.org/pdf/2412.08905)
