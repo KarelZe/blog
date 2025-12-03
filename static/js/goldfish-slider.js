@@ -5,16 +5,29 @@ document.addEventListener('DOMContentLoaded', function () {
     const maskTypeRadios = document.getElementsByName('mask-type');
     const inputText = document.getElementById('input-text');
 
-    // Simple hash function for demonstration
-    // Hashes a string to an integer
-    function simpleHash(str) {
+    // Simulated hash table (fixed random values for consistency)
+    // In a real app, this would be a large array of random floats [0, 1)
+    const TABLE_SIZE = 1000;
+    const HASH_TABLE = new Float32Array(TABLE_SIZE);
+    // Seeded random generator for reproducibility across reloads
+    let seed = 12345;
+    function random() {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+    for (let i = 0; i < TABLE_SIZE; i++) {
+        HASH_TABLE[i] = random();
+    }
+
+    // Simple string hash to map context to table index
+    function getTableIndex(str) {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
             const char = str.charCodeAt(i);
             hash = ((hash << 5) - hash) + char;
             hash = hash & hash; // Convert to 32bit integer
         }
-        return Math.abs(hash);
+        return Math.abs(hash) % TABLE_SIZE;
     }
 
     function updateMask() {
@@ -37,7 +50,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const tokens = sampleText.split(' ');
+        const tokens = sampleText.split(/\s+/); // Split by whitespace
+        const contextWidth = 4; // h=4, matching the python example
 
         // Clear current text
         textContainer.innerHTML = '';
@@ -55,14 +69,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 // We use (index + 1) % k === 0 to make it 1-based for intuition (e.g. k=4 masks 4th, 8th...)
                 isMasked = ((index + 1) % k) === 0;
             } else {
-                // Hashed mask: depends on context
-                // For demo, we use the previous token as context (h=1)
-                // In reality, h is larger (e.g., 13)
-                const context = index > 0 ? tokens[index - 1] : "START";
-                const hash = simpleHash(context + token); // Hash context + current token (or just context)
-                // The paper says: hash(context) < 1/k.
-                // Equivalent to: hash(context) % k === 0
-                isMasked = (hash % k) === 0;
+                // Hashed mask (hash-table strategy)
+
+                // Cold Start: First (h-1) tokens are NEVER masked
+                if (index < contextWidth - 1) {
+                    isMasked = false;
+                } else {
+                    // Context window: [index - (h-1), ..., index]
+                    // This window has length 'contextWidth' and ends at the current token
+                    // We join them to simulate the "product of tokens"
+                    const start = index - (contextWidth - 1);
+                    const end = index + 1; // slice is exclusive
+                    const windowTokens = tokens.slice(start, end);
+                    const contextStr = windowTokens.join(" ");
+
+                    const tableIndex = getTableIndex(contextStr);
+                    const randomValue = HASH_TABLE[tableIndex];
+
+                    // Drop if random value < 1/k
+                    isMasked = randomValue < (1.0 / k);
+                }
             }
 
             if (isMasked) {

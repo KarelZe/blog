@@ -17,12 +17,12 @@ The novel idea is to exclude specific tokens from the loss calculation during tr
 
 ## The Problem of Memorization
 
-Memorization means that a generative model, like a LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in Large Language Models (LLMs) poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Such as:
+Memorization means that a generative model, like an LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in Large Language Models (LLMs) poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Risks include:
 
-*   **Copyright Risk for Providers/Customers:** If a model memorizes lyrics or books or copyrighted code, it can reproduce them verbatim, leading to uncertainties and potential lawsuits for those hosting the models and consuming the output. Recent practical examples include the lawsuit against Meta for training Llama 3 on Anna's Archive and LibGen [^3] or a lawsuit between German songwriter Helene Fischer (represented by GEMA) and OpenAI for memorizing the lyrics of "Atemlos durch die Nacht"[^4],[^5].
-*   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personal identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personal identifiable information (PII) because the model had memorized them from the training corpus? [^6]
+*   **Copyright Risk for Providers/Customers:** If a model memorizes lyrics, books, or copyrighted code, it can reproduce them verbatim, leading to uncertainties and potential lawsuits for those hosting the models and consuming the output. Recent practical examples include the lawsuit against Meta for training Llama 3 on Anna's Archive and LibGen [^3] or a lawsuit by German songwriter Helene Fischer (represented by GEMA) against OpenAI for memorizing the lyrics of "Atemlos durch die Nacht"[^4],[^5].
+*   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personally identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personally identifiable information (PII) because the model had memorized them from the training corpus? [^6]
 
-No wonder, European regulators are increasingly focusing on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis and implement counter-measures for our own models. Let's see if the *goldfish loss* could come to our rescue.
+No wonder European regulators are increasingly focusing on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis, and implement countermeasures for our own models. Let's see if the *goldfish loss* could come to our rescue.
 
 ## The Goldfish Loss
 
@@ -30,7 +30,7 @@ The authors propose *Goldfish Loss (GL)*, a modification to the standard trainin
 
 ### The Standard Causal Language Modelling Objective
 
-Standard CLM trains the model to predict the next token $x_i$ given all previous tokens $x_{<i}$. Tokens are nowadays mostly sub-words e.g., the tokenizer of GPT-4 would split `Bilz` into `B`, `il`, `z`.[^7] The loss is calculated for *every* token in the sequence $x=\left\{x_i\right\}$ of $L$ training tokens, where $\theta$ represents the model parameters:
+Standard CLM trains the model to predict the next token $x_i$ given all previous tokens $x_{<i}$. Tokens are nowadays mostly sub-words; e.g., the tokenizer of GPT-4 would split `Bilz` into `B`, `il`, `z`.[^7] The loss is calculated for *every* token in the sequence $x=\left\{x_i\right\}$ of $L$ training tokens, where $\theta$ represents the model parameters:
 
 $$
 \mathcal{L}(\theta)=-\frac{1}{L} \sum_{i=1}^L \log P\left(x_i \mid x_{<i} ; \theta\right).
@@ -46,15 +46,15 @@ Here's a naive python implementation:
 import torch
 import torch.nn.functional as F
 
-def compute_clm_loss(logits: torch.tensor, tokens: torch.tensor) -> torch.tensor:
+def compute_clm_loss(logits: torch.Tensor, tokens: torch.Tensor) -> torch.Tensor:
     """Compute standard CLM loss on all tokens.
 
     Args:
-        logits (torch.tensor): Model predictions [batch_size, seq_len, vocab_size]
-        tokens (torch.tensor): Target tokens [batch_size, seq_len]
+        logits (torch.Tensor): Model predictions [batch_size, seq_len, vocab_size]
+        tokens (torch.Tensor): Target tokens [batch_size, seq_len]
 
     Returns:
-        torch.tensor: loss.
+        torch.Tensor: loss.
     """
     # Shift: predict token i+1 from tokens 0..i
     shift_logits = logits[:, :-1, :].contiguous()
@@ -82,7 +82,7 @@ By intuition, hyperparameter $k$ controls the aggressiveness of masking. For ver
 
 ![meme on forgetful dory from finding nemo](meme-dory.jpg)
 
-As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different (wait for the Section on limitations).[^9] We will discuss in the next section how to arrive at such a mask.
+As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different (wait for the section on limitations).[^9] We will discuss in the next section how to arrive at such a mask.
 
 For now, I'd like to stress the following aspects:
 
@@ -95,16 +95,16 @@ For now, I'd like to stress the following aspects:
 import torch
 import torch.nn.functional as F
 
-def compute_goldfish_loss(logits: torch.tensor, tokens: torch.tensor, mask: torch.tensor) -> torch.tensor:
+def compute_goldfish_loss(logits: torch.Tensor, tokens: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
     """Compute Goldfish loss only on unmasked tokens.
 
     Args:
-        logits (torch.tensor): Model predictions [batch_size, seq_len, vocab_size]
-        tokens (torch.tensor): Target tokens [batch_size, seq_len]
-        mask (torch.tensor): Binary mask [batch_size, seq_len] (1 = compute loss, 0 = skip)
+        logits (torch.Tensor): Model predictions [batch_size, seq_len, vocab_size]
+        tokens (torch.Tensor): Target tokens [batch_size, seq_len]
+        mask (torch.Tensor): Binary mask [batch_size, seq_len] (1 = compute loss, 0 = skip)
 
     Returns:
-        torch.tensor: loss.
+        torch.Tensor: loss.
     """
     # Shift: predict token i+1 from tokens 0..i
     shift_logits = logits[:, :-1, :].contiguous()
@@ -126,100 +126,96 @@ def compute_goldfish_loss(logits: torch.tensor, tokens: torch.tensor, mask: torc
 
 ### The Hashed Mask
 
-Let's now focus on the token mask; the second
-main contribution of the paper.
+Let's now focus on the token mask, the second main contribution of the paper.
 
-Recall that most language models are trained on the internet corpus and the internet is a fuzzy place[^10]. Texts may copied around the web, may be embedded into larger texts (buzzfeed in mean you) or restructured and data curation makes up for a large part of the effort spent on LLM training.
+Recall that most language models are trained on internet corpora and the internet is a fuzzy place[^10]. Texts may be copied around the web, may be embedded into larger texts (BuzzFeed, I mean you), or restructured; data curation thus makes up a large part of the effort spent on LLM training.
 
 Ideally, we'd like to mask the same passages identically to prevent leakage.
 
-Naive approaches, like masking every $k$-th character (referred in the paper as *static mask*) don't help here much, as the mask would aligned to the pre-training sequence and deviate if text was chunked differently or prefixed differently. Eventually, the model could see (and learn) every token. Feel free to experiment with the downsides of *static masking* in the interactive visualization.
+Naive approaches, like masking every $k$-th token (referred to in the paper as *static mask*), don't help much here, as the mask would be aligned to the pre-training sequence and deviate if the text were chunked or prefixed differently. Eventually, the model could see (and learn) every token. Feel free to experiment with the downsides of *static masking* in the interactive visualization.
 
-Another layman's idea could be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), however, the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
+Another idea might be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), however, the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
 
-That's why, we need a mask, that is:
+Thus, we need a mask that is:
 
 - deterministic
-- independent from the absolute position of a sequence within longer sequence
+- independent from the absolute position of a sequence within a longer sequence
 
-Hence, the author's propose a *localized hashed mask*. The decision to mask a token $x_i$ is deterministic based on its immediate preceding context (the previous $h$ tokens) and the output hash function $\operatorname{hash}:|V|^h \rightarrow \mathbb{R}$. We mask $x_i$ if:
+Hence, the authors propose a *localized hashed mask*. The decision to mask a token $x_i$ is deterministic based on its immediate preceding context (the previous $h$ tokens) and the output of a hash function $\operatorname{hash}:|V|^h \rightarrow \mathbb{R}$. We mask $x_i$ (i.e., set $G_i=0$) if:
 $$
-\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{G}_i = 1
+\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{G}_i = 0
 $$
 
-Note, that with the context width $h$ we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". Definitely unsatisfying. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation the context widht defaults to $h=4$.
+Note that with the context width $h$, we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". Definitely unsatisfying. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation, the context width defaults to $h=4$.
 
-```yaml
-TODO: comment on masking the beginning of sequences.
-```
+A nerdy implementation detail: You might wonder what happens to the first few tokens of a document. Since they don't have enough preceding tokens to form a full context of size $h$, we can't compute a hash for them. Therefore, the first $h-1$ tokens are never masked (i.e., always included in the loss).
 
-Now it's your turn to play. Adjust the slider below to see how the parameter $k$ affects which tokens are masked. Adjust the text and suffixes. You can also switch between *Static Mask* and the *Hashed Mask*. I'd also recommend to add vary punctuation to see how it affects masking.
+Now it's your turn to play. Adjust the slider below to see how the parameter $k$ affects which tokens are masked. Adjust the text and suffixes. You can also switch between *Static Mask* and the *Hashed Mask*. I also recommend varying punctation to see how it affects masking.
 
 {{< goldfish-slider >}}
 
-Here's a simple python implementation. The authors reference implementation is slightly different as it uses a hash-table-based approach, which is both performant and mostly collision-free [^11].
-
-```yaml
-TODO: maybe adapt the implementation of the authors.
-```
+Here's a Python implementation, adapted from the author's reference implementation, which uses a performant hash-table-based approach [^11].
 
 ```python
-import hashlib
+# for original implementation see supplemental:
+# https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html
 
 import torch
 
-def generate_hashed_mask(tokens, k, context_width=1):
-    """Generate deterministic mask based on context hash.
+# 1. Initialize a global hash table (simulated)
+# In a real scenario, this is a large tensor of random numbers
+TABLE_SIZE = 1000  # Simplified size for demo
+HASH_TABLE = torch.rand(TABLE_SIZE)
+
+def generate_hashed_mask(tokens, k, context_width=4):
+    """Generate deterministic mask using a hash table strategy.
 
     Args:
-        tokens: List of token strings or token IDs
+        tokens: List of token IDs (integers)
         k: Masking parameter (masks ~1/k of tokens)
-        context_width: Number of preceding tokens to use for hash (h)
+        context_width: Number of tokens in the context window (h)
 
     Returns:
         Binary mask tensor [seq_len] where 1 = compute loss, 0 = skip
     """
-    mask = []
-    for i in range(len(tokens)):
-        # Get context: previous h tokens (or "START" if at beginning)
-        if i < context_width:
-            context = "START"
-        else:
-            # Convert token IDs to strings if needed
-            context_tokens = [str(t) for t in tokens[i-context_width:i]]
-            context = " ".join(context_tokens)
+    seq_len = len(tokens)
+    mask = torch.ones(seq_len) # Default: compute loss for all
 
-        # Hash the context to get deterministic value
-        hash_value = int(hashlib.md5(context.encode()).hexdigest(), 16)
+    # Convert to tensor for easier manipulation
+    token_tensor = torch.tensor(tokens)
 
-        # Mask if hash % k == 0 (drops ~1/k tokens)
-        mask.append(0 if hash_value % k == 0 else 1)
+    # We can only mask if we have enough context
+    if seq_len < context_width:
+        return mask
 
-    return torch.tensor(mask, dtype=torch.float32)
+    # Create sliding windows of size 'context_width'
+    # unfold(dimension, size, step)
+    # Result shape: [num_windows, context_width]
+    windows = token_tensor.unfold(0, context_width, 1)
+
+    # Compute a hash for each window
+    # Reference impl uses product of tokens % table_size
+    # We use a simple sum here for demonstration stability on small integers
+    window_hashes = windows.sum(dim=1) % TABLE_SIZE
+
+    # Look up random values in the hash table
+    random_values = HASH_TABLE[window_hashes]
+
+    # Determine which to drop: value < 1/k
+    # These correspond to tokens at indices [context_width-1, seq_len-1]
+    tokens_to_drop = random_values < (1.0 / k)
+
+    # Apply drops to the mask
+    # We offset by (context_width - 1) because the first window ends at index (context_width - 1)
+    mask[context_width-1:][tokens_to_drop] = 0.0
+
+    return mask
 
 # Example usage
-tokens = ["The", "cat", "sat", "on", "the", "mat"]
-mask = generate_hashed_mask(tokens, k=4, context_width=1)
-print(mask)  # tensor([1., 0., 1., 1., 0., 1.]) (deterministic for this sequence)
-
-# For batched inputs
-def generate_hashed_mask_batch(token_ids, k, context_width=1):
-    """Generate masks for a batch of sequences.
-
-    Args:
-        token_ids: Token IDs [batch_size, seq_len]
-        k: Masking parameter
-        context_width: Number of preceding tokens (h)
-
-    Returns:
-        Binary mask tensor [batch_size, seq_len]
-    """
-    batch_size, seq_len = token_ids.shape
-    masks = []
-    for b in range(batch_size):
-        mask = generate_hashed_mask(token_ids[b].tolist(), k, context_width)
-        masks.append(mask)
-    return torch.stack(masks)
+# Using integers as token IDs
+tokens = [101, 2054, 2003, 1037, 2003, 1037, 2003, 1037]
+mask = generate_hashed_mask(tokens, k=4, context_width=4)
+print(mask)
 ```
 
 
@@ -247,9 +243,9 @@ There are some caveats though:
 1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on the RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss (see Fig. 5 in paper).
 2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. E.g., small rewrites or some added punctuation or different different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies. (see Sec. 6.3 in paper)
 
-## Conclusion
+## My thoughts
 
-Goldfish loss is a clever, lightweight adaption of the CLM that can be easily dropped into existing training recipes. This is a big plus for practitioners with limited resources.
+The goldfish loss is a clever, lightweight adaption of the CLM that can be easily dropped into existing training recipes. This is a big plus for practitioners with limited resources.
 
 It offers a promising alternative for training powerful models that respect privacy-by-design, rather than relying on complex machine unlearning strategies. I agree with the authors, that its most It's most useful on high-risk sources or late phases of training e.g., fine-tuning.
 
@@ -260,8 +256,6 @@ Lastly, I remain slightly skeptical about their copyright compliance angle:
 > We hope that goldfish loss paves the way for aiding copyright compliance rather than serving as a means to misuse private data maliciously. (Sec. 7)
 
 While their loss function prevents *verbatim* reproduction, the model still learns the *information* and *style* from the copyrighted works. Is a paraphrased text more copyrighted-compliant? That's a question for the courts, not the loss function.
-
-## References
 
 [^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
 [^2]: While conceptually similar to overfitting, an overfitted model would fit the training distribution too precisely including noise and idiosyncrasies and perform poorly on the true underlying distribution.
@@ -274,4 +268,4 @@ While their loss function prevents *verbatim* reproduction, the model still lear
 [^9]: In this context, pseudo-random doesn't refer to pseudo-random number generators, which are the most common variant in modern computers, but rather to the fact, that masking of tokens is done randomly and identical sequences will be masked identically. If you are interested in true random number generators, you can read [this article](https://blog.cloudflare.com/lavarand-in-production-the-nitty-gritty-technical-details/) on a creative approach to generate truly random numbers using lava lamps at cloudflare.
 [^10]: For some interesting infographics see this [nature article](https://www.nature.com/articles/d41586-024-03990-2)
 [^11]: For original source code see [here.](https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html)
-[^13]: See e.g, the [technical report of Phi-4](https://arxiv.org/pdf/2412.08905)
+[^13]: For applications of these techniques see e.g., the [technical report of Phi-4](https://arxiv.org/pdf/2412.08905)

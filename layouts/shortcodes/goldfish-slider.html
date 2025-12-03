@@ -26,10 +26,15 @@
         border-radius: 6px;
         color: var(--text-color);
         border: 1px solid var(--border-color);
+        box-sizing: border-box;
+        /* Ensure padding doesn't affect width */
+        width: 100%;
+        /* Ensure both take full width */
+        display: block;
+        /* Ensure consistent block behavior */
     }
 
     .goldfish-input-area {
-        width: 100%;
         resize: vertical;
     }
 
@@ -66,7 +71,8 @@
 
 <div class="goldfish-slider-container">
     <h3>Interactive Goldfish Masking</h3>
-    <p>Adjust <code>k</code>, the mask type, and the input text to see how tokens are dropped. For simplicity tokens are split by whitespace.</p>
+    <p>Adjust <code>k</code>, the mask type, and the input text to see how tokens are dropped. For simplicity tokens are
+        split by whitespace. Context length <code>h</code> set to 4.</p>
 
     <div style="margin-bottom: 15px;">
         <label for="k-slider" style="font-weight: bold;">k = <span id="k-value">4</span></label>
@@ -86,7 +92,7 @@
     <div style="margin-bottom: 15px;">
         <label for="input-text" style="font-weight: bold; display: block; margin-bottom: 5px;">Input Text:</label>
         <textarea id="input-text" rows="3"
-            class="goldfish-input-area">We choose to go to the Moon in this decade and do the other things, not because they are easy, but because they are hard."</textarea>
+            class="goldfish-input-area">We choose to go to the Moon in this decade and do the other things, not because they are easy, but because they are hard.</textarea>
     </div>
 
     <div id="goldfish-text" class="goldfish-text-area">
