@@ -1,0 +1,71 @@
+[
+    {
+        "id": "tyen2024goldfish",
+        "type": "article",
+        "title": "Be like a Goldfish, Don't Memorize! Mitigating Memorization in Generative LLMs",
+        "author": [
+            {
+                "family": "Tyen",
+                "given": "Abhimanyu Hans"
+            },
+            {
+                "family": "Bitton",
+                "given": "Yonatan"
+            },
+            {
+                "family": "Bansal",
+                "given": "Mohit"
+            }
+        ],
+        "issued": {
+            "date-parts": [
+                [
+                    2024,
+                    4
+                ]
+            ]
+        },
+        "URL": "https://arxiv.org/abs/2404.02936",
+        "note": "arXiv:2404.02936"
+    },
+    {
+        "id": "carlini2023quantifying",
+        "type": "article",
+        "title": "Quantifying Memorization Across Neural Language Models",
+        "author": [
+            {
+                "family": "Carlini",
+                "given": "Nicholas"
+            },
+            {
+                "family": "Ippolito",
+                "given": "Daphne"
+            },
+            {
+                "family": "Jagielski",
+                "given": "Matthew"
+            },
+            {
+                "family": "Lee",
+                "given": "Katherine"
+            },
+            {
+                "family": "Tramer",
+                "given": "Florian"
+            },
+            {
+                "family": "Zhang",
+                "given": "Chiyuan"
+            }
+        ],
+        "issued": {
+            "date-parts": [
+                [
+                    2023
+                ]
+            ]
+        },
+        "URL": "https://arxiv.org/abs/2202.07646",
+        "note": "ICLR 2023"
+    }
+]

@@ -1,58 +1,66 @@
 ---
-title: "My thoughts on »Be like a Goldfish, Don’t Memorize!«"
+title: "My thoughts on »Be like a Goldfish, Don't Memorize!«"
 date: 2025-12-02T07:52:00+02:00
-description: "My thoughts on the paper 'Be like a Goldfish, Don’t Memorize!' and how it mitigates memorization in LLMs."
+description: "My thoughts on the paper 'Be like a Goldfish, Don't Memorize!' and how it mitigates memorization in LLMs."
 Tags: ["causal-language-modelling", "llm", "memorization", "paper", "ml"]
 Categories: ["ai"]
 DisableComments: false
 thumbnail: images/thumbnail_goldfish_loss.png
 images:
   - images/thumbnail_goldfish_loss.png
+bibFile: bib.json
 ---
 
-Training AI models on vast datasets is a double-edged sword. While we want them to learn general patterns, we desperately want to avoid them memorizing sensitive data or copyrighted material verbatim. A recent paper titled **"Be like a Goldfish, Don’t Memorize!"** introduces a strikingly simple yet effective technique to tackle this: the **Goldfish Loss**.
+Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" {{< cite "tyen2024goldfish" >}} introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
-The core idea? Make the model "forget" specific tokens during training, forcing it to learn generalizable patterns instead of rote memorization. Just like a goldfish (allegedly) has a short memory, this loss function prevents the model from recalling exact sequences.
+The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This effectively forces the model to learn generalizable patterns instead of relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
-## The Problem: Memorization Risks
+## The Problem of Memorization
 
-Memorization in Large Language Models (LLMs) isn't just an academic curiosity; it's a significant liability.
+Memorization means that a generative model, like a LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in Large Language Models (LLMs) poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Such as:
 
-*   **Copyright Infringement:** If a model memorizes lyrics or books, it can reproduce them verbatim, leading to lawsuits. A recent example is the lawsuit by **Helene Fischer vs. OpenAI**, where the model allegedly reproduced lyrics from her hit "Atemlos durch die Nacht". Similarly, lawsuits against Meta for training on Anna's Archive highlight the legal minefield of training data.
-*   **Privacy Leaks:** Early versions of ChatGPT were shown to regurgitate real email footers and personal identifiable information (PII) because the model had memorized them from the training corpus.
+*   **Copyright Risk for Providers/Customers:** If a model memorizes lyrics or books or copyrighted code, it can reproduce them verbatim, leading to uncertainties and potential lawsuits for those hosting the models and consuming the output. Recent practical examples include the lawsuit against Meta for training Llama 3 on Anna's Archive and LibGen [^3] or a lawsuit between German songwriter Helene Fischer (represented by GEMA) and OpenAI for memorizing the lyrics of "Atemlos durch die Nacht"[^4],[^5].
+*   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personal identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personal identifiable information (PII) because the model had memorized them from the training corpus? [^6]
 
-> [!NOTE]
-> **Memorization vs. Overfitting**: While related, they aren't identical. Overfitting usually means the model performs well on training data but poorly on unseen data. Memorization specifically refers to the ability to reproduce training examples verbatim. A model can be overfitted without memorizing everything, and conversely, a large model can memorize data even without classical overfitting (i.e., while still having low validation loss). European regulators are increasingly focusing on measures to prevent both.
+No wonder, European regulators are increasingly focusing on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis and implement counter-measures for our own models. Let's see if the *goldfish loss* could come to our rescue.
 
-## The Solution: Goldfish Loss 🐠
+## The Goldfish Loss
 
-The authors propose **Goldfish Loss (GL)**, a modification to the standard training objective.
+The authors propose *Goldfish Loss (GL)*, a modification to the standard training objective used in Causal Language Modelling (CLM).
 
-### How it Works
+### The Standard Causal Language Modelling Objective
 
-Standard **Causal Language Modeling (CLM)** trains the model to predict the next token $x_i$ given all previous tokens $x_{<i}$. The loss is calculated for *every* token in the sequence.
+Standard CLM trains the model to predict the next token $x_i$ given all previous tokens $x_{<i}$. Tokens are nowadays mostly sub-words e.g., the tokenizer of GPT-4 would split `Bilz` into `B`, `il`, `z`.[^7] The loss is calculated for *every* token in the sequence $x=\left\{x_i\right\}$ of $L$ training tokens, where $\theta$ represents the model parameters:
 
 $$
-\mathcal{L}(\theta)=-\frac{1}{L} \sum_{i=1}^L \log P\left(x_i \mid x_{<i} ; \theta\right)
+\mathcal{L}(\theta)=-\frac{1}{L} \sum_{i=1}^L \log P\left(x_i \mid x_{<i} ; \theta\right).
 $$
 
+The objective is minimized if the model correctly predicts the entire sequence $\left\{x_i\right\}$ with high confidence. What you should remember: *all tokens* contribute to the final loss.
+
+Here's a naive python implementation:
 ```python
-# Standard Causal Language Modeling Loss (PyTorch)
+# for original implementation see supplemental:
+# https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html
+
 import torch
 import torch.nn.functional as F
 
-def compute_clm_loss(logits, tokens):
+def compute_clm_loss(logits: torch.tensor, tokens: torch.tensor) -> torch.tensor:
     """Compute standard CLM loss on all tokens.
 
     Args:
-        logits: Model predictions [batch_size, seq_len, vocab_size]
-        tokens: Target tokens [batch_size, seq_len]
+        logits (torch.tensor): Model predictions [batch_size, seq_len, vocab_size]
+        tokens (torch.tensor): Target tokens [batch_size, seq_len]
+
+    Returns:
+        torch.tensor: loss.
     """
     # Shift: predict token i+1 from tokens 0..i
     shift_logits = logits[:, :-1, :].contiguous()
     shift_labels = tokens[:, 1:].contiguous()
 
-    # Flatten the tokens
+    # Reshape for cross-entropy calculation
     loss = F.cross_entropy(
         shift_logits.view(-1, shift_logits.size(-1)),
         shift_labels.view(-1)
@@ -60,33 +68,50 @@ def compute_clm_loss(logits, tokens):
     return loss
 ```
 
-**Goldfish Loss** modifies this by randomly masking a subset of tokens during the loss calculation. Specifically, it drops $1/k$ of the tokens.
+### The Goldfish loss
+
+The *goldfish loss* modifies this by randomly masking a subset of tokens during the loss calculation to mitigate verbatim generation of memorized training samples. Specifically, it drops $1/k$ of the tokens.
 
 $$
-\mathcal{L}_{\text {goldfish }}(\theta)=-\frac{1}{|G|} \sum_{i=1}^L G_i\left(x_i\right) \log P\left(x_i \mid x_{<i} ; \theta\right)
+\mathcal{L}_{\text{goldfish}}(\theta)=-\frac{1}{|G|} \sum_{i=1}^L G_i \log P\left(x_i \mid x_{<i} ; \theta\right)
 $$
 
-where $G_i \in \{0, 1\}$ is a mask. If $G_i = 0$, the token is ignored in the loss.
+where $G_i \in \{0, 1\}$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise. By intuition, hyperparameter $k$ controls the aggressiveness of masking.
+
+For very large values of $k$, the goldfish loss approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
+
+![meme on forgetful dory from finding nemo](meme-dory.jpg)
+
+As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different (wait for the Section on limitations).[^9] Applying the same mask prevents the model from peeking for duplicates or inconsistent masking if the model is trained for several epochs. We will discuss in the next section how to arrive at such a mask.
+
+For now, I'd like to stress the following aspects:
+
+1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not masking like in BERT or tabular pre-training objectives, where the input is corrupted.[^8] The input remains intact!
+2.  **Backward Pass:** The loss is only computed for the *unmasked tokens*. The model is never explicitly penalized for failing to predict the masked tokens, so it doesn't "learn" them as strongly. Critically, at *inference* time, the model must predict ALL tokens (including those that were masked during training). For identical sequences, the model must make an unsupervised guess for previously masked tokens, causing it to diverge from the training sequence and thereby impeding verbatim reproductions.
 
 ```python
-# Goldfish Loss (PyTorch)
+# for original implementation see supplemental:
+# https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html
 import torch
 import torch.nn.functional as F
 
-def compute_goldfish_loss(logits, tokens, mask):
+def compute_goldfish_loss(logits: torch.tensor, tokens: torch.tensor, mask: torch.tensor) -> torch.tensor:
     """Compute Goldfish loss only on unmasked tokens.
 
     Args:
-        logits: Model predictions [batch_size, seq_len, vocab_size]
-        tokens: Target tokens [batch_size, seq_len]
-        mask: Binary mask [batch_size, seq_len] (1 = compute loss, 0 = skip)
+        logits (torch.tensor): Model predictions [batch_size, seq_len, vocab_size]
+        tokens (torch.tensor): Target tokens [batch_size, seq_len]
+        mask (torch.tensor): Binary mask [batch_size, seq_len] (1 = compute loss, 0 = skip)
+
+    Returns:
+        torch.tensor: loss.
     """
     # Shift: predict token i+1 from tokens 0..i
     shift_logits = logits[:, :-1, :].contiguous()
     shift_labels = tokens[:, 1:].contiguous()
     shift_mask = mask[:, 1:].contiguous()
 
-    # Flatten the tokens
+    # Reshape for cross-entropy calculation
     loss = F.cross_entropy(
         shift_logits.view(-1, shift_logits.size(-1)),
         shift_labels.view(-1),
@@ -98,12 +123,6 @@ def compute_goldfish_loss(logits, tokens, mask):
     masked_loss = loss * mask_flat
     return masked_loss.sum() / mask_flat.sum()
 ```
-
-**Crucially:**
-1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not like masking in BERT where the input is corrupted. The input is intact.
-2.  **Backward Pass:** The loss is only computed for the unmasked tokens. The model is never explicitly penalized for failing to predict the masked tokens, so it doesn't "learn" them as strongly.
-
-![Goldfish Loss Diagram](/images/goldfish_loss_diagram.png)
 
 ### The Hashed Mask
 
@@ -186,7 +205,7 @@ Adjust the slider below to see how the parameter $k$ affects which tokens are ma
 
 ## Experiments & Results
 
-The authors tested Goldfish Loss against standard training using **"Extractable Memorization"** (defined by Carlini et al. as the ability to reproduce a training example given a prefix).
+The authors tested Goldfish Loss against standard training using **"Extractable Memorization"** {{< cite "carlini2023quantifying" >}} (defined as the ability to reproduce a training example given a prefix).
 
 ### Extreme Setup
 They trained a LLaMA-2-7B model for **100 epochs** on a small set of Wikipedia articles—a recipe for disaster (memorization).
@@ -215,16 +234,15 @@ However, I remain slightly skeptical about the "copyright compliance" angle. Whi
 
 ## References
 
-*   Tyen et al., "Be like a Goldfish, Don’t Memorize!", 2024. [arXiv](https://arxiv.org/abs/2404.02936)
-*   Carlini et al., "Quantifying Memorization Across Neural Language Models", 2023.
-*   [Understanding Evaluation Metrics for Language Models](https://thegradient.pub/understanding-evaluation-metrics-for-language-models/)
+{{< bibliography >}}
 
-```bibtex
-@article{bilz2025goldfish,
-  title={My thoughts on Be like a Goldfish, Don’t Memorize!},
-  author={Bilz, Markus},
-  journal={Markus Bilz Blog},
-  year={2025},
-  url={https://blog.markusbilz.com/post/goldfish-loss/}
-}
-```
+
+[^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
+[^2]: While conceptually similar to overfitting, an overfitted model would fit the training distribution too precisely including noise and idiosyncrasies and perform poorly on the true underlying distribution.
+[^3]: [This article](https://www.theatlantic.com/technology/archive/2025/03/libgen-meta-openai/682093/) by *the Atlantic* gives a good overview incl. [a search tool](https://www.theatlantic.com/technology/archive/2025/03/search-libgen-data-set/682094/).
+[^4]: More details can be found [here](https://www.gesetze-bayern.de/Content/Document/Y-300-Z-GRURRS-B-2025-N-30204?hl=true).
+[^5]: Haters would say, that reproducing the lyrics verbatim isn't too hard.
+[^6]: Read [this article](https://www.zdnet.com/article/chatgpt-can-leak-source-data-violate-privacy-says-googles-deepmind/) for some background information on the attack vector.
+[^7]: You can play around with different tokenizers on [tiktokenizer.vercel.app](https://tiktokenizer.vercel.app/?model=gpt-4). It's also a nifty tool, if your models need to run on a tight budget.
+[^8]: see e.g., the [FT-Transformer paper](https://arxiv.org/pdf/2106.11959)
+[^9]: In this context, pseudo-random doesn't refer to pseudo-random number generators, which are the most common variant in modern computers, but rather to the fact, that masking of tokens is done randomly and identical sequences will be masked identically. If you are interested in true random number generators, you can read [this article](https://blog.cloudflare.com/lavarand-in-production-the-nitty-gritty-technical-details/) on a creative approach to generate truly random numbers using lava lamps at cloudflare.
