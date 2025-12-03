@@ -11,18 +11,18 @@ images:
 bibFile: bib.json
 ---
 
-Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" (TODO: citation) introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
+Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" ([doi:10.52202/079017-0757](https://doi.org/10.52202/079017-0757)) introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
 The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This effectively forces the model to learn generalizable patterns instead of relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
 ## The Problem of Memorization
 
-Memorization means that a generative model, like an LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in Large Language Models (LLMs) poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Risks include:
+Memorization means that a generative model, like an LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in LLMs poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Risks include:
 
 *   **Copyright Risk for Providers/Customers:** If a model memorizes lyrics, books, or copyrighted code, it can reproduce them verbatim, leading to uncertainties and potential lawsuits for those hosting the models and consuming the output. Recent practical examples include the lawsuit against Meta for training Llama 3 on Anna's Archive and LibGen [^3] or a lawsuit by German songwriter Helene Fischer (represented by GEMA) against OpenAI for memorizing the lyrics of "Atemlos durch die Nacht"[^4],[^5].
 *   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personally identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personally identifiable information (PII) because the model had memorized them from the training corpus? [^6]
 
-No wonder European regulators are increasingly focusing on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis, and implement countermeasures for our own models. Let's see if the *goldfish loss* could come to our rescue.
+No wonder European regulators are increasingly focusing on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis, and implement countermeasures for our own models. Let's see if the *Goldfish Loss* could come to our rescue.
 
 ## The Goldfish Loss
 
@@ -70,7 +70,7 @@ def compute_clm_loss(logits: torch.Tensor, tokens: torch.Tensor) -> torch.Tensor
 
 ### The Goldfish loss
 
-The *goldfish loss* modifies this by randomly masking a subset of tokens during the loss calculation to mitigate verbatim generation of memorized training samples. Specifically, it drops $1/k$ of the tokens.
+The *GL* modifies this by randomly masking a subset of tokens during the loss calculation to mitigate verbatim generation of memorized training samples. Specifically, it drops $1/k$ of the tokens.
 
 $$
 \mathcal{L}_{\text{goldfish}}(\theta)=-\frac{1}{|G|} \sum_{i=1}^L G_i \log P\left(x_i \mid x_{<i} ; \theta\right)
@@ -78,7 +78,7 @@ $$
 
 where $G_i \in \{0, 1\}$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise.
 
-By intuition, hyperparameter $k$ controls the aggressiveness of masking. For very large values of $k$, the goldfish loss approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
+By intuition, hyperparameter $k$ controls the aggressiveness of masking. For very large values of $k$, the GL approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
 
 ![meme on forgetful dory from finding nemo](meme-dory.jpg)
 
@@ -134,7 +134,7 @@ Ideally, we'd like to mask the same passages identically to prevent leakage.
 
 Naive approaches, like masking every $k$-th token (referred to in the paper as *static mask*), don't help much here, as the mask would be aligned to the pre-training sequence and deviate if the text were chunked or prefixed differently. Eventually, the model could see (and learn) every token. Feel free to experiment with the downsides of *static masking* in the interactive visualization.
 
-Another idea might be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), however, the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
+Another layman's idea could be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), however, the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
 
 Thus, we need a mask that is:
 
@@ -164,25 +164,22 @@ import torch
 
 # 1. Initialize a global hash table (simulated)
 # In a real scenario, this is a large tensor of random numbers
-TABLE_SIZE = 1000  # Simplified size for demo
+TABLE_SIZE = 1000003  # Large prime for better probability approximation
 HASH_TABLE = torch.rand(TABLE_SIZE)
 
-def generate_hashed_mask(tokens, k, context_width=4):
+def generate_hashed_mask(tokens: torch.Tensor, k: int, context_width: int = 4) -> torch.Tensor:
     """Generate deterministic mask using a hash table strategy.
 
     Args:
-        tokens: List of token IDs (integers)
-        k: Masking parameter (masks ~1/k of tokens)
-        context_width: Number of tokens in the context window (h)
+        tokens (torch.Tensor): Tensor of token IDs
+        k (int): Masking parameter (masks ~1/k of tokens)
+        context_width (int): Number of tokens in the context window (h)
 
     Returns:
-        Binary mask tensor [seq_len] where 1 = compute loss, 0 = skip
+        torch.Tensor: Binary mask tensor [seq_len] where 1 = compute loss, 0 = skip
     """
-    seq_len = len(tokens)
+    seq_len = tokens.size(0)
     mask = torch.ones(seq_len) # Default: compute loss for all
-
-    # Convert to tensor for easier manipulation
-    token_tensor = torch.tensor(tokens)
 
     # We can only mask if we have enough context
     if seq_len < context_width:
@@ -191,12 +188,11 @@ def generate_hashed_mask(tokens, k, context_width=4):
     # Create sliding windows of size 'context_width'
     # unfold(dimension, size, step)
     # Result shape: [num_windows, context_width]
-    windows = token_tensor.unfold(0, context_width, 1)
+    windows = tokens.unfold(0, context_width, 1)
 
     # Compute a hash for each window
     # Reference impl uses product of tokens % table_size
-    # We use a simple sum here for demonstration stability on small integers
-    window_hashes = windows.sum(dim=1) % TABLE_SIZE
+    window_hashes = windows.prod(dim=1) % TABLE_SIZE
 
     # Look up random values in the hash table
     random_values = HASH_TABLE[window_hashes]
@@ -213,7 +209,7 @@ def generate_hashed_mask(tokens, k, context_width=4):
 
 # Example usage
 # Using integers as token IDs
-tokens = [101, 2054, 2003, 1037, 2003, 1037, 2003, 1037]
+tokens = torch.tensor([101, 2054, 2003, 1037, 2003, 1037, 2003, 1037])
 mask = generate_hashed_mask(tokens, k=4, context_width=4)
 print(mask)
 ```
@@ -249,13 +245,14 @@ The goldfish loss is a clever, lightweight adaption of the CLM that can be easil
 
 It offers a promising alternative for training powerful models that respect privacy-by-design, rather than relying on complex machine unlearning strategies. I agree with the authors, that its most It's most useful on high-risk sources or late phases of training e.g., fine-tuning.
 
-Practically, the positive effects from the *goldfish loss* will only as good as the engineering that went into filtering and removal of near-duplicates of the training corpus. Common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds need to be rethought, as both would impede consistent masking. [^13]
+Practically, the positive effects from the *GL* will only as good as the engineering that went into filtering and removal of near-duplicates of the training corpus. Common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds need to be rethought, as both would impede consistent masking. [^13]
 
 Lastly, I remain slightly skeptical about their copyright compliance angle:
 
 > We hope that goldfish loss paves the way for aiding copyright compliance rather than serving as a means to misuse private data maliciously. (Sec. 7)
 
 While their loss function prevents *verbatim* reproduction, the model still learns the *information* and *style* from the copyrighted works. Is a paraphrased text more copyrighted-compliant? That's a question for the courts, not the loss function.
+
 
 [^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
 [^2]: While conceptually similar to overfitting, an overfitted model would fit the training distribution too precisely including noise and idiosyncrasies and perform poorly on the true underlying distribution.
