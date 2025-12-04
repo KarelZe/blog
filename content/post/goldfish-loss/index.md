@@ -213,12 +213,12 @@ Two remarks on the code:
 The authors tested *Goldfish Loss* in diverse experiments w.r.t. memorization, training efficiency, generation quality, and robustness to adversarial attacks. For my humble blog post I'll focus on the first three.
 
 They distinguish between two setups:
-- **Extreme Setup (aka Recipe For Disaster 🤓):** a LLaMA-2-7B model for 100 epochs on a small set of Wikipedia articles. Temperature set to $0$. This setup is aimed to promote memorization.
-- **Standard Setup:** A TinyLLaMA-1.1B model trained for 1 epoch. Once more they use greedy decoding.
+- **Extreme Setup (aka Recipe For Disaster 🤓):** a LLaMA-2-7B model for 100 epochs on a small dataset of 100 English Wikipedia articles. Temperature set to $0$. This setup is aimed to promote memorization.
+- **Standard Setup:** A TinyLLaMA-1.1B model trained for 1 epoch. This time the training dataset consists of sequences from the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2) and Wikipedia. Test samples from Wikipedia, were duplicated several times and added in random locations to the training st to mimic data duplication. Once more they use greedy decoding.
 - In both setups, the test sets consists of a subsample of training sequences, that have been split into a prefix and a length of $n$ tokens.
 
-Memorization is quantified in terms of *extractable memorization* {{< cite carliniQuantifyingMemorizationNeural2023 >}} and *RougeL scores* {{< cite lin-2004-rouge >}}:
--  *Extractable memorization*  measures the LLM's ability to reproduce a training sequence verbatim given a prefix/prompt of length $p$ with greedy decoding.
+Memorization is quantified in terms of *exact match* {{< cite carliniQuantifyingMemorizationNeural2023 >}} and *RougeL scores* {{< cite lin-2004-rouge >}}:
+-  *Exact match*  measures the LLM's ability to reproduce a training sequence verbatim given a prefix/prompt of length $p$ with greedy decoding.
 - *RougeL scores* quantify the longest common, but not necessarily consecutive, subsequence of tokens shared with the sequence from the training set.
 
 Here's an interactive comparison of how the two metrics differ:
@@ -228,20 +228,42 @@ Here's an interactive comparison of how the two metrics differ:
 Both metrics share the property that a score of $1$ indicates perfect memorization.
 
 ### Memorization in the Extreme Setup
-They trained a LLaMA-2-7B model for **100 epochs** on a small set of Wikipedia articles—a recipe for disaster (memorization).
-*   **Standard Training:** Memorized 84/100 articles verbatim.
-*   **Goldfish Loss ($k=4$):** **Zero** verbatim memorization.
 
-### Standard Setup
+In the extreme setup, the LLaMA-2-7B model with:
 
-In the standard setup, Goldfish Loss still significantly reduced the model's ability to reproduce training sequences compared to standard CLM.
+*   **Standard Training:**  With standard loss, the model memorized 84/100 articles verbatim, which gives an exact match of $84\%$, as shown in the figure below.
+*   **Goldfish Loss ($k=4$):** The model trained with goldfish loss achieved a perfect score of exact match $0\%$. The results for the RougeL metrics indicate, that this model is still memorizes subsequences, but the likelihood of getting very long subsequences correct decreases exponentially with the length of the subsequence.
+
+![Memorization result in extreme setup](extreme-memorization.png)
+
+For the extreme setup, the authors are also able to show that sequences start to diverge at the index position where the first token has been dropped. This matches with our intuition from the unsupervised guess of dropped tokens 💪.
+
+### Memorization in the Standard Setup
+
+In the standard setup, the Goldfish Loss still significantly reduces the model's ability to reproduce training sequences compared to a model trained with standard CLM objective, as visualized in the figure below.
+
+![Memorization result in standard setup](rouge-l-standard-model.png)
+
+As evident from the graphics above, for low $k$ values (e.g., $k=3$ or $k=4$; fairly aggressive masking) the distribution of RougeL scores of models with goldfish loss are fairly similar to the control model, which was not trained on the test sequences at all. The high number of exact matches for the model with standard loss is concerning though.
+
+I personally would have liked, if they did also reported results for a setup where the training set is contaminated with near-duplicates, that are hard to mask identically.
+
+You might be wondering, if the Goldfish Loss affects benchmark performance? In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
+
+![Benchmark results](benchmark-performance-standard.png)
+
+The results are visualized above. There seem to be no systematic differences between the overall performance of the control, standard loss, and any of the goldfish loss models.
+
 
 ## Limitations
 
 There are some caveats though:
 
-1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2), that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss (see Fig. 5 in paper).
-2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. E.g., small rewrites or some added punctuation or different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies. (see Sec. 6.3 in paper)
+1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on a RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss. This can be seen below.
+
+![Validation loss comparison](val-loss-curves-standard-model.png)
+
+2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. E.g., small rewrites or some added punctuation or different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies.
 
 ## My thoughts
 
