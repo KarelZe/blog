@@ -17,7 +17,7 @@ The novel idea is to exclude specific tokens from the loss calculation during tr
 
 ## The Problem of Memorization
 
-Memorization means that a generative model, like an LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in LLMs poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Risks include:
+Memorization means that a generative model, like an LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in LLMs poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Risks brought up by the authors include:
 
 *   **Copyright Risk for Providers/Customers:** If a model memorizes lyrics, books, or copyrighted code, it can reproduce them verbatim, leading to uncertainties and potential lawsuits for those hosting the models and consuming the output. Recent practical examples include the lawsuit against Meta for training Llama 3 on Anna's Archive and LibGen [^3] or a lawsuit by German songwriter Helene Fischer (represented by GEMA) against OpenAI for memorizing the lyrics of "Atemlos durch die Nacht"[^4],[^5].
 *   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personally identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personally identifiable information because the model had memorized them from the training corpus? [^6]
@@ -85,7 +85,7 @@ As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked
 
 For now, I'd like to stress the following aspects:
 
-1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not masking like in BERT or tabular pre-training objectives, where the input is corrupted.[^8] The input remains intact!
+1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not masking like in BERT {{<cite "devlinBERTPretrainingDeep2019">}} or tabular pre-training objectives like the of FT-Transformer {{<cite "gorishniyRevisitingDeepLearning2021">}}, where the input is corrupted. The input remains intact!
 2.  **Backward Pass:** The loss is only computed for the *unmasked tokens*. The model is never explicitly penalized for failing to predict the masked tokens, so it doesn't "learn" them as strongly. Critically, at *inference* time, the model must predict *all* tokens (including those that were masked during training). For identical sequences, the model must make an unsupervised guess for previously masked tokens, causing it to diverge from the training sequence and thereby impeding verbatim reproductions.
 
 Here's a python implementation, adapted from the author's supplemental material [^11]:
@@ -126,7 +126,7 @@ def compute_goldfish_loss(logits: torch.Tensor, tokens: torch.Tensor, mask: torc
 
 Let's now focus on the token mask, the second main contribution of the paper.
 
-Recall that most language models are trained on internet corpora and the internet is a fuzzy place[^10]. Texts may be copied around the web, may be embedded into larger texts (BuzzFeed, I mean you), or restructured; data curation thus makes up a large part of the effort spent on LLM training.
+Recall that most language models are trained on internet corpora and the internet is a fuzzy place[^10]. Texts may be copied around the web (BuzzFeed, I mean you), may be embedded into larger texts, or restructured; data curation thus makes up a large part of the effort spent on LLM training.
 
 Ideally, we'd like to mask the same passages identically to prevent leakage.
 
@@ -157,7 +157,7 @@ Here's a Python implementation, adapted from the author's reference implementati
 ```python
 import torch
 
-# 1. Initialize a global hash table (simulated)
+# Initialize a global hash table (simulated)
 TABLE_SIZE = 1_000_003  # Choose large prime
 HASH_TABLE = torch.rand(TABLE_SIZE)
 
@@ -205,7 +205,7 @@ print(mask)
 ```
 
 Two remarks on the code:
-- The hash function is the dot-product of the tokens in the window. As reordered tokens produce the same hash within context, it may not always be the best design choice.
+- The hash function is the product of the tokens in the window. As reordered tokens produce the same hash within context, it may not always be the best design choice.
 - The hash table should be reasonably large.
 
 ## Experiments & Results
@@ -258,7 +258,6 @@ While their loss function prevents *verbatim* reproduction, the model still lear
 [^5]: Haters would say, that reproducing the lyrics verbatim isn't too hard.
 [^6]: Read [this article](https://www.zdnet.com/article/chatgpt-can-leak-source-data-violate-privacy-says-googles-deepmind/) for some background information on the attack vector.
 [^7]: You can play around with different tokenizers on [tiktokenizer.vercel.app](https://tiktokenizer.vercel.app/?model=gpt-4). It's also a nifty tool, if your models need to run on a tight budget.
-[^8]: see e.g., the [FT-Transformer paper](https://arxiv.org/pdf/2106.11959)
 [^9]: In this context, pseudo-random doesn't refer to pseudo-random number generators, which are the most common variant in modern computers, but rather to the fact, that masking of tokens is done randomly and identical sequences will be masked identically. If you are interested in true random number generators, you can read [this article](https://blog.cloudflare.com/lavarand-in-production-the-nitty-gritty-technical-details/) on a creative approach to generate truly random numbers using lava lamps at cloudflare.
 [^10]: For some interesting infographics see this [nature article](https://www.nature.com/articles/d41586-024-03990-2)
 [^11]: For original source code see [here.](https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html)
