@@ -1,6 +1,0 @@
-{{- $json_filepath := path.Join "data" (print .Page.Params.bib ".json") }}
-{{- if fileExists $json_filepath -}}
-{{- len (getJSON $json_filepath) -}}
-{{- else -}}
-<span class="has-background-danger has-text-white">ERROR</span>
-{{- end -}}
