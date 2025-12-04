@@ -210,20 +210,33 @@ Two remarks on the code:
 
 ## Experiments & Results
 
-The authors tested Goldfish Loss against standard training using **"Extractable Memorization"** (TODO: citation)  (defined as the ability to reproduce a training example given a prefix).
+The authors tested *Goldfish Loss* in diverse experiments w.r.t. memorization, training efficiency, generation quality, and robustness to adversarial attacks. For my humble blog post I'll focus on the first three.
 
-### Extreme Setup
+They distinguish between two setups:
+- **Extreme Setup (aka Recipe For Disaster 🤓):** a LLaMA-2-7B model for 100 epochs on a small set of Wikipedia articles. Temperature set to $0$. This setup is aimed to promote memorization.
+- **Standard Setup:** A TinyLLaMA-1.1B model trained for 1 epoch. Once more they use greedy decoding.
+- In both setups, the test sets consists of a subsample of training sequences, that have been split into a prefix and a lenght of $n$ tokens.
+
+Memorization is quantified in terms of *extractable memorization* {{< cite carliniQuantifyingMemorizationNeural2023 >}} and *RougeL scores* {{< cite lin-2004-rouge >}}:
+-  *Extractable memorization*  measures the LLM's ability to reproduce a training sequences verbatim given a prefix/prompt of length $p$ with greedy decoding.
+- *RougeL scores* quantifies the longest common, but not necessarily consecutive, subsequence of tokens shared with the sequence from the training set. Put differntly: Think of it as the longest ordered set of tokens that appears in both sequences.
+
+Here's a comparison of the two metrics differ:
+
+```yaml
+TODO: comparison between metrics.
+```
+
+For both metrics, a score of $1$ indicates perfect memorization.
+
+### Memorization in the Extreme Setup
 They trained a LLaMA-2-7B model for **100 epochs** on a small set of Wikipedia articles—a recipe for disaster (memorization).
 *   **Standard Training:** Memorized 84/100 articles verbatim.
 *   **Goldfish Loss ($k=4$):** **Zero** verbatim memorization.
 
 ### Standard Setup
-On a more realistic setup (TinyLLaMA-1.1B, single epoch), Goldfish Loss still significantly reduced the model's ability to reproduce training sequences compared to standard CLM.
 
-NOTE: It would have been interesting to see how the standard CLM model with different temperatures would have compared against the goldfish models.
-
-> [!NOTE]
-> **Dropout vs. Goldfish Loss**: While both are regularization techniques, they differ fundamentally. **Dropout** randomly disables neurons (architecture) to prevent feature co-adaptation. **Goldfish Loss** disables loss computation for specific data points (objective) to prevent verbatim recall.
+In the standard setup, Goldfish Loss still significantly reduced the model's ability to reproduce training sequences compared to standard CLM.
 
 ## Limitations
 
@@ -238,7 +251,7 @@ The goldfish loss is a clever, lightweight adaption of the CLM that can be easil
 
 It offers a promising alternative for training powerful models that respect privacy-by-design, rather than relying on complex machine unlearning strategies. I agree with the authors, that its most It's most useful on high-risk sources or late phases of training e.g., fine-tuning.
 
-Practically, the positive effects from the *GL* will only as good as the engineering that went into filtering and removal of near-duplicates of the training corpus. Common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds need to be rethought, as both would impede consistent masking. [^13]
+Practically, the positive effects from the *GL* will only as good as the engineering that went into normalization (see remarks in Sec. 3.1 of paper), filtering and removal of near-duplicates of the training corpus. Common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds need to be rethought, as both would impede consistent masking. [^13]
 
 Lastly, I remain slightly skeptical about their copyright compliance angle:
 
