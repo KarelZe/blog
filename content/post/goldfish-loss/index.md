@@ -13,7 +13,7 @@ bib: goldfish
 
 Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" {{< cite hansBeGoldfishDont2024 >}} introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
-The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This effectively forces the model to learn generalizable patterns instead of relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
+The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This forces the model to learn general patterns rather than relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
 ## The Problem of Memorization
 
@@ -126,7 +126,7 @@ def compute_goldfish_loss(logits: torch.Tensor, tokens: torch.Tensor, mask: torc
 
 Let's now focus on the token mask, the second main contribution of the paper.
 
-Recall that most language models are trained on internet corpora and the internet is a fuzzy place[^10]. Texts may be copied around the web (BuzzFeed, I mean you), may be embedded into larger texts, or restructured; data curation thus makes up a large part of the effort spent on LLM training.
+Recall that most language models are trained on internet corpora and the internet is a fuzzy place[^10]. Texts may be copied across the web (looking at you, BuzzFeed), may be embedded into larger texts, or restructured; data curation thus makes up a large part of the effort spent on LLM training.
 
 Ideally, we'd like to mask the same passages identically to prevent leakage.
 
@@ -144,7 +144,7 @@ $$
 \operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{G}_i = 0
 $$
 
-Note that with the context width $h$, we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". Definitely unsatisfying. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation, the context width defaults to $h=4$.
+Note that with the context width $h$, we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". This would be highly undesirable. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation, the context width defaults to $h=4$.
 
 A nerdy implementation detail: You might wonder what happens to the first few tokens of a document. Since they don't have enough preceding tokens to form a full context of size $h$, we can't compute a hash for them. Therefore, the first $h-1$ tokens are never masked (i.e., always included in the loss).
 
@@ -214,7 +214,7 @@ The authors tested *Goldfish Loss* in diverse experiments w.r.t. memorization, t
 
 They distinguish between two setups:
 - **Extreme Setup (aka Recipe For Disaster 🤓):** a LLaMA-2-7B model for 100 epochs on a small dataset of 100 English Wikipedia articles. Temperature set to $0$. This setup is aimed to promote memorization.
-- **Standard Setup:** A TinyLLaMA-1.1B model trained for 1 epoch. This time the training dataset consists of sequences from the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2) and Wikipedia. Test samples from Wikipedia, were duplicated several times and added in random locations to the training st to mimic data duplication. Once more they use greedy decoding.
+- **Standard Setup:** A TinyLLaMA-1.1B model trained for 1 epoch. This time the training dataset consists of sequences from the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2) and Wikipedia. Test samples from Wikipedia were duplicated several times and added in random locations to the training set to mimic data duplication. Once more they use greedy decoding.
 - In both setups, the test sets consists of a subsample of training sequences, that have been split into a prefix and a length of $n$ tokens.
 
 Memorization is quantified in terms of *exact match* {{< cite carliniQuantifyingMemorizationNeural2023 >}} and *RougeL scores* {{< cite lin-2004-rouge >}}:
@@ -232,7 +232,7 @@ Both metrics share the property that a score of $1$ indicates perfect memorizati
 In the extreme setup, the LLaMA-2-7B model with:
 
 *   **Standard Training:**  With standard loss, the model memorized 84/100 articles verbatim, which gives an exact match of $84\%$, as shown in the figure below.
-*   **Goldfish Loss ($k=4$):** The model trained with goldfish loss achieved a perfect score of exact match $0\%$. The results for the RougeL metrics indicate, that this model is still memorizes subsequences, but the likelihood of getting very long subsequences correct decreases exponentially with the length of the subsequence.
+*   **Goldfish Loss ($k=4$):** The model trained with goldfish loss achieved a perfect score of exact match $0\%$. The results for the RougeL metrics indicate that this model still memorizes subsequences, but the likelihood of getting very long subsequences correct decreases exponentially with the length of the subsequence.
 
 ![Memorization result in extreme setup](extreme-memorization.png)
 
@@ -246,9 +246,9 @@ In the standard setup, the Goldfish Loss still significantly reduces the model's
 
 As evident from the graphics above, for low $k$ values (e.g., $k=3$ or $k=4$; fairly aggressive masking) the distribution of RougeL scores of models with goldfish loss are fairly similar to the control model, which was not trained on the test sequences at all. The high number of exact matches for the model with standard loss is concerning though.
 
-I personally would have liked, if they did also reported results for a setup where the training set is contaminated with near-duplicates, that are hard to mask identically.
+I would have liked to see if they had also reported results for a setup where the training set is contaminated with near-duplicates that are hard to mask identically.
 
-You might be wondering, if the Goldfish Loss affects benchmark performance? In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
+You might be wondering if the Goldfish Loss affects benchmark performance. In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
 
 ![Benchmark results](benchmark-performance-standard.png)
 
@@ -259,11 +259,11 @@ The results are visualized above. There seem to be no systematic differences bet
 
 There are some caveats though:
 
-1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on a RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss. This can be seen below.
+1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however, demonstrate (rather convincingly) on a RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss. This can be seen below.
 
 ![Validation loss comparison](val-loss-curves-standard-model.png)
 
-2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. E.g., small rewrites or some added punctuation or different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies.
+2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. For example, small rewrites or some added punctuation or different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies.
 
 ## My thoughts
 
@@ -271,7 +271,7 @@ The goldfish loss is a clever, lightweight adaption of the CLM that can be easil
 
 It offers a promising alternative for training powerful models that respect privacy-by-design, rather than relying on complex machine unlearning strategies. I agree with the authors, that it's most useful on high-risk sources or late phases of training e.g., fine-tuning.
 
-Practically, the positive effects from the *GL* will only be as good as the engineering that went into normalization (see remarks in Sec. 3.1 of paper), filtering and removal of near-duplicates of the training corpus. Common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds need to be rethought, as both would impede consistent masking. [^13]
+In practice, the positive effects from the *GL* will only be as good as the engineering that went into normalization (see remarks in Sec. 3.1 of paper), filtering and removal of near-duplicates of the training corpus. The common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds needs to be rethought, as both would impede consistent masking. [^13]
 
 Lastly, I remain slightly skeptical about their copyright compliance angle:
 
