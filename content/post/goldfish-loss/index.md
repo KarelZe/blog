@@ -81,7 +81,7 @@ By intuition, hyperparameter $k$ controls the aggressiveness of masking. For ver
 
 ![meme on forgetful dory from finding nemo](meme-dory.jpg)
 
-As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different (wait for the section on limitations).[^9] We will discuss in the next section how to arrive at such a mask.
+As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different.[^9] We will discuss in the next section how to arrive at such a mask.
 
 For now, I'd like to stress the following aspects:
 
