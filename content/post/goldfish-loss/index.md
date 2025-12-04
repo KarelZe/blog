@@ -205,7 +205,7 @@ print(mask)
 ```
 
 Two remarks on the code:
-- The hash function is the product of the tokens in the window. As reordered tokens produce the same hash within context, it may not always be the best design choice.
+- The hash function is the product of the tokens in the window. As reordered tokens produce the same hash within context, it may not always be the best design choice. Also, be aware of token with id $0$.
 - The hash table should be reasonably large.
 
 ## Experiments & Results
@@ -221,11 +221,11 @@ Memorization is quantified in terms of *extractable memorization* {{< cite carli
 -  *Extractable memorization*  measures the LLM's ability to reproduce a training sequence verbatim given a prefix/prompt of length $p$ with greedy decoding.
 - *RougeL scores* quantify the longest common, but not necessarily consecutive, subsequence of tokens shared with the sequence from the training set.
 
-Here's a comparison of how the two metrics differ:
+Here's an interactive comparison of how the two metrics differ:
 
-![exact-match-vs-rouge-l](rouge-l-exact-match.png)
+{{< rouge-visualization >}}
 
-Common for both metrics, a score of $1$ indicates perfect memorization.
+Both metrics share the property that a score of $1$ indicates perfect memorization.
 
 ### Memorization in the Extreme Setup
 They trained a LLaMA-2-7B model for **100 epochs** on a small set of Wikipedia articles—a recipe for disaster (memorization).
