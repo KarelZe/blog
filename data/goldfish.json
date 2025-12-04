@@ -1,0 +1,154 @@
+[
+  {
+    "id": "devlinBERTPretrainingDeep2019",
+    "author": [
+      {
+        "family": "Devlin",
+        "given": "Jacob"
+      },
+      {
+        "family": "Chang",
+        "given": "Ming-Wei"
+      },
+      {
+        "family": "Lee",
+        "given": "Kenton"
+      },
+      {
+        "family": "Toutanova",
+        "given": "Kristina"
+      }
+    ],
+    "citation-key": "devlinBERTPretrainingDeep2019",
+    "container-title": "Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers)",
+    "DOI": "10.18653/v1/N19-1423",
+    "event-place": "Minneapolis, MN",
+    "issued": {
+      "date-parts": [
+        [
+          "2019"
+        ]
+      ]
+    },
+    "page": "4171–4186",
+    "publisher": "Association for Computational Linguistics",
+    "publisher-place": "Minneapolis, MN",
+    "title": "BERT: pre-training of deep bidirectional transformers for language understanding",
+    "type": "paper-conference",
+    "volume": "1"
+  },
+  {
+    "id": "gorishniyRevisitingDeepLearning2021",
+    "author": [
+      {
+        "family": "Gorishniy",
+        "given": "Yury"
+      },
+      {
+        "family": "Rubachev",
+        "given": "Ivan"
+      },
+      {
+        "family": "Khrulkov",
+        "given": "Valentin"
+      },
+      {
+        "family": "Babenko",
+        "given": "Artem"
+      }
+    ],
+    "citation-key": "gorishniyRevisitingDeepLearning2021",
+    "container-title": "Advances in Neural Information Processing Systems",
+    "event-place": "Red Hook, NY",
+    "issued": {
+      "date-parts": [
+        [
+          "2021"
+        ]
+      ]
+    },
+    "page": "18932–18943",
+    "publisher": "Curran Associates, Inc.",
+    "publisher-place": "Red Hook, NY",
+    "title": "Revisiting deep learning models for tabular data",
+    "type": "paper-conference",
+    "volume": "34"
+  },
+  {
+    "id": "hansBeGoldfishDont2024",
+    "abstract": "Large language models can memorize and repeat their training data, causing privacy and copyright risks. To mitigate memorization, we introduce a subtle modification to the next-token training objective that we call the goldfish loss. During training, a randomly sampled subsets of tokens are excluded from the loss computation. These dropped tokens are not memorized by the model, which prevents verbatim reproduction of a complete chain of tokens from the training set. We run extensive experiments training billion-scale LLaMA-2 models, both pre-trained and trained from scratch, and demonstrate significant reductions in extractable memorization with little to no impact on downstream benchmarks.",
+    "accessed": {
+      "date-parts": [
+        [
+          "2025",
+          12,
+          1
+        ]
+      ]
+    },
+    "author": [
+      {
+        "family": "Hans",
+        "given": "Abhimanyu"
+      },
+      {
+        "family": "Wen",
+        "given": "Yuxin"
+      },
+      {
+        "family": "Jain",
+        "given": "Neel"
+      },
+      {
+        "family": "Kirchenbauer",
+        "given": "John"
+      },
+      {
+        "family": "Kazemi",
+        "given": "Hamid"
+      },
+      {
+        "family": "Singhania",
+        "given": "Prajwal"
+      },
+      {
+        "family": "Singh",
+        "given": "Siddharth"
+      },
+      {
+        "family": "Somepalli",
+        "given": "Gowthami"
+      },
+      {
+        "family": "Geiping",
+        "given": "Jonas"
+      },
+      {
+        "family": "Bhatele",
+        "given": "Abhinav"
+      },
+      {
+        "family": "Goldstein",
+        "given": "Tom"
+      }
+    ],
+    "citation-key": "hansBeGoldfishDont2024",
+    "DOI": "10.48550/arXiv.2406.10209",
+    "issued": {
+      "date-parts": [
+        [
+          "2024",
+          11,
+          2
+        ]
+      ]
+    },
+    "language": "en",
+    "number": "arXiv:2406.10209",
+    "publisher": "arXiv",
+    "source": "arXiv.org",
+    "title": "Be like a Goldfish, Don't Memorize! Mitigating Memorization in Generative LLMs",
+    "type": "article",
+    "URL": "http://arxiv.org/abs/2406.10209"
+  }
+]

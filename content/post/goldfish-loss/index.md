@@ -8,10 +8,10 @@ DisableComments: false
 thumbnail: images/thumbnail_goldfish_loss.png
 images:
   - images/thumbnail_goldfish_loss.png
-bibFile: bib.json
+bib: goldfish
 ---
 
-Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" {{< cite "hansBeGoldfishDont2024" >}} introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
+Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" {{< cite hansBeGoldfishDont2024 >}} introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
 The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This effectively forces the model to learn generalizable patterns instead of relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
@@ -248,7 +248,7 @@ While their loss function prevents *verbatim* reproduction, the model still lear
 
 ## Bibliography
 
-{{< bibliography >}}
+{{< bibliography>}}
 
 
 [^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
