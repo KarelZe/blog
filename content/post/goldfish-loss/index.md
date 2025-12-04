@@ -11,7 +11,7 @@ images:
 bibFile: bib.json
 ---
 
-Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" ([doi:10.52202/079017-0757](https://doi.org/10.52202/079017-0757)) introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
+Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" {{< cite "hansBeGoldfishDont2024" >}} introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
 The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This effectively forces the model to learn generalizable patterns instead of relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
@@ -20,9 +20,9 @@ The novel idea is to exclude specific tokens from the loss calculation during tr
 Memorization means that a generative model, like an LLM, fails to generalize and either copies or nearly replicates training samples in regions of the input space with poor coverage of training samples.[^2] Memorization in LLMs poses a severe risk to both LLM developers and data donors, whose data eventually end up in a training corpus. Risks include:
 
 *   **Copyright Risk for Providers/Customers:** If a model memorizes lyrics, books, or copyrighted code, it can reproduce them verbatim, leading to uncertainties and potential lawsuits for those hosting the models and consuming the output. Recent practical examples include the lawsuit against Meta for training Llama 3 on Anna's Archive and LibGen [^3] or a lawsuit by German songwriter Helene Fischer (represented by GEMA) against OpenAI for memorizing the lyrics of "Atemlos durch die Nacht"[^4],[^5].
-*   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personally identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personally identifiable information (PII) because the model had memorized them from the training corpus? [^6]
+*   **Privacy Risks:** Memorization in LLMs can also lead to leakage of personally identifiable or sensitive information. Remember the early days, when you could trick ChatGPT to leak real email footers and other personally identifiable information because the model had memorized them from the training corpus? [^6]
 
-No wonder European regulators are increasingly focusing on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis, and implement countermeasures for our own models. Let's see if the *Goldfish Loss* could come to our rescue.
+No wonder European regulators are increasingly pushy on measures to assess memorization. In my daily work at [Atruvia](https://atruvia.de/), I also have to assess the risk of memorization, conduct analysis, and implement countermeasures for our own models. Let's see if the *Goldfish Loss* could come to our rescue.
 
 ## The Goldfish Loss
 
@@ -40,9 +40,6 @@ The objective is minimized if the model correctly predicts the entire sequence $
 
 Here's a naive python implementation:
 ```python
-# for original implementation see supplemental:
-# https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html
-
 import torch
 import torch.nn.functional as F
 
@@ -68,7 +65,9 @@ def compute_clm_loss(logits: torch.Tensor, tokens: torch.Tensor) -> torch.Tensor
     return loss
 ```
 
-### The Goldfish loss
+Now we are all set for the *Goldfish Loss*.
+
+### The Goldfish Loss
 
 The *GL* modifies this by randomly masking a subset of tokens during the loss calculation to mitigate verbatim generation of memorized training samples. Specifically, it drops $1/k$ of the tokens.
 
@@ -87,11 +86,10 @@ As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked
 For now, I'd like to stress the following aspects:
 
 1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not masking like in BERT or tabular pre-training objectives, where the input is corrupted.[^8] The input remains intact!
-2.  **Backward Pass:** The loss is only computed for the *unmasked tokens*. The model is never explicitly penalized for failing to predict the masked tokens, so it doesn't "learn" them as strongly. Critically, at *inference* time, the model must predict ALL tokens (including those that were masked during training). For identical sequences, the model must make an unsupervised guess for previously masked tokens, causing it to diverge from the training sequence and thereby impeding verbatim reproductions.
+2.  **Backward Pass:** The loss is only computed for the *unmasked tokens*. The model is never explicitly penalized for failing to predict the masked tokens, so it doesn't "learn" them as strongly. Critically, at *inference* time, the model must predict *all* tokens (including those that were masked during training). For identical sequences, the model must make an unsupervised guess for previously masked tokens, causing it to diverge from the training sequence and thereby impeding verbatim reproductions.
 
+Here's a python implementation, adapted from the author's supplemental material [^11]:
 ```python
-# for original implementation see supplemental:
-# https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html
 import torch
 import torch.nn.functional as F
 
@@ -115,7 +113,7 @@ def compute_goldfish_loss(logits: torch.Tensor, tokens: torch.Tensor, mask: torc
     loss = F.cross_entropy(
         shift_logits.view(-1, shift_logits.size(-1)),
         shift_labels.view(-1),
-        reduction='none'  # Don't reduce yet
+        reduction='none'  # Don't reduce yet ;)
     )
 
     # Apply mask and compute mean only over unmasked positions
@@ -157,44 +155,37 @@ Now it's your turn to play. Adjust the slider below to see how the parameter $k$
 Here's a Python implementation, adapted from the author's reference implementation, which uses a performant hash-table-based approach [^11].
 
 ```python
-# for original implementation see supplemental:
-# https://proceedings.neurips.cc/paper_files/paper/2024/hash/2ad2dffba5079687651226ac8752df97-Abstract-Conference.html
-
 import torch
 
 # 1. Initialize a global hash table (simulated)
-# In a real scenario, this is a large tensor of random numbers
-TABLE_SIZE = 1000003  # Large prime for better probability approximation
+TABLE_SIZE = 1_000_003  # Choose large prime
 HASH_TABLE = torch.rand(TABLE_SIZE)
 
-def generate_hashed_mask(tokens: torch.Tensor, k: int, context_width: int = 4) -> torch.Tensor:
+def generate_hashed_mask(tokens: torch.Tensor, k: int = 4, context_width: int = 4) -> torch.Tensor:
     """Generate deterministic mask using a hash table strategy.
 
     Args:
         tokens (torch.Tensor): Tensor of token IDs
-        k (int): Masking parameter (masks ~1/k of tokens)
-        context_width (int): Number of tokens in the context window (h)
+        k (int): Masking parameter (masks ~1/k of tokens). Defaults to 4.
+        context_width (int): Number of tokens in the context window (h). Defaults to 4.
 
     Returns:
         torch.Tensor: Binary mask tensor [seq_len] where 1 = compute loss, 0 = skip
     """
     seq_len = tokens.size(0)
-    mask = torch.ones(seq_len) # Default: compute loss for all
+    mask = torch.ones(seq_len) # Don't mask by default
 
     # We can only mask if we have enough context
     if seq_len < context_width:
         return mask
 
     # Create sliding windows of size 'context_width'
-    # unfold(dimension, size, step)
     # Result shape: [num_windows, context_width]
     windows = tokens.unfold(0, context_width, 1)
 
     # Compute a hash for each window
-    # Reference impl uses product of tokens % table_size
     window_hashes = windows.prod(dim=1) % TABLE_SIZE
 
-    # Look up random values in the hash table
     random_values = HASH_TABLE[window_hashes]
 
     # Determine which to drop: value < 1/k
@@ -208,12 +199,14 @@ def generate_hashed_mask(tokens: torch.Tensor, k: int, context_width: int = 4) -
     return mask
 
 # Example usage
-# Using integers as token IDs
 tokens = torch.tensor([101, 2054, 2003, 1037, 2003, 1037, 2003, 1037])
 mask = generate_hashed_mask(tokens, k=4, context_width=4)
 print(mask)
 ```
 
+Two remarks on the code:
+- The hash function is the dot-product of the tokens in the window. As reordered tokens produce the same hash within context, it may not always be the best design choice.
+- The hash table should be reasonably large.
 
 ## Experiments & Results
 
@@ -236,7 +229,7 @@ NOTE: It would have been interesting to see how the standard CLM model with diff
 
 There are some caveats though:
 
-1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on the RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss (see Fig. 5 in paper).
+1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however demonstrate (rather convincingly) on the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2), that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss (see Fig. 5 in paper).
 2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. E.g., small rewrites or some added punctuation or different different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies. (see Sec. 6.3 in paper)
 
 ## My thoughts
@@ -251,7 +244,11 @@ Lastly, I remain slightly skeptical about their copyright compliance angle:
 
 > We hope that goldfish loss paves the way for aiding copyright compliance rather than serving as a means to misuse private data maliciously. (Sec. 7)
 
-While their loss function prevents *verbatim* reproduction, the model still learns the *information* and *style* from the copyrighted works. Is a paraphrased text more copyrighted-compliant? That's a question for the courts, not the loss function.
+While their loss function prevents *verbatim* reproduction, the model still learns the *information* and *style* from the copyrighted works. Is a paraphrased text more copyrighted-compliant? That's a question for the courts, not the loss function.🪝
+
+## Bibliography
+
+{{< bibliography >}}
 
 
 [^1]: More than allegedly. As a child, I used to have a small goldfish living in a large bowl.
