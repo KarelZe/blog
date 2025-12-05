@@ -79,7 +79,7 @@ where $G_i \in \{0, 1\}$ is a binary mask. If $G_i = 0$, the token is ignored in
 
 By intuition, hyperparameter $k$ controls the aggressiveness of masking. For very large values of $k$, the GL approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
 
-![meme on forgetful dory from finding nemo](meme-dory.jpg)
+{{< figure src="meme-dory.jpg" caption="Poor forgetful Dory" >}}
 
 As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different.[^9] We will discuss in the next section how to arrive at such a mask.
 
@@ -132,7 +132,7 @@ Ideally, we'd like to mask the same passages identically to prevent leakage.
 
 Naive approaches, like masking every $k$-th token (referred to in the paper as *static mask*), don't help much here, as the mask would be aligned to the pre-training sequence and deviate if the text were chunked or prefixed differently. Eventually, the model could see (and learn) every token. Feel free to experiment with the downsides of *static masking* in the interactive visualization.
 
-Another naive idea could be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), however, the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
+Another naive idea could be to mask purely randomly. If masks were purely random (referred to as *random mask* in the paper), the model could learn every token over the course of several epochs or from differently masked duplicates, impeding our original goal.
 
 Thus, we need a mask that is:
 
@@ -205,8 +205,8 @@ print(mask)
 ```
 
 Two remarks on the code:
-- The hash function is the product of the tokens in the window. As reordered tokens produce the same hash within context, it may not always be the best design choice. Also, be aware of token with id $0$.
-- The hash table should be reasonably large.
+- Since the hash function is simply the product of token IDs modulo the table size, it is permutation-invariant (e.g., "A B" and "B A" produce the same hash). This leads to collisions, as reordered tokens within the same context produce the same hash. This may not always be desirable. Also, be aware of multiplying with token id $0$.
+- The hash table should be reasonably large and of prime size.
 
 ## Experiments & Results
 
@@ -234,7 +234,12 @@ In the extreme setup, the LLaMA-2-7B model with:
 *   **Standard Training:**  With standard loss, the model memorized 84/100 articles verbatim, which gives an exact match of $84\%$, as shown in the figure below.
 *   **Goldfish Loss ($k=4$):** The model trained with goldfish loss achieved a perfect score of exact match $0\%$. The results for the RougeL metrics indicate that this model still memorizes subsequences, but the likelihood of getting very long subsequences correct decreases exponentially with the length of the subsequence.
 
-![Memorization result in extreme setup](extreme-memorization.png)
+<figure>
+    <img src="extreme-memorization.png" alt="Memorization result in extreme setup">
+    <figcaption>Memorization result for the extreme setup. Figure from {{< cite t hansBeGoldfishDont2024 >}}.</figcaption>
+</figure>
+
+
 
 For the extreme setup, the authors are also able to show that sequences start to diverge at the index position where the first token has been dropped. This matches with our intuition from the unsupervised guess of dropped tokens 💪.
 
@@ -242,7 +247,10 @@ For the extreme setup, the authors are also able to show that sequences start to
 
 In the standard setup, the Goldfish Loss still significantly reduces the model's ability to reproduce training sequences compared to a model trained with standard CLM objective, as visualized in the figure below.
 
-![Memorization result in standard setup](rouge-l-standard-model.png)
+<figure>
+    <img src="rouge-l-standard-model.png" alt="Memorization result in standard setup">
+    <figcaption>Memorization result in standard setup. Figure from {{< cite t hansBeGoldfishDont2024 >}}.</figcaption>
+</figure>
 
 As evident from the graphics above, for low $k$ values (e.g., $k=3$ or $k=4$; fairly aggressive masking) the distribution of RougeL scores of models with goldfish loss are fairly similar to the control model, which was not trained on the test sequences at all. The high number of exact matches for the model with standard loss is concerning though.
 
@@ -250,7 +258,10 @@ I would have liked to see if they had also reported results for a setup where th
 
 You might be wondering if the Goldfish Loss affects benchmark performance. In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
 
-![Benchmark results](benchmark-performance-standard.png)
+<figure>
+    <img src="benchmark-performance-standard.png" alt="Benchmark results">
+    <figcaption>Benchmark Performance. Figure from {{< cite t hansBeGoldfishDont2024 >}}.</figcaption>
+</figure>
 
 The results are visualized above. There seem to be no systematic differences between the overall performance of the control, standard loss, and any of the goldfish loss models.
 
@@ -261,7 +272,10 @@ There are some caveats though:
 
 1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however, demonstrate (rather convincingly) on a RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss. This can be seen below.
 
-![Validation loss comparison](val-loss-curves-standard-model.png)
+<figure>
+    <img src="val-loss-curves-standard-model.png" alt="Validation loss comparison">
+    <figcaption>Validation loss comparison. Figure from {{< cite hansBeGoldfishDont2024 >}}.</figcaption>
+</figure>
 
 2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. For example, small rewrites or some added punctuation or different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies.
 
@@ -271,7 +285,7 @@ The goldfish loss is a clever, lightweight adaption of the CLM that can be easil
 
 It offers a promising alternative for training powerful models that respect privacy-by-design, rather than relying on complex machine unlearning strategies. I agree with the authors, that it's most useful on high-risk sources or late phases of training e.g., fine-tuning.
 
-In practice, the positive effects from the *GL* will only be as good as the engineering that went into normalization (see remarks in Sec. 3.1 of paper), filtering and removal of near-duplicates of the training corpus. The common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds needs to be rethought, as both would impede consistent masking. [^13]
+In practice, the positive effects from the *GL* will only be as good as the engineering that went into normalization (see remarks in Sec. 3.1 of the paper), filtering and removal of near-duplicates of the training corpus. The common practice of training on rewritten synthetic texts or near-identical synthetic texts based on real seeds needs to be rethought, as both would impede consistent masking. [^13]
 
 Lastly, I remain slightly skeptical about their copyright compliance angle:
 
