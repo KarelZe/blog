@@ -75,7 +75,7 @@ $$
 \mathcal{L}_{\text{goldfish}}(\theta)=-\frac{1}{|G|} \sum_{i=1}^L G_i \log P\left(x_i \mid x_{<i} ; \theta\right)
 $$
 
-where $G_i \in \{0, 1\}$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise.
+where $G \in \{0, 1\}^L$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise.
 
 By intuition, hyperparameter $k$ controls the aggressiveness of masking. For very large values of $k$, the GL approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
 
@@ -205,7 +205,7 @@ print(mask)
 ```
 
 Two remarks on the code:
-- Since the hash function is simply the product of token IDs modulo the table size, it is permutation-invariant (e.g., "A B" and "B A" produce the same hash). This leads to collisions, as reordered tokens within the same context produce the same hash. This may not always be desirable. Also, be aware of multiplying with token id $0$.
+- Since the hash function is simply the product of token IDs modulo the table size, it is permutation-invariant (e.g., `[1,2,3]` and `[2,3,1]` produce the same hash). This leads to collisions, as reordered tokens within the same context produce the same hash. This may not always be desirable. Also, be aware of multiplying with token id $0$.
 - The hash table should be reasonably large and of prime size.
 
 ## Experiments & Results
@@ -213,8 +213,8 @@ Two remarks on the code:
 The authors tested *Goldfish Loss* in diverse experiments w.r.t. memorization, training efficiency, generation quality, and robustness to adversarial attacks. For my humble blog post I'll focus on the first three.
 
 They distinguish between two setups:
-- **Extreme Setup (aka Recipe For Disaster 🤓):** a LLaMA-2-7B model for 100 epochs on a small dataset of 100 English Wikipedia articles. Temperature set to $0$. This setup is aimed to promote memorization.
-- **Standard Setup:** A TinyLLaMA-1.1B model trained for 1 epoch. This time the training dataset consists of sequences from the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2) and Wikipedia. Test samples from Wikipedia were duplicated several times and added in random locations to the training set to mimic data duplication. Once more they use greedy decoding.
+- **Extreme Setup (aka Recipe For Disaster 🤓):** a Llama-2-7B model for 100 epochs on a small dataset of 100 English Wikipedia articles. Temperature set to $0$. This setup is aimed to promote memorization.
+- **Standard Setup:** A TinyLlama-1.1B model trained for 1 epoch. This time the training dataset consists of sequences from the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2) and Wikipedia. Test samples from Wikipedia were duplicated several times and added in random locations to the training set to mimic data duplication. Once more they use greedy decoding.
 - In both setups, the test sets consists of a subsample of training sequences, that have been split into a prefix and a length of $n$ tokens.
 
 Memorization is quantified in terms of *exact match* {{< cite carliniQuantifyingMemorizationNeural2023 >}} and *RougeL scores* {{< cite lin-2004-rouge >}}:
@@ -229,7 +229,7 @@ Both metrics share the property that a score of $1$ indicates perfect memorizati
 
 ### Memorization in the Extreme Setup
 
-In the extreme setup, the LLaMA-2-7B model with:
+In the extreme setup, the Llama-2-7B model with:
 
 *   **Standard Training:**  With standard loss, the model memorized 84/100 articles verbatim, which gives an exact match of $84\%$, as shown in the figure below.
 *   **Goldfish Loss ($k=4$):** The model trained with goldfish loss achieved a perfect score of exact match $0\%$. The results for the RougeL metrics indicate that this model still memorizes subsequences, but the likelihood of getting very long subsequences correct decreases exponentially with the length of the subsequence.
@@ -245,7 +245,7 @@ For the extreme setup, the authors are also able to show that sequences start to
 
 ### Memorization in the Standard Setup
 
-In the standard setup, the Goldfish Loss still significantly reduces the model's ability to reproduce training sequences compared to a model trained with standard CLM objective, as visualized in the figure below.
+In the standard setup, the goldfish loss still significantly reduces the model's ability to reproduce training sequences compared to a model trained with standard CLM objective, as visualized in the figure below.
 
 <figure>
     <img src="rouge-l-standard-model.png" alt="Memorization result in standard setup">
@@ -256,7 +256,7 @@ As evident from the graphics above, for low $k$ values (e.g., $k=3$ or $k=4$; fa
 
 I would have liked to see if they had also reported results for a setup where the training set is contaminated with near-duplicates that are hard to mask identically.
 
-You might be wondering if the Goldfish Loss affects benchmark performance. In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
+You might be wondering if the goldfish loss affects benchmark performance. In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
 
 <figure>
     <img src="benchmark-performance-standard.png" alt="Benchmark results">
