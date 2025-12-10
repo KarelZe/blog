@@ -13,3 +13,5 @@ $RECYCLE.BIN/
 .DS_Store
 resources/
 venv/
+
+*.pth
