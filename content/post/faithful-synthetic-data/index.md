@@ -147,6 +147,14 @@ Let's next see what is needed to implement the approach practically.
 
 {{< figure src="cat-tracing-meme.jpg" caption="Girl reproducing research." >}}
 
+```yaml
+# possible large-scale dataset with modern generatative models
+dataset:
+- https://huggingface.co/papers/2407.20337
+- https://arxiv.org/pdf/2407.20337
+- https://github.com/aimagelab/code
+```
+
 1.  **Evaluation embeddings:** Evaluation embeddings are learned using a simple *one-class* neural network with a loss function inspired *one-class* support-vector machines (SVMs). The neural networks is rather simplistic with 2 to 3 layers, ahidden dimension of 32 to 128, and a good old ReLU activation. We learn the parameters on *real samples*. The *soft-boundary loss function* is given by $L=\sum_i \ell_i$ where:
 
     $$\ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left|\Phi\left(X\_{r, i}\right)-c_r\right|^2-r^2\right\}$$
