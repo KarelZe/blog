@@ -58,7 +58,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         tokens.forEach((token, index) => {
             const span = document.createElement('span');
-            span.textContent = token + ' ';
 
             let isMasked = false;
 
@@ -92,8 +91,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (isMasked) {
+                // adapted from paper appendix.
+                span.textContent = '[DROP] ';
                 span.classList.add('masked-token');
-                span.title = "Masked (Loss ignored)";
+                span.title = "Masked (Loss ignored): " + token;
+            } else {
+                span.textContent = token + ' ';
             }
 
             textContainer.appendChild(span);
