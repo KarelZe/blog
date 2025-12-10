@@ -31,16 +31,18 @@ if [ ! -f "$CSL_STYLE" ]; then
     exit 1
 fi
 
-# Counter for processed files
-processed=0
+# Counters for processed files
+processed_citations=0
+copied=0
 
-# Find all .md.draft files that contain Pandoc citations [@...]
+# Find all .md.draft files
 find "$CONTENT_DIR" -name "*.md.draft" -type f | while read -r draft_file; do
-    if grep -q '\[@[^]]*\]' "$draft_file"; then
-        # Derive the output .md file name
-        output_file="${draft_file%.draft}"
+    # Derive the output .md file name
+    output_file="${draft_file%.draft}"
 
-        echo "Processing: $draft_file → $output_file"
+    if grep -q '\[@[^]]*\]' "$draft_file"; then
+        # File contains citations - process with Pandoc
+        echo "Processing citations: $draft_file → $output_file"
 
         # Create temporary output
         temp_file="${output_file}.tmp"
@@ -66,15 +68,22 @@ find "$CONTENT_DIR" -name "*.md.draft" -type f | while read -r draft_file; do
         # Replace output file if successful
         if [ $? -eq 0 ]; then
             mv "$temp_file" "$output_file"
-            processed=$((processed + 1))
+            processed_citations=$((processed_citations + 1))
         else
             echo "Error processing $draft_file"
             rm -f "$temp_file"
             exit 1
         fi
+    else
+        # No citations - just copy the file
+        echo "Copying: $draft_file → $output_file"
+        cp "$draft_file" "$output_file"
+        copied=$((copied + 1))
     fi
 done
 
 echo ""
-echo "Citation processing complete! Processed $processed file(s)."
-echo "Source files (.md.draft) preserved with unresolved citations."
+echo "Citation processing complete!"
+echo "  - Processed with citations: $processed_citations file(s)"
+echo "  - Copied without citations: $copied file(s)"
+echo "Source files (.md.draft) preserved for future edits."
