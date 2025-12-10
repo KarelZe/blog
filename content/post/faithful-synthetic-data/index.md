@@ -6,7 +6,7 @@ csl: chicago-author-date.csl
 date: "2025-12-10 07:52:00+02:00"
 description: My thoughts on the paper "How Faithful is Your Synthetic Data?".
 DisableComments: false
-draft: true
+draft: false
 images:
 - images/thumbnail_cat_hypersphere.png
 Tags:

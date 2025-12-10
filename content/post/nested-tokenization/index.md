@@ -6,7 +6,7 @@ csl: chicago-author-date.csl
 date: "2025-12-10T11:00:00+02:00"
 description: My thoughts on the paper "Nested Tokenization for Larger Context in Large Images".
 disableComments: false
-draft: true
+draft: false
 images:
 - images/thumbnail_nested_tokenization.png
 tags:
