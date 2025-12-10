@@ -1,0 +1,162 @@
+<style>
+    .rouge-viz-container {
+        /* GitHub Light Theme Defaults */
+        --border-color: #d0d7de;
+        --bg-color: #ffffff;
+        --text-color: #24292f;
+        --code-bg: #f6f8fa;
+        --highlight-bg: #ddf4ff;
+        --highlight-text: #0969da;
+        --match-bg: #dafbe1;
+        --match-text: #1a7f37;
+        --mismatch-bg: #ffebe9;
+        --mismatch-text: #cf222e;
+
+        border: 1px solid var(--border-color);
+        padding: 20px;
+        border-radius: 6px;
+        margin: 20px 0;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
+
+    .rouge-text-area,
+    .rouge-input-area {
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+        font-size: 1.1em;
+        line-height: 1.6;
+        background: var(--code-bg);
+        padding: 15px;
+        border-radius: 6px;
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        box-sizing: border-box;
+        width: 100%;
+        display: block;
+        margin-bottom: 15px;
+    }
+
+    .rouge-input-area {
+        resize: vertical;
+    }
+
+    .rouge-metrics {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .rouge-metric-card {
+        flex: 1;
+        background: var(--code-bg);
+        padding: 15px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        text-align: center;
+        min-width: 150px;
+    }
+
+    .rouge-metric-value {
+        font-size: 2em;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .rouge-metric-label {
+        font-size: 0.9em;
+        color: var(--text-color);
+        opacity: 0.8;
+    }
+
+    .lcs-token {
+        background-color: var(--match-bg);
+        color: var(--match-text);
+        border-radius: 3px;
+        padding: 0 2px;
+    }
+
+    /* Dark mode support */
+    @media (prefers-color-scheme: dark) {
+        .rouge-viz-container {
+            /* GitHub Dark Theme Defaults */
+            --border-color: #30363d;
+            --bg-color: #0d1117;
+            --text-color: #c9d1d9;
+            --code-bg: #161b22;
+            --highlight-bg: #1f6feb;
+            /* Adjusted for dark */
+            --highlight-text: #58a6ff;
+            --match-bg: #238636;
+            /* Adjusted for dark */
+            --match-text: #ffffff;
+            --mismatch-bg: #441d20;
+            --mismatch-text: #ff7b72;
+        }
+
+        .lcs-token {
+            background-color: rgba(35, 134, 54, 0.4);
+            /* Softer green for dark mode text bg */
+            color: #7ee787;
+        }
+    }
+
+    /* Support for theme-based dark mode if class is on html */
+    html.theme--dark .rouge-viz-container {
+        --border-color: #30363d;
+        --bg-color: #0d1117;
+        --text-color: #c9d1d9;
+        --code-bg: #161b22;
+        --highlight-bg: #1f6feb;
+        --highlight-text: #58a6ff;
+        --match-bg: #238636;
+        --match-text: #ffffff;
+        --mismatch-bg: #441d20;
+        --mismatch-text: #ff7b72;
+    }
+
+    html.theme--dark .lcs-token {
+        background-color: rgba(35, 134, 54, 0.4);
+        color: #7ee787;
+    }
+</style>
+
+<div class="rouge-viz-container">
+    <h3>Interactive ROUGE-L & Exact Match</h3>
+    <p>Compare a reference sequence with a generated sequence to see how the metrics are calculated. The <strong>Longest
+            Common Subsequence (LCS)</strong> used for ROUGE-L is highlighted in green.</p>
+
+    <div class="rouge-metrics">
+        <div class="rouge-metric-card">
+            <span class="rouge-metric-value" id="rouge-score">0.00</span>
+            <span class="rouge-metric-label">ROUGE-L Score</span>
+        </div>
+        <div class="rouge-metric-card">
+            <span class="rouge-metric-value" id="exact-match-score">0.00</span>
+            <span class="rouge-metric-label">Exact Match</span>
+        </div>
+    </div>
+
+    <div>
+        <label for="reference-input" style="font-weight: bold; display: block; margin-bottom: 5px;">Reference
+            Sequence:</label>
+        <textarea id="reference-input" rows="3"
+            class="rouge-input-area">The quick brown fox jumps over the lazy dog</textarea>
+    </div>
+
+    <div>
+        <label for="generated-input" style="font-weight: bold; display: block; margin-bottom: 5px;">Generated
+            Sequence:</label>
+        <textarea id="generated-input" rows="3" class="rouge-input-area">The brown fox jumps over the dog</textarea>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Visualization (LCS Highlighted):</label>
+        <div id="rouge-visualization-output" class="rouge-text-area">
+            <!-- Visualization will be injected here -->
+        </div>
+    </div>
+
+    <script src="/js/rouge-visualization.js"></script>
+</div>

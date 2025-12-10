@@ -1,9 +1,14 @@
 ---
 title: Timelapse of writing a thesis in 180 days🎓
-date: 2024-01-05T17:35:00+02:00
+date: 2024-01-05 17:35:00+02:00
 Description: Timelapse of writing a thesis
-Tags: [academia, thesis, making-of, timelapse]
-Categories: [academia]
+Tags:
+  - academia
+  - thesis
+  - making-of
+  - timelapse
+Categories:
+  - academia
 DisableComments: false
 thumbnail: images/thumbnail_writing_thesis.png
 images:

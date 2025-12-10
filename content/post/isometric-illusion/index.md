@@ -1,9 +1,15 @@
 ---
 title: Isometric Illusion✨
-date: 2015-02-09T07:00:00+02:00
+date: 2015-02-09 07:00:00+02:00
 Description: Creating monument valley-like images in Blender
-Tags: [blender, art, ustwo, monument valley, blendernation]
-Categories: [art]
+Tags:
+  - blender
+  - art
+  - ustwo
+  - monument valley
+  - blendernation
+Categories:
+  - art
 DisableComments: false
 thumbnail: images/thumbnail_monument_valley.png
 images:
