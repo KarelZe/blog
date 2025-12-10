@@ -16,10 +16,24 @@ tags:
 - vision-language-models
 - paper
 thumbnail: images/thumbnail_nested_tokenization.png
-title: My thoughts on Nested Tokenization for Larger Context in Large Images ✂️
+title: My thoughts on "Nested Tokenization for Larger Context in Large Images" ✂️
 ---
 
-## Ressources
+Processing images in Large Multimodal Models (LMMs) can be a tough challenge. Sometimes, we want the model to focus on the big picture only while other times we need to focus on tiny details in small parts of the image. Ideally, no tokens or inference time should be wasted on *irrelevant* regions.
+
+I face this challenge frequently at work. At [Atruvia](https://atruvia.de/), we solve many document extraction tasks using LMMs. Images may be mostly whitespace, but can contain tiny details, such as [diacritics](https://en.wikipedia.org/wiki/Diacritic) in names like ◌̣ or delimiters in amounts that matter. In recent years, the size of image uploads has exploded due to higher camera resolutions. Wouldn't it be great if we only processed the relevant parts of the image, especially at high resolution? That's where the paper *"xT: Nested Tokenization for Larger Context in Large Images"* by Gupta et al. (2024) might come in handy.
+
+Its core idea is simple. The paper introduces a two-stage framework, named $xT$, that allows existing vision backbones to process large-scale images at a fraction of the memory and compute cost. To accomplish this, $xT$ employs a divide-and-conquer strategy, referred to as *nested tokenization*: First, images are divided into coarse regions, then patches containing local details, which are passed through a *hierarchical region encoder* to obtain enriched region encodings. Subsequently, in a *context encoder*, the context from other regions is encoded onto the region encodings to create a sequence of context-aware region encodings, ready to be passed to a decoder.
+
+The savings are twofold: As the region encoding is independent from other image regions and happening on smaller image regions, it can be done sequentially requiring less memory and compute. Also, the sequence of contextualized region encodings is typically shorter than in a comparable setup. Before going into the nitty-gritty details, let's see where previous approaches fall short.
+
+## Where Existing Approaches Fall Short
+
+## A Parameter Game
+
+## One Year Later
+
+## Resources
 
 (Gupta et al. 2024)
 
@@ -30,7 +44,7 @@ title: My thoughts on Nested Tokenization for Larger Context in Large Images ✂
 - github
 
 Paper addresses the following problem:
-- images needing to be handled by ai models are getting larger. E.g., compare the latest iPhone 17 Pro shooting images @ 45 MP that might be input to your vision-language model. On the other hand, handling large-scale images is typically sub-optimal. It either uses down-sampling, or cropping. Generally, we face a quadratic increase in memory usage as a function of image size.
+- images needing to be handled by ai models are getting larger. E.g., compare the latest iPhone 16 Pro shooting images @ 45 MP that might be input to your vision-language model. On the other hand, handling large-scale images is typically sub-optimal. It either uses down-sampling, or cropping. Generally, we face a quadratic increase in memory usage as a function of image size.
 - *comment:* Guess this is due to the fact that images are rectangular but also due to the fact that attention is quadratic and that a token sequence of a larger image becomes longer?
 - *comment*: cropping is often done with global thumbnails from my experience.
 - Both cropping and down-sampling have several down-sights. Context or information gets lost (cp. classical cropping/down-sampling.)
