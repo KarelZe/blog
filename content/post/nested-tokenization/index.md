@@ -6,7 +6,7 @@ csl: chicago-author-date.csl
 date: "2025-12-10T11:00:00+02:00"
 description: My thoughts on the paper "Nested Tokenization for Larger Context in Large Images".
 disableComments: false
-draft: true
+draft: false
 images:
 - images/thumbnail_nested_tokenization.png
 tags:
@@ -15,11 +15,85 @@ tags:
 - visual data
 - vision-language-models
 - paper
+- llm
+- ml
 thumbnail: images/thumbnail_nested_tokenization.png
-title: My thoughts on Nested Tokenization for Larger Context in Large Images ✂️
+title: My thoughts on "Nested Tokenization for Larger Context in Large Images" ✂️
 ---
 
-## Ressources
+Processing images in Large Multimodal Models (LMMs) can be a tough challenge. Sometimes, we want the model to focus on the big picture only while other times we need to focus on tiny details in small parts of the image. Ideally, no tokens or inference time should be wasted on *irrelevant* regions.
+
+I face this challenge frequently at work. At [Atruvia](https://atruvia.de/), we solve many document extraction tasks using LMMs. Images may be mostly whitespace, but can contain tiny details, such as [diacritics](https://en.wikipedia.org/wiki/Diacritic) in names like ◌̣ or delimiters in amounts that matter. In recent years, the size of image uploads has exploded due to higher camera resolutions. Wouldn't it be great if we only processed the relevant parts of the image, especially at high resolution? That's where the paper *"xT: Nested Tokenization for Larger Context in Large Images"* by Gupta et al. (2024) might come in handy.
+
+Its core idea is simple. The paper introduces a two-stage framework, named $xT$, that allows existing vision backbones to process large-scale images at a fraction of the memory and compute cost. To accomplish this, $xT$ employs a divide-and-conquer strategy, referred to as *nested tokenization*: First, images are divided into coarse regions, then patches containing local details, which are passed through a *hierarchical region encoder* to obtain enriched region encodings. Subsequently, in a *context encoder*, the context from other regions is encoded onto the region encodings to create a sequence of context-aware region encodings, ready to be passed to a decoder.
+
+The savings are twofold: As the region encoding is independent from other image regions and happening on smaller image regions, it can be done sequentially requiring less memory and compute. Also, the sequence of contextualized region encodings is typically shorter than in a comparable setup. Before going into the nitty-gritty details, let's see where previous approaches fall short.
+
+``` yaml
+todo: My own explanation could be further simplified. xT is a streaming, two-stage architecture in which a powerful vision backbones extracts features from regions of a large image in batches. These features are streamed to a shallow context encoder which integrates global context across local features, effectively increasing the receptive field of the vision backbone across the entire image while staying within memory and parameter limits
+```
+
+## Where Existing Approaches Fall Short
+
+Two common strategies for handling large-scale images, mentioned in the paper, are *cropping* and *down-sampling*, which are both problematic in their own way. Cropping may lose the global context within the image, as the model sees only parts of the image at once, and down-sampling will inevitably lose local details. From experience, [down-sampling algorithms](https://visionbook.mit.edu/upsamplig_downsampling_2.html) like $k$-nearest neighbors or bicubic interpolation need to be chosen wisely, as the algorithm may introduce subtle scaling artifacts affecting downstream performance.
+
+Several state-of-the-art MMLs like *Phi-3.5-Vision* (Abdin et al. 2024, 10), use a combination of down-sampling and cropping. One such approach is *dynamic resolution with automatic patch configuration* (Dong et al. 2024, 5) for processing high-res images. The high-res image $x$ with size $[h, w]$ is partitioned into (at most) $\mathcal{H}$ image patches of size $336 \times 336$ and an additional global thumbnail for incorporating the global context.[^1]
+
+First, the image gets resized and padded to a new image $\hat{x}$ with size $\left[p_h \times 336, p_w \times 336\right]$. Resizing is subject to the following constraints:
+
+$$p_w \times p_h \leq \mathcal{H} ; p_h=\left\lceil p_w \times h / w\right\rceil$$
+
+here $p_w$ and $p_h$ represent the number of patches in each row and column, respectively. The so-resized image $\hat{x}$ is then split into a sequence of $p_h \times p_w$ non-overlapping patches. The global thumbnail is the input image scaled to match the resolution of the patches.
+
+For $\mathcal{H}=9$, the model allows up to 9 patches, covering a broad range of resolutions such as $1008 \times 1008$, $672 \times 1344$ or $336 \times 3024$. Let's now see how a vision encoder would see the image patches:
+
+``` yaml
+todo: add visualizations.
+```
+
+The visualization is generated using the following python code:
+
+``` python
+import math
+
+def calculate_grid_dimensions(width, height, max_patches=9):
+    """
+    Calculates the optimal grid dimensions (p_w, p_h) for dynamic resolution.
+
+    Args:
+        width (int): Original image width.
+        height (int): Original image height.
+        max_patches (int): Maximum number of patches allowed (H).
+
+    Returns:
+        tuple: (p_w, p_h) best grid dimensions.
+    """
+    best_pw, best_ph = 1, 1
+
+    # Iterate over possible values of p_w
+    for pw in range(1, max_patches + 1):
+        ph = math.ceil(pw * height / width)
+
+        if pw * ph <= max_patches:
+            # We assume we want to maximize resolution, so we update best found so far
+            # Since p_w is increasing and p_h is roughly monotonic increasing,
+            # the last valid configuration is usually the one with max patches.
+            best_pw, best_ph = pw, ph
+        else:
+            # Once we exceed max_patches, larger p_w will only lead to larger p_h,
+            # so we can stop.
+            break
+
+    return best_pw, best_ph
+```
+
+## A Parameter Game
+
+## One Year Later
+
+    todo: not sure how the paper would relate to approaches from the latest Qwen3-VL paper, where the encoder can handle arbitrary image sizes. https://arxiv.org/pdf/2511.21631
+
+## Resources
 
 (Gupta et al. 2024)
 
@@ -30,7 +104,7 @@ title: My thoughts on Nested Tokenization for Larger Context in Large Images ✂
 - github
 
 Paper addresses the following problem:
-- images needing to be handled by ai models are getting larger. E.g., compare the latest iPhone 17 Pro shooting images @ 45 MP that might be input to your vision-language model. On the other hand, handling large-scale images is typically sub-optimal. It either uses down-sampling, or cropping. Generally, we face a quadratic increase in memory usage as a function of image size.
+- images needing to be handled by ai models are getting larger. E.g., compare the latest iPhone 16 Pro shooting images @ 45 MP that might be input to your vision-language model. On the other hand, handling large-scale images is typically sub-optimal. It either uses down-sampling, or cropping. Generally, we face a quadratic increase in memory usage as a function of image size.
 - *comment:* Guess this is due to the fact that images are rectangular but also due to the fact that attention is quadratic and that a token sequence of a larger image becomes longer?
 - *comment*: cropping is often done with global thumbnails from my experience.
 - Both cropping and down-sampling have several down-sights. Context or information gets lost (cp. classical cropping/down-sampling.)
@@ -74,6 +148,18 @@ In their blog they write:
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 
+<div id="ref-abdinPhi3TechnicalReport2024" class="csl-entry">
+
+Abdin, Marah, Jyoti Aneja, Hany Awadalla, et al. 2024. *Phi-3 Technical Report: A Highly Capable Language Model Locally on Your Phone*. arXiv:2404.14219. arXiv. <https://doi.org/10.48550/arXiv.2404.14219>.
+
+</div>
+
+<div id="ref-dongInternLMXComposer24KHDPioneeringLarge2024" class="csl-entry">
+
+Dong, Xiaoyi, Pan Zhang, Yuhang Zang, et al. 2024. *InternLM-XComposer2-4KHD: A Pioneering Large Vision-Language Model Handling Resolutions from 336 Pixels to 4K HD*. arXiv:2404.06512. arXiv. <https://doi.org/10.48550/arXiv.2404.06512>.
+
+</div>
+
 <div id="ref-guptaXTNestedTokenization2024" class="csl-entry">
 
 Gupta, Ritwik, Shufan Li, Tyler Zhu, Jitendra Malik, Trevor Darrell, and Karttikeya Mangalam. 2024. *[xT]{.nocase}: Nested Tokenization for Larger Context in Large Images*. arXiv:2403.01915. arXiv. <https://doi.org/10.48550/arXiv.2403.01915>.
@@ -81,3 +167,5 @@ Gupta, Ritwik, Shufan Li, Tyler Zhu, Jitendra Malik, Trevor Darrell, and Karttik
 </div>
 
 </div>
+
+[^1]: Somewhat confusing. Image patches refer to the same thing as regions in the $xT$ paper.
