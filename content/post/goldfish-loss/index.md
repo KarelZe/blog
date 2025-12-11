@@ -77,15 +77,15 @@ Now we are all set for the *Goldfish Loss*.
 
 The *GL* modifies this by randomly masking a subset of tokens during the loss calculation to mitigate verbatim generation of memorized training samples. Specifically, it drops $1/k$ of the tokens.
 
-$$\mathcal{L}_{\text{goldfish}}(\theta)=-\frac{1}{|G|} \sum_{i=1}^L G_i \log P\left(x_i \mid x_{<i} ; \theta\right)$$
+$$\mathcal{L}_{\text{goldfish}}(\theta)=-\frac{1}{|{\color{cornflowerblue}G}|} \sum_{i=1}^L {\color{cornflowerblue}G_i} \log P\left(x_i \mid x_{<i} ; \theta\right)$$
 
-where $G \in \{0, 1\}^L$ is a binary mask. If $G_i = 0$, the token is ignored in the loss and contributes otherwise.
+where ${\color{cornflowerblue}G \in \{0, 1\}^L}$ is a binary mask. If ${\color{cornflowerblue}G_i = 0}$, the token is ignored in the loss and contributes otherwise.
 
 By intuition, hyperparameter $k$ controls the aggressiveness of masking. For very large values of $k$, the GL approaches the standard CLM objective, since $\lim_{k \to \infty} \frac{1}{k} = 0$ means almost no tokens are masked. In the paper the authors set $k=4$, meaning 25% of all tokens are dropped.
 
 {{< figure src="meme-dory.jpg" caption="Poor forgetful Dory" >}}
 
-As for $G$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different.[^8] We will discuss in the next section how to arrive at such a mask.
+As for ${\color{cornflowerblue}G}$, the mask is *pseudo-random*, meaning that a passage is always masked *in the same manner*, unless the sequence is ever-so-slightly different.[^8] We will discuss in the next section how to arrive at such a mask.
 
 For now, I'd like to stress the following aspects:
 
@@ -144,9 +144,9 @@ Thus, we need a mask that is:
 - deterministic
 - independent from the absolute position of a sequence within a longer sequence
 
-Hence, the authors propose a *localized hashed mask*. The decision to mask a token $x_i$ is deterministic based on its immediate preceding context (the previous $h$ tokens) and the output of a hash function $\operatorname{hash}:|V|^h \rightarrow \mathbb{R}$. We mask $x_i$ (i.e., set $G_i=0$) if:
+Hence, the authors propose a *localized hashed mask*. The decision to mask a token $x_i$ is deterministic based on its immediate preceding context (the previous $h$ tokens) and the output of a hash function $\operatorname{hash}:|V|^h \rightarrow \mathbb{R}$. We mask $x_i$ (i.e., set ${\color{cornflowerblue}G_i=0}$) if:
 
-$$\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies \text{G}_i = 0$$
+$$\operatorname{hash}(x_{i-h}, \dots, x_{i-1}) <  \frac{1}{k} \implies {\color{cornflowerblue}G_i = 0}$$
 
 Note that with the context width $h$, we introduce another hyperparameter that needs to be set carefully. An example from the paper makes this very clear: If $h=7$ is used, the model may never learn to produce the word "Power" at the end of the phrase "the Los Angeles Department of Water and Power.". This would be highly undesirable. Equally, $h$ should not be too large, as then the hash is underdetermined for the first $h-1$ tokens in the document. In the reference implementation, the context width defaults to $h=4$.
 

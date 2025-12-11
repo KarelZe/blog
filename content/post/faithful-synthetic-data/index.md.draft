@@ -14,7 +14,7 @@ DisableComments: false
 thumbnail: images/thumbnail_cat_hypersphere.png
 images:
   - images/thumbnail_cat_hypersphere.png
-draft: false
+draft: true
 bibliography: library.bib
 csl: chicago-author-date.csl
 ---
