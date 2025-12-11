@@ -50,13 +50,43 @@ here $p_w$ and $p_h$ represent the number of patches in each row and column, res
 For $\mathcal{H}=9$, the model allows up to 9 patches, covering a broad range of resolutions such as $1008 \times 1008$, $672 \times 1344$ or $336 \times 3024$. Let's now see how a vision encoder would see the image patches:
 
 ```yaml
-todo: add code.
+todo: add visualizations.
 ```
 
 The visualization is generated using the following python code:
 
 ```python
-# TODO: add code.
+import math
+
+def calculate_grid_dimensions(width, height, max_patches=9):
+    """
+    Calculates the optimal grid dimensions (p_w, p_h) for dynamic resolution.
+
+    Args:
+        width (int): Original image width.
+        height (int): Original image height.
+        max_patches (int): Maximum number of patches allowed (H).
+
+    Returns:
+        tuple: (p_w, p_h) best grid dimensions.
+    """
+    best_pw, best_ph = 1, 1
+
+    # Iterate over possible values of p_w
+    for pw in range(1, max_patches + 1):
+        ph = math.ceil(pw * height / width)
+
+        if pw * ph <= max_patches:
+            # We assume we want to maximize resolution, so we update best found so far
+            # Since p_w is increasing and p_h is roughly monotonic increasing,
+            # the last valid configuration is usually the one with max patches.
+            best_pw, best_ph = pw, ph
+        else:
+            # Once we exceed max_patches, larger p_w will only lead to larger p_h,
+            # so we can stop.
+            break
+
+    return best_pw, best_ph
 ```
 
 ## A Parameter Game
