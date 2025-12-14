@@ -55,6 +55,7 @@ find "$CONTENT_DIR" -name "*.md.draft" -type f | while read -r draft_file; do
             --citeproc \
             --bibliography="$BIBLIOGRAPHY" \
             --csl="$CSL_STYLE" \
+            -M link-citations=true \
             --from=markdown \
             --to=markdown-fenced_divs+raw_attribute \
             --wrap=preserve \

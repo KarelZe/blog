@@ -8,6 +8,7 @@ description: My thoughts on the paper 'Be like a Goldfish, Don't Memorize!' and 
 DisableComments: false
 images:
 - images/thumbnail_goldfish_loss.png
+link-citations: true
 Tags:
 - causal-language-modelling
 - llm
@@ -18,7 +19,7 @@ thumbnail: images/thumbnail_goldfish_loss.png
 title: My thoughts on "Be like a Goldfish, Don't Memorize!"
 ---
 
-Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" (Hans et al. 2024) introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
+Training large language models (LLMs) on vast datasets is a double-edged sword. While we want them to learn general patterns, we must strictly avoid the verbatim memorization of sensitive data from the training corpus. A '24 NEURIPS paper titled "Be like a Goldfish, Don't Memorize!" ([Hans et al. 2024](#ref-hansBeGoldfishDont2024)) introduces a surprisingly simple approach to address this issue: the *Goldfish Loss*.
 
 The novel idea is to exclude specific tokens from the loss calculation during training, instead of incorporating all tokens up to the predicted one. This forces the model to learn general patterns rather than relying on rote memorization. Just like a goldfish with its famously short memory, this loss function forces the model to 'forget' specific tokens during training.[^1] Let's first understand why this matters.
 
@@ -89,7 +90,7 @@ As for ${\color{cornflowerblue}G}$, the mask is *pseudo-random*, meaning that a 
 
 For now, I'd like to stress the following aspects:
 
-1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not masking like in BERT (Devlin et al. 2019) or tabular pre-training objectives like the of FT-Transformer (Gorishniy et al. 2021), where the input is corrupted. The input remains intact!
+1.  **Forward Pass:** The model still sees *all* tokens in the context. It's not masking like in BERT ([Devlin et al. 2019](#ref-devlinBERTPretrainingDeep2019)) or tabular pre-training objectives like the of FT-Transformer ([Gorishniy et al. 2021](#ref-gorishniyRevisitingDeepLearning2021)), where the input is corrupted. The input remains intact!
 2.  **Backward Pass:** The loss is only computed for the *unmasked tokens*. The model is never explicitly penalized for failing to predict the masked tokens, so it doesn't "learn" them as strongly. Critically, at *inference* time, the model must predict *all* tokens (including those that were masked during training). For identical sequences, the model must make an unsupervised guess for previously masked tokens, causing it to diverge from the training sequence and thereby impeding verbatim reproductions.
 
 Here's a python implementation, adapted from the author's supplemental material [^9]:
@@ -221,7 +222,7 @@ They distinguish between two setups:
 - **Standard Setup:** A TinyLlama-1.1B model trained for 1 epoch. This time the training dataset consists of sequences from the [RedPajamaV2 dataset](https://huggingface.co/datasets/togethercomputer/RedPajama-Data-V2) and Wikipedia. Test samples from Wikipedia were duplicated several times and added in random locations to the training set to mimic data duplication. Once more they use greedy decoding.
 - In both setups, the test sets consists of a subsample of training sequences, that have been split into a prefix and a length of $n$ tokens.
 
-Memorization is quantified in terms of *exact match* (Carlini et al. 2023) and *RougeL scores* (Lin 2004):
+Memorization is quantified in terms of *exact match* ([Carlini et al. 2023](#ref-carliniQuantifyingMemorizationNeural2023)) and *RougeL scores* ([Lin 2004](#ref-lin-2004-rouge)):
 - *Exact match* measures the LLM's ability to reproduce a training sequence verbatim given a prefix/prompt of length $p$ with greedy decoding.
 - *RougeL scores* quantify the longest common, but not necessarily consecutive, subsequence of tokens shared with the sequence from the training set.
 
@@ -238,7 +239,7 @@ In the extreme setup, the Llama-2-7B model with:
 - **Standard Training:** With standard loss, the model memorized 84/100 articles verbatim, which gives an exact match of $84\%$, as shown in the figure below.
 - **Goldfish Loss ($k=4$):** The model trained with goldfish loss achieved a perfect score of exact match $0\%$. The results for the RougeL metrics indicate that this model still memorizes subsequences, but the likelihood of getting very long subsequences correct decreases exponentially with the length of the subsequence.
 
-{{< figure src="extreme-memorization.png" caption="Memorization result for the extreme setup. Figure from Hans et al. (2024)." >}}
+{{< figure src="extreme-memorization.png" caption="Memorization result for the extreme setup. Figure from Hans et al. ([2024](#ref-hansBeGoldfishDont2024))." >}}
 
 For the extreme setup, the authors are also able to show that sequences start to diverge at the index position where the first token has been dropped. This matches with our intuition from the unsupervised guess of dropped tokens 💪.
 
@@ -246,7 +247,7 @@ For the extreme setup, the authors are also able to show that sequences start to
 
 In the standard setup, the goldfish loss still significantly reduces the model's ability to reproduce training sequences compared to a model trained with standard CLM objective, as visualized in the figure below.
 
-{{< figure src="rouge-l-standard-model.png" caption="Memorization result in standard setup. Figure from Hans et al. (2024)." >}}
+{{< figure src="rouge-l-standard-model.png" caption="Memorization result in standard setup. Figure from Hans et al. ([2024](#ref-hansBeGoldfishDont2024))." >}}
 
 As evident from the graphics above, for low $k$ values (e.g., $k=3$ or $k=4$; fairly aggressive masking) the distribution of RougeL scores of models with goldfish loss are fairly similar to the control model, which was not trained on the test sequences at all. The high number of exact matches for the model with standard loss is concerning though.
 
@@ -254,7 +255,7 @@ I would have liked to see if they had also reported results for a setup where th
 
 You might be wondering if the goldfish loss affects benchmark performance. In the paper the author's evaluate two $k$-GL models and compare against the model with standard loss and a control model (trained on RedPajamaV2 only) on selected tasks from the [huggingface LLM leaderboard](https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/).
 
-{{< figure src="benchmark-performance-standard.png" caption="Benchmark Performance. Figure from Hans et al. (2024)." >}}
+{{< figure src="benchmark-performance-standard.png" caption="Benchmark Performance. Figure from Hans et al. ([2024](#ref-hansBeGoldfishDont2024))." >}}
 
 The results are visualized above. There seem to be no systematic differences between the overall performance of the control, standard loss, and any of the goldfish loss models.
 
@@ -264,7 +265,7 @@ There are some caveats though:
 
 1.  **Training Efficiency:** Since in a setup with goldfish loss, we are ignoring $1/k$ of the training tokens, the model learns "slower" per batch. You effectively need to train on more data (or for longer) to reach the same validation loss as a standard model. The authors, however, demonstrate (rather convincingly) on a RedPajamaV2 dataset, that if we compare the validation loss for the supervised tokens (aka unmasked) tokens with an equal number of input tokens in a standard training setup, both models end up with an approximately an equal validation loss. This can be seen below.
 
-{{< figure src="val-loss-curves-standard-model.png" caption="Validation loss comparison. Figure from Hans et al. (2024)." >}}
+{{< figure src="val-loss-curves-standard-model.png" caption="Validation loss comparison. Figure from Hans et al. ([2024](#ref-hansBeGoldfishDont2024))." >}}
 
 2.  **Near-Duplicates:** The approach is still prone to near-duplicates. You can spot this in the interactive visualization above easily. For example, small rewrites or some added punctuation or different unicode-encoding, the hashed mask might be different for each version, allowing the model to piece together the full text from the different copies.
 

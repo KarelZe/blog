@@ -9,6 +9,7 @@ DisableComments: false
 draft: true
 images:
 - images/thumbnail_cat_hypersphere.png
+link-citations: true
 Tags:
 - synthetic-data
 - data-sampling
@@ -21,7 +22,7 @@ title: My thoughts on How Faithful is Your Synthetic Data?🛸
 
 Training AI models on synthetic data is a data scientist's (and management's) dream come true. It's easy to generate in vast amounts, contains no labeling errors, and privacy concerns are virtually nonexistent. However, a frequently overlooked aspect is how to assess the quality of these synthetic samples. How can we build rich synthetic datasets that both mimic the properties of real data and introduce genuine novelty? These are challenges I frequently face in my daily work at [Atruvia](https://atruvia.de/).
 
-A paper titled *"How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"* by (Alaa et al. 2022) sheds light on these questions and caught my attention.
+A paper titled *"How Faithful is Your Synthetic Data? Sample-Level Metrics for Evaluating and Auditing Generative Models"* by ([Alaa et al. 2022](#ref-alaaHowFaithfulYour2022)) sheds light on these questions and caught my attention.
 
 More specifically, it introduces a three-dimensional metric to assess the quality of generative models. This new metric is both *domain-* and *model-agnostic*. Its novelty lies in being computable at the sample level (hurray ✨), making it interesting for selecting high-quality samples for purely synthetic or hybrid datasets. Let's examine whether it lives up to its promise.
 

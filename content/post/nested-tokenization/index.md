@@ -9,6 +9,7 @@ disableComments: false
 draft: true
 images:
 - images/thumbnail_nested_tokenization.png
+link-citations: true
 tags:
 - tokenization
 - vision understanding
@@ -21,7 +22,7 @@ title: My thoughts on Nested Tokenization for Larger Context in Large Images ✂
 
 ## Ressources
 
-(Gupta et al. 2024)
+([Gupta et al. 2024](#ref-guptaXTNestedTokenization2024))
 
 - blog: https://bair.berkeley.edu/blog/2024/03/21/xt/
 - open review: https://openreview.net/revisions?id=km5IHr5vFv
