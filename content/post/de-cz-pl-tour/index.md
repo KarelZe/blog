@@ -39,7 +39,7 @@ The landscape revealed itself through morning mist: three pairs of roe deer appe
 
 At the Czech border, I crossed the [EuroVelo 13](https://de.eurovelo.com/ev13) (commonly known as Iron Curtain Trail) and wondered if that might be my next adventure.
 
-{{< gallery match="fichtel\*.jpg" group="fichtel mountains" size="300x300" quality="q60" >}}
+{{< gallery match="fichtel*.jpg" group="fichtel mountains" size="300x300" quality="q60" >}}
 
 ## Calendar Picture Country
 
@@ -53,7 +53,7 @@ I crossed paths with the Camino de Santiago and spotted my daily record of 14 ro
 
 The Czech forest tracks, however, demanded respect. What looked like paths on the map often turned into obstacle courses: coarse gravel that rattled every bolt, deep furrows carved by harvesters and tractors, and puddles so massive that they deserved their own names. I dubbed the first one Lake Gambrinus [^3]. Some were inhabited by frogs and required using my bike as a walking frame to wade through. On particularly waterlogged sections, I'd prop myself against the handlebars like an improvised rollator. Practice for old age, I suppose 👵🏻.
 
-{{< gallery match="czech\*.jpg" group="czech republic" size="300x300" quality="q60" >}}
+{{< gallery match="czech*.jpg" group="czech republic" size="300x300" quality="q60" >}}
 
 ## Listening to Your Body
 
@@ -69,7 +69,7 @@ Finding my grandmother's birthplace required detective work. The address on her 
 
 Heřmánky nad Odru (Ger. [Kleinhermsdorf](https://de.wikipedia.org/wiki/He%C5%99m%C3%A1nky_nad_Odrou)) sits nestled between hillsides through which the odru (Eng./Ger. Oder) flows-a typical Czech village with its mini market, train station, and playground. In summer, the region attracts day-trippers to restaurants serving soft ice, coffee, and some local specialities along the river path. I arrived in autumn as winter began knocking on the door. Small lakes showed surface ice, and the landscape wore a light dusting of sugar frost in the morning, warming to a pleasant 12°C by afternoon. I ended this segment in Opava (Ger. Troppau), where I also visited the [Silesian museum](https://www.szm.cz/en/) and strolled around the old city centre.
 
-{{< gallery match="hermanky\*.jpg" group="hermanky" size="300x300" quality="q60" >}}
+{{< gallery match="hermanky*.jpg" group="hermanky" size="300x300" quality="q60" >}}
 
 ## The Polish Odyssey
 
@@ -83,7 +83,7 @@ In the woods, I met Simon and Piotr collecting mushrooms. These kind Polish soul
 
 The technical team at castle Moszna came to my rescue the next morning, arranging transport to a bike shop and new tubes within an hour. The castle itself (and the breakfast 🤤) was also worth a stay. Thanks to marketing manager Veronika's translations and the team's help, I could complete the final 30 kilometers to Opole on proper Polish cycle paths. The reputation is true, they're excellent.
 
-{{< gallery match="poland\*.jpg" group="Poland" size="300x300" quality="q60" >}}
+{{< gallery match="poland*.jpg" group="Poland" size="300x300" quality="q60" >}}
 
 ## Lessons from the Streets
 
