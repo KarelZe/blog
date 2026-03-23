@@ -1,0 +1,95 @@
+---
+title: 'My thoughts on "Be like a Goldfish, Don''t Memorize!"'
+date: 2025-12-02T07:52:00+02:00
+description: "My thoughts on the paper 'Be like a Goldfish, Don't Memorize!' and how it mitigates memorization in LLMs."
+Tags: ["causal-language-modelling", "llm", "memorization", "paper", "ml"]
+Categories: ["ai"]
+DisableComments: false
+thumbnail: images/thumbnail_goldfish_loss.png
+images:
+  - images/thumbnail_goldfish_loss.png
+---
+
+Softmax is foundational to modern large-language models (LLMs). It normalizes attention scores ([@vaswaniAttentionAllYou2017]) and converts logits into a probability distribution for sampling.
+
+In this post, we explore how Softmax is implemented in most frontier models. A recent discussion at work on computing attention over millions of tokens sent me down this engineering rabbit hole.
+
+## Softmax
+
+Let's first look at good-old Softmax. The Softmax function converts a vector of real numbers into a probability distribution.
+
+The formula is given by: $$ \operatorname{softmax}: \mathbb{R}^n \rightarrow \mathbb{R}^n$$ $$ \operatorname{softmax}(\mathbf{x})_i = \frac{e^{x_i}}{\sum_{j=1}^n e^{x_j}} $$
+where:
+-  $\mathbf{x} \in \mathbb{R}^n$ is an input vector (e.g., logits over a vocabulary) of size $n$.
+- The output is a probability distribution over the $n$ elements.  All elements lie in $[0,1]$ and sum to $1$.
+
+Softmax uses the exponential function to amplify differences between values. The exponential function ensures *non-negativity* and as it is strictly monotonic, probabilities increase for larger values of $x_i$. Dividing by the sum of all exponentials normalizes the result into a valid probability distribution ([@zhangDiveDeepLearning2021]).
+
+*example (adapted from [@simonozHowWriteFast2024]):*
+
+$$
+\left[\begin{array}{l}
+3 \\
+5 \\
+2
+\end{array}\right] \xrightarrow{\operatorname{softmax}}\left[\begin{array}{l}
+\frac{e^3}{e^3+e^5+e^2} \\
+\frac{e^5}{e^3+e^5+e^2} \\
+\frac{e^2}{e^3+e^5+e^2}
+\end{array}\right]=\left[\begin{array}{l}
+0.114 \\
+0.844 \\
+0.042
+\end{array}\right]
+$$
+
+Such a naive implementation of Softmax is prone to *numerical overflow* if input values $x_i$ become large. If calculations are done in standard `float16`, the maximum supported number would be 65536, which means that for $x \geqslant 11$,  $e^x$ would exceed the effective range of `float16` [@yeOnlineSoftmaxFlashAttention]. [^1] Interestingly, for `bfloat16` overflows would occur much later, as the exponent range is the same as with `float32` [@BFloat16SecretHigh]. The overflow threshold would jump to roughly $x \geqslant 89$.
+
+*example (continued):*
+
+$$
+\left[\begin{array}{l}
+999 \\
+988 \\
+997
+\end{array}\right] \xrightarrow{\operatorname{softmax}}\left[\begin{array}{l}
+\frac{e^{999}}{e^{999}+e^{988}+e^{997}} \\
+\frac{e^{988}}{e^{999}+e^{988}+e^{997}} \\
+\frac{e^{997}}{e^{999}+e^{988}+e^{997}}
+\end{array}\right]=\left[\begin{array}{c}
+\text { nan } \\
+\text { nan } \\
+\text { nan }
+\end{array}\right]
+$$
+## Numerically Stable Softmax
+
+To make Softmax numerically stable, the maximum input value ($\max(\mathbf{x})$) is subtracted from each element to prevent overflow:
+
+$$ \operatorname{softmax}(\mathbf{x})_i = \frac{e^{x_i - \max(\mathbf{x})}}{\sum_{j=1}^n e^{x_j - \max(\mathbf{x})}} $$
+While being mathematically equivalent, this trick ensures all exponents are non-positive (i.e., $x_i - \max(\mathbf{x})\leqslant 0$)  and the negative inputs produce outputs $\leqslant 1$, which prevents overflow [@yeOnlineSoftmaxFlashAttention].
+
+*example (continued):*
+$$
+\left[\begin{array}{c}
+999 \\
+988 \\
+997
+\end{array}\right] \xrightarrow{\text { softmax }}\left[\begin{array}{c}
+\frac{e^{999-999}}{e^{999-999}+e^{988-999}+e^{997-999}} \\
+\frac{e^{988-999}}{e^{999-999}+e^{988-999}+e^{997-999}} \\
+\frac{e^{997-999}}{e^{999-999}+e^{988-999}+e^{997-999}}
+\end{array}\right]=\left[\begin{array}{c}
+0.881 \\
+0.000 \\
+0.119
+\end{array}\right]
+$$
+
+[^1]: Note that $e^{11} ≈ 59874$, but we also need to compute the sum over all exponentials.
+
+## Online-Softmax
+
+```python
+# TODO:
+```

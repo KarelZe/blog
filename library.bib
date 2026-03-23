@@ -26,6 +26,25 @@
   keywords = {Computer Science - Computation and Language}
 }
 
+@misc{abagyanOneTokenizerRule2025a,
+  title = {One {{Tokenizer To Rule Them All}}: {{Emergent Language Plasticity}} via {{Multilingual Tokenizers}}},
+  shorttitle = {One {{Tokenizer To Rule Them All}}},
+  author = {Abagyan, Diana and Salamanca, Alejandro R. and {Cruz-Salinas}, Andres Felipe and Cao, Kris and Lin, Hangyu and Locatelli, Acyr and Fadaee, Marzieh and {\"U}st{\"u}n, Ahmet and Hooker, Sara},
+  year = 2025,
+  month = jun,
+  number = {arXiv:2506.10766},
+  eprint = {2506.10766},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2506.10766},
+  urldate = {2026-01-11},
+  abstract = {Pretraining massively multilingual Large Language Models (LLMs) for many languages at once is challenging due to limited model capacity, scarce high-quality data, and compute constraints. Moreover, the lack of language coverage of the tokenizer makes it harder to address the gap for new languages purely at the post-training stage. In this work, we study what relatively cheap interventions early on in training improve ``language plasticity'', or adaptation capabilities of the model post-training to new languages. We focus on tokenizer design and propose using a universal tokenizer that is trained for more languages than the primary pretraining languages to enable efficient adaptation in expanding language coverage after pretraining. Our systematic experiments across diverse groups of languages and different training strategies show that a universal tokenizer enables significantly higher language adaptation, with up to 20.2\% increase in win rates compared to tokenizers specific to pretraining languages. Furthermore, a universal tokenizer also leads to better plasticity towards languages that are completely unseen in the tokenizer and pretraining, by up to 5\% win rate gain. We achieve this adaptation to an expanded set of languages with minimal compromise in performance on the majority of languages included in pretraining.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computation and Language},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Abagyan et al. - 2025 - One Tokenizer To Rule Them All Emergent Language Plasticity via Multilingual Tokenizers.pdf}
+}
+
 @misc{abdinPhi3TechnicalReport2024,
   title = {Phi-3 {{Technical Report}}: {{A Highly Capable Language Model Locally}} on {{Your Phone}}},
   shorttitle = {Phi-3 {{Technical Report}}},
@@ -508,6 +527,17 @@
   number = {3},
   pages = {233--257},
   doi = {10.1016/S1386-4181(02)00064-2}
+}
+
+@misc{BFloat16SecretHigh,
+  title = {{{BFloat16}}: {{The}} Secret to High Performance on {{Cloud TPUs}}},
+  shorttitle = {{{BFloat16}}},
+  journal = {Google Cloud Blog},
+  urldate = {2026-03-22},
+  abstract = {How the high performance of Google Cloud TPUs is driven by Brain Floating Point Format, or bfloat16},
+  howpublished = {https://cloud.google.com/blog/products/ai-machine-learning/bfloat16-the-secret-to-high-performance-on-cloud-tpus},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/AAMN8SYZ/bfloat16-the-secret-to-high-performance-on-cloud-tpus.html}
 }
 
 @book{bishopPatternRecognitionMachine2006,
@@ -1200,6 +1230,20 @@
   pmid = {null}
 }
 
+@book{cookCUDAProgrammingDevelopers2013,
+  title = {{{CUDA}} Programming: A Developer's Guide to Parallel Computing with {{GPUs}}},
+  shorttitle = {{{CUDA}} Programming},
+  author = {Cook, Shane},
+  year = 2013,
+  publisher = {Elsevier, MK},
+  address = {Amsterdam Boston},
+  abstract = {"If you need to learn CUDA but don't have experience with parallel computing, CUDA Programming: A Developer's Introduction offers a detailed guide to CUDA with a grounding in parallel fundamentals. It starts by introducing CUDA and bringing you up to speed on GPU parallelism and hardware, then delving into CUDA installation. Chapters on core concepts including threads, blocks, grids, and memory focus on both parallel and CUDA-specific issues. Later, the book demonstrates CUDA in practice for optimizing applications, adjusting to new hardware, and solving common problems. Comprehensive introduction to parallel programming with CUDA, for readers new to both. Detailed instructions help readers optimize the CUDA software development kit. Practical techniques illustrate working with memory, threads, algorithms, resources, and more. Covers CUDA on multiple hardware platforms: Mac, Linux and Windows with several NVIDIA chipsets. Each chapter includes exercises to test reader knowledge."},
+  isbn = {978-0-12-415933-4},
+  langid = {english},
+  lccn = {005.275},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Cook - 2013 - CUDA programming a developer's guide to parallel computing with GPUs.pdf}
+}
+
 @misc{CosineSimilarityEmbeddingsReally,
   title = {Is {{Cosine-Similarity}} of {{Embeddings Really About Similarity}}?},
   urldate = {2025-11-11},
@@ -1361,6 +1405,60 @@
   doi = {10.21314/JCF.2020.403}
 }
 
+@article{deepseek-aiDeepSeekR1IncentivizingReasoning2025,
+  title = {{{DeepSeek-R1}}: {{Incentivizing Reasoning Capability}} in {{LLMs}} via {{Reinforcement Learning}}},
+  shorttitle = {{{DeepSeek-R1}}},
+  author = {{DeepSeek-AI} and Guo, Daya and Yang, Dejian and Zhang, Haowei and Song, Junxiao and Wang, Peiyi and Zhu, Qihao and Xu, Runxin and Zhang, Ruoyu and Ma, Shirong and Bi, Xiao and Zhang, Xiaokang and Yu, Xingkai and Wu, Yu and Wu, Z. F. and Gou, Zhibin and Shao, Zhihong and Li, Zhuoshu and Gao, Ziyi and Liu, Aixin and Xue, Bing and Wang, Bingxuan and Wu, Bochao and Feng, Bei and Lu, Chengda and Zhao, Chenggang and Deng, Chengqi and Zhang, Chenyu and Ruan, Chong and Dai, Damai and Chen, Deli and Ji, Dongjie and Li, Erhang and Lin, Fangyun and Dai, Fucong and Luo, Fuli and Hao, Guangbo and Chen, Guanting and Li, Guowei and Zhang, H. and Bao, Han and Xu, Hanwei and Wang, Haocheng and Ding, Honghui and Xin, Huajian and Gao, Huazuo and Qu, Hui and Li, Hui and Guo, Jianzhong and Li, Jiashi and Wang, Jiawei and Chen, Jingchang and Yuan, Jingyang and Qiu, Junjie and Li, Junlong and Cai, J. L. and Ni, Jiaqi and Liang, Jian and Chen, Jin and Dong, Kai and Hu, Kai and Gao, Kaige and Guan, Kang and Huang, Kexin and Yu, Kuai and Wang, Lean and Zhang, Lecong and Zhao, Liang and Wang, Litong and Zhang, Liyue and Xu, Lei and Xia, Leyi and Zhang, Mingchuan and Zhang, Minghua and Tang, Minghui and Li, Meng and Wang, Miaojun and Li, Mingming and Tian, Ning and Huang, Panpan and Zhang, Peng and Wang, Qiancheng and Chen, Qinyu and Du, Qiushi and Ge, Ruiqi and Zhang, Ruisong and Pan, Ruizhe and Wang, Runji and Chen, R. J. and Jin, R. L. and Chen, Ruyi and Lu, Shanghao and Zhou, Shangyan and Chen, Shanhuang and Ye, Shengfeng and Wang, Shiyu and Yu, Shuiping and Zhou, Shunfeng and Pan, Shuting and Li, S. S. and Zhou, Shuang and Wu, Shaoqing and Ye, Shengfeng and Yun, Tao and Pei, Tian and Sun, Tianyu and Wang, T. and Zeng, Wangding and Zhao, Wanjia and Liu, Wen and Liang, Wenfeng and Gao, Wenjun and Yu, Wenqin and Zhang, Wentao and Xiao, W. L. and An, Wei and Liu, Xiaodong and Wang, Xiaohan and Chen, Xiaokang and Nie, Xiaotao and Cheng, Xin and Liu, Xin and Xie, Xin and Liu, Xingchao and Yang, Xinyu and Li, Xinyuan and Su, Xuecheng and Lin, Xuheng and Li, X. Q. and Jin, Xiangyue and Shen, Xiaojin and Chen, Xiaosha and Sun, Xiaowen and Wang, Xiaoxiang and Song, Xinnan and Zhou, Xinyi and Wang, Xianzu and Shan, Xinxia and Li, Y. K. and Wang, Y. Q. and Wei, Y. X. and Zhang, Yang and Xu, Yanhong and Li, Yao and Zhao, Yao and Sun, Yaofeng and Wang, Yaohui and Yu, Yi and Zhang, Yichao and Shi, Yifan and Xiong, Yiliang and He, Ying and Piao, Yishi and Wang, Yisong and Tan, Yixuan and Ma, Yiyang and Liu, Yiyuan and Guo, Yongqiang and Ou, Yuan and Wang, Yuduan and Gong, Yue and Zou, Yuheng and He, Yujia and Xiong, Yunfan and Luo, Yuxiang and You, Yuxiang and Liu, Yuxuan and Zhou, Yuyang and Zhu, Y. X. and Xu, Yanhong and Huang, Yanping and Li, Yaohui and Zheng, Yi and Zhu, Yuchen and Ma, Yunxian and Tang, Ying and Zha, Yukun and Yan, Yuting and Ren, Z. Z. and Ren, Zehui and Sha, Zhangli and Fu, Zhe and Xu, Zhean and Xie, Zhenda and Zhang, Zhengyan and Hao, Zhewen and Ma, Zhicheng and Yan, Zhigang and Wu, Zhiyu and Gu, Zihui and Zhu, Zijia and Liu, Zijun and Li, Zilin and Xie, Ziwei and Song, Ziyang and Pan, Zizheng and Huang, Zhen and Xu, Zhipeng and Zhang, Zhongyu and Zhang, Zhen},
+  year = 2025,
+  month = sep,
+  journal = {Nature},
+  volume = {645},
+  number = {8081},
+  eprint = {2501.12948},
+  primaryclass = {cs},
+  pages = {633--638},
+  issn = {0028-0836, 1476-4687},
+  doi = {10.1038/s41586-025-09422-z},
+  urldate = {2026-01-10},
+  abstract = {General reasoning represents a long-standing and formidable challenge in artificial intelligence. Recent breakthroughs, exemplified by large language models (LLMs) (Brown et al., 2020; OpenAI, 2023) and chain-of-thought prompting (Wei et al., 2022b), have achieved considerable success on foundational reasoning tasks. However, this success is heavily contingent upon extensive human-annotated demonstrations, and models' capabilities are still insufficient for more complex problems. Here we show that the reasoning abilities of LLMs can be incentivized through pure reinforcement learning (RL), obviating the need for human-labeled reasoning trajectories. The proposed RL framework facilitates the emergent development of advanced reasoning patterns, such as self-reflection, verification, and dynamic strategy adaptation. Consequently, the trained model achieves superior performance on verifiable tasks such as mathematics, coding competitions, and STEM fields, surpassing its counterparts trained via conventional supervised learning on human demonstrations. Moreover, the emergent reasoning patterns exhibited by these large-scale models can be systematically harnessed to guide and enhance the reasoning capabilities of smaller models.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Computation and Language,Computer Science - Machine Learning},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/DeepSeek-AI et al. - 2025 - DeepSeek-R1 Incentivizing Reasoning Capability in LLMs via Reinforcement Learning.pdf}
+}
+
+@article{deepseek-aiDeepSeekR1IncentivizingReasoning2025a,
+  title = {{{DeepSeek-R1}}: {{Incentivizing Reasoning Capability}} in {{LLMs}} via {{Reinforcement Learning}}},
+  shorttitle = {{{DeepSeek-R1}}},
+  author = {{DeepSeek-AI} and Guo, Daya and Yang, Dejian and Zhang, Haowei and Song, Junxiao and Wang, Peiyi and Zhu, Qihao and Xu, Runxin and Zhang, Ruoyu and Ma, Shirong and Bi, Xiao and Zhang, Xiaokang and Yu, Xingkai and Wu, Yu and Wu, Z. F. and Gou, Zhibin and Shao, Zhihong and Li, Zhuoshu and Gao, Ziyi and Liu, Aixin and Xue, Bing and Wang, Bingxuan and Wu, Bochao and Feng, Bei and Lu, Chengda and Zhao, Chenggang and Deng, Chengqi and Zhang, Chenyu and Ruan, Chong and Dai, Damai and Chen, Deli and Ji, Dongjie and Li, Erhang and Lin, Fangyun and Dai, Fucong and Luo, Fuli and Hao, Guangbo and Chen, Guanting and Li, Guowei and Zhang, H. and Bao, Han and Xu, Hanwei and Wang, Haocheng and Ding, Honghui and Xin, Huajian and Gao, Huazuo and Qu, Hui and Li, Hui and Guo, Jianzhong and Li, Jiashi and Wang, Jiawei and Chen, Jingchang and Yuan, Jingyang and Qiu, Junjie and Li, Junlong and Cai, J. L. and Ni, Jiaqi and Liang, Jian and Chen, Jin and Dong, Kai and Hu, Kai and Gao, Kaige and Guan, Kang and Huang, Kexin and Yu, Kuai and Wang, Lean and Zhang, Lecong and Zhao, Liang and Wang, Litong and Zhang, Liyue and Xu, Lei and Xia, Leyi and Zhang, Mingchuan and Zhang, Minghua and Tang, Minghui and Li, Meng and Wang, Miaojun and Li, Mingming and Tian, Ning and Huang, Panpan and Zhang, Peng and Wang, Qiancheng and Chen, Qinyu and Du, Qiushi and Ge, Ruiqi and Zhang, Ruisong and Pan, Ruizhe and Wang, Runji and Chen, R. J. and Jin, R. L. and Chen, Ruyi and Lu, Shanghao and Zhou, Shangyan and Chen, Shanhuang and Ye, Shengfeng and Wang, Shiyu and Yu, Shuiping and Zhou, Shunfeng and Pan, Shuting and Li, S. S. and Zhou, Shuang and Wu, Shaoqing and Ye, Shengfeng and Yun, Tao and Pei, Tian and Sun, Tianyu and Wang, T. and Zeng, Wangding and Zhao, Wanjia and Liu, Wen and Liang, Wenfeng and Gao, Wenjun and Yu, Wenqin and Zhang, Wentao and Xiao, W. L. and An, Wei and Liu, Xiaodong and Wang, Xiaohan and Chen, Xiaokang and Nie, Xiaotao and Cheng, Xin and Liu, Xin and Xie, Xin and Liu, Xingchao and Yang, Xinyu and Li, Xinyuan and Su, Xuecheng and Lin, Xuheng and Li, X. Q. and Jin, Xiangyue and Shen, Xiaojin and Chen, Xiaosha and Sun, Xiaowen and Wang, Xiaoxiang and Song, Xinnan and Zhou, Xinyi and Wang, Xianzu and Shan, Xinxia and Li, Y. K. and Wang, Y. Q. and Wei, Y. X. and Zhang, Yang and Xu, Yanhong and Li, Yao and Zhao, Yao and Sun, Yaofeng and Wang, Yaohui and Yu, Yi and Zhang, Yichao and Shi, Yifan and Xiong, Yiliang and He, Ying and Piao, Yishi and Wang, Yisong and Tan, Yixuan and Ma, Yiyang and Liu, Yiyuan and Guo, Yongqiang and Ou, Yuan and Wang, Yuduan and Gong, Yue and Zou, Yuheng and He, Yujia and Xiong, Yunfan and Luo, Yuxiang and You, Yuxiang and Liu, Yuxuan and Zhou, Yuyang and Zhu, Y. X. and Xu, Yanhong and Huang, Yanping and Li, Yaohui and Zheng, Yi and Zhu, Yuchen and Ma, Yunxian and Tang, Ying and Zha, Yukun and Yan, Yuting and Ren, Z. Z. and Ren, Zehui and Sha, Zhangli and Fu, Zhe and Xu, Zhean and Xie, Zhenda and Zhang, Zhengyan and Hao, Zhewen and Ma, Zhicheng and Yan, Zhigang and Wu, Zhiyu and Gu, Zihui and Zhu, Zijia and Liu, Zijun and Li, Zilin and Xie, Ziwei and Song, Ziyang and Pan, Zizheng and Huang, Zhen and Xu, Zhipeng and Zhang, Zhongyu and Zhang, Zhen},
+  year = 2025,
+  month = sep,
+  journal = {Nature},
+  volume = {645},
+  number = {8081},
+  eprint = {2501.12948},
+  primaryclass = {cs},
+  pages = {633--638},
+  issn = {0028-0836, 1476-4687},
+  doi = {10.1038/s41586-025-09422-z},
+  urldate = {2026-01-11},
+  abstract = {General reasoning represents a long-standing and formidable challenge in artificial intelligence. Recent breakthroughs, exemplified by large language models (LLMs) (Brown et al., 2020; OpenAI, 2023) and chain-of-thought prompting (Wei et al., 2022b), have achieved considerable success on foundational reasoning tasks. However, this success is heavily contingent upon extensive human-annotated demonstrations, and models' capabilities are still insufficient for more complex problems. Here we show that the reasoning abilities of LLMs can be incentivized through pure reinforcement learning (RL), obviating the need for human-labeled reasoning trajectories. The proposed RL framework facilitates the emergent development of advanced reasoning patterns, such as self-reflection, verification, and dynamic strategy adaptation. Consequently, the trained model achieves superior performance on verifiable tasks such as mathematics, coding competitions, and STEM fields, surpassing its counterparts trained via conventional supervised learning on human demonstrations. Moreover, the emergent reasoning patterns exhibited by these large-scale models can be systematically harnessed to guide and enhance the reasoning capabilities of smaller models.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Computation and Language,Computer Science - Machine Learning},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/DeepSeek-AI et al. - 2025 - DeepSeek-R1 Incentivizing Reasoning Capability in LLMs via Reinforcement Learning 1.pdf}
+}
+
+@misc{DefeatingNondeterminismLLM,
+  title = {Defeating {{Nondeterminism}} in {{LLM Inference}}},
+  journal = {Thinking Machines Lab},
+  urldate = {2026-02-01},
+  abstract = {Reproducibility is a bedrock of scientific progress. However, it's remarkably difficult to get reproducible results out of large language models. For example, you might observe that asking ChatGPT the same question multiple times provides different results. This by itself is not surprising, since getting a result from a language model involves ``sampling'', a process that converts the language model's output into a probability distribution and probabilistically selects a token. What might be more surprising is that even when we adjust the temperature down to 0This means that the LLM always chooses the highest probability token, which is called greedy sampling. (thus making the sampling theoretically deterministic), LLM APIs are still not deterministic in practice (see past discussions here, here, or here). Even when running inference on your own hardware with an OSS inference library like vLLM or SGLang, sampling still isn't deterministic (see here or here).},
+  howpublished = {https://thinkingmachines.ai/blog/defeating-nondeterminism-in-llm-inference/},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/SU6BI7BY/defeating-nondeterminism-in-llm-inference.html}
+}
+
 @misc{dehghaniUniversalTransformers2019,
   title = {Universal Transformers},
   author = {Dehghani, Mostafa and Gouws, Stephan and Vinyals, Oriol and Uszkoreit, Jakob and Kaiser, {\L}ukasz},
@@ -1397,6 +1495,37 @@
 @article{dengStrategicTradingManipulation,
   title = {Strategic Trading and Manipulation: Machine Learning in Limit Order Markets},
   author = {Deng, Xinyi and He, Xue-Zhong}
+}
+
+@article{DeterministicAlgorithm2025,
+  title = {Deterministic Algorithm},
+  year = 2025,
+  month = jun,
+  journal = {Wikipedia},
+  urldate = {2026-02-15},
+  abstract = {In computer science, a deterministic algorithm is an algorithm that, given a particular input, will always produce the same output, with the underlying machine always passing through the same sequence of states. Deterministic algorithms are by far the most studied and familiar kind of algorithm, as well as one of the most practical, since they can be run on real machines efficiently. Formally, a deterministic algorithm computes a mathematical function; a function has a unique value for any input in its domain, and the algorithm is a process that produces this particular value as output.},
+  copyright = {Creative Commons Attribution-ShareAlike License},
+  langid = {english},
+  annotation = {Page Version ID: 1293713463},
+  file = {/Users/markusbilz/Zotero/storage/J5TI43N4/index.html}
+}
+
+@misc{DeterministicInferenceSGLang,
+  title = {Towards {{Deterministic Inference}} in {{SGLang}} and {{Reproducible RL Training}} \textbar{} {{LMSYS Org}}},
+  urldate = {2026-02-01},
+  abstract = {{$<$}p{$><$}strong{$>$}TL;DR{$<$}/strong{$>$}: This post shares our efforts to enable deterministic inference in SGLang and our collaboration with},
+  howpublished = {https://lmsys.org/blog/2025-09-22-sglang-deterministic},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/AJFMNH72/2025-09-22-sglang-deterministic.html}
+}
+
+@misc{DeterministicInferenceSGLanga,
+  title = {Towards {{Deterministic Inference}} in {{SGLang}} and {{Reproducible RL Training}} \textbar{} {{LMSYS Org}}},
+  urldate = {2026-02-15},
+  abstract = {{$<$}p{$><$}strong{$>$}TL;DR{$<$}/strong{$>$}: This post shares our efforts to enable deterministic inference in SGLang and our collaboration with},
+  howpublished = {https://lmsys.org/blog/2025-09-22-sglang-deterministic},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/HL35TNGL/2025-09-22-sglang-deterministic.html}
 }
 
 @misc{dettmersQLoRAEfficientFinetuning2023,
@@ -1908,6 +2037,16 @@
   doi = {10.1093/rfs/hhp005}
 }
 
+@misc{GenerateContentGemini,
+  title = {Generate Content with the {{Gemini API}} in {{Vertex AI}} \textbar{} {{Generative AI}} on {{Vertex AI}}},
+  journal = {Google Cloud Documentation},
+  urldate = {2026-02-01},
+  abstract = {Use the Model API for Gemini in Vertex AI to create custom applications. Review the Gemini model request body, model parameters, response body, and sample requests and responses.},
+  howpublished = {https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/inference},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/Q3H6KBBZ/inference.html}
+}
+
 @misc{gengUnmetPromiseSynthetic2024,
   title = {The {{Unmet Promise}} of {{Synthetic Training Images}}: {{Using Retrieved Real Images Performs Better}}},
   shorttitle = {The {{Unmet Promise}} of {{Synthetic Training Images}}},
@@ -2000,6 +2139,23 @@
   doi = {10.1111/j.1540-6261.2005.00795.x}
 }
 
+@article{goldbergWhatEveryComputer1991,
+  title = {What Every Computer Scientist Should Know about Floating-Point Arithmetic},
+  author = {Goldberg, David},
+  year = 1991,
+  month = mar,
+  journal = {ACM Computing Surveys},
+  volume = {23},
+  number = {1},
+  pages = {5--48},
+  issn = {0360-0300, 1557-7341},
+  doi = {10.1145/103162.103163},
+  urldate = {2026-02-15},
+  abstract = {Floating-point arithmetic is considered as esoteric subject by many people. This is rather surprising, because floating-point is ubiquitous in computer systems: Almost every language has a floating-point datatype; computers from PCs to supercomputers have floating-point accelerators; most compilers will be called upon to compile floating-point algorithms from time to time; and virtually every operating system must respond to floating-point exceptions such as overflow. This paper presents a tutorial on the aspects of floating-point that have a direct impact on designers of computer systems. It begins with background on floating-point representation and rounding error, continues with a discussion of the IEEE floating point standard, and concludes with examples of how computer system builders can better support floating point.},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Goldberg - 1991 - What every computer scientist should know about floating-point arithmetic.pdf}
+}
+
 @article{goncalves-pintoWhyOptionPrices2020,
   title = {Why {{Do Option Prices Predict Stock Returns}}? {{The Role}} of {{Price Pressure}} in the {{Stock Market}}},
   author = {{Goncalves-Pinto}, Luis and Grundy, Bruce D. and Hameed, Allaudeen and Van Der Heijden, Thijs and Zhu, Yichao},
@@ -2010,6 +2166,20 @@
   pages = {3903--3926},
   doi = {10.1287/mnsc.2019.3398},
   urldate = {2023-06-23}
+}
+
+@misc{gondLLM42EnablingDeterminism2026,
+  title = {{{LLM-42}}: {{Enabling Determinism}} in {{LLM Inference}} with {{Verified Speculation}}},
+  shorttitle = {{{LLM-42}}},
+  author = {Gond, Raja and Kamath, Aditya K and Ramjee, Ramachandran and Panwar, Ashish},
+  year = 2026,
+  publisher = {arXiv},
+  doi = {10.48550/ARXIV.2601.17768},
+  urldate = {2026-02-15},
+  abstract = {In LLM inference, the same prompt may yield different outputs across different runs. At the system level, this nondeterminism arises from floating-point non-associativity combined with dynamic batching and GPU kernels whose reduction orders vary with batch size. A straightforward way to eliminate non-determinism is to disable dynamic batching during inference, but doing so severely degrades throughput. Another approach is to make kernels batch-invariant; however, this tightly couples determinism to kernel design, requiring new implementations. This coupling also imposes fixed runtime overheads, regardless of how much of the workload actually requires determinism.},
+  copyright = {Creative Commons Attribution 4.0 International},
+  langid = {english},
+  keywords = {Artificial Intelligence (cs.AI),Distributed Parallel and Cluster Computing (cs.DC),FOS: Computer and information sciences,Machine Learning (cs.LG)}
 }
 
 @book{goodfellowDeepLearning2016,
@@ -2171,6 +2341,14 @@
   urldate = {2022-01-12}
 }
 
+@article{guoCalibrationModernNeural,
+  title = {On {{Calibration}} of {{Modern Neural Networks}}},
+  author = {Guo, Chuan and Pleiss, Geoff and Sun, Yu and Weinberger, Kilian Q},
+  abstract = {Confidence calibration -- the problem of predicting probability estimates representative of the true correctness likelihood -- is important for classification models in many applications. We discover that modern neural networks, unlike those from a decade ago, are poorly calibrated. Through extensive experiments, we observe that depth, width, weight decay, and Batch Normalization are important factors influencing calibration. We evaluate the performance of various post-processing calibration methods on state-ofthe-art architectures with image and document classification datasets. Our analysis and experiments not only offer insights into neural network learning, but also provide a simple and straightforward recipe for practical settings: on most datasets, temperature scaling -- a singleparameter variant of Platt Scaling -- is surprisingly effective at calibrating predictions.},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Guo et al. - On Calibration of Modern Neural Networks.pdf}
+}
+
 @inproceedings{guoEmbeddingLearningFramework2021,
   title = {An Embedding Learning Framework for Numerical Features in {{CTR}} Prediction},
   booktitle = {Proceedings of the 27th {{ACM SIGKDD Conference}} on {{Knowledge Discovery}} \& {{Data Mining}}},
@@ -2284,6 +2462,20 @@
   number = {1},
   pages = {29},
   doi = {10.2307/2330746}
+}
+
+@article{harrisOptimizingParallelReduction,
+  title = {Optimizing {{Parallel Reduction}} in {{CUDA}}},
+  author = {Harris, Mark},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Harris - Optimizing Parallel Reduction in CUDA.pdf}
+}
+
+@article{harrisOptimizingParallelReductiona,
+  title = {Optimizing {{Parallel Reduction}} in {{CUDA}}},
+  author = {Harris, Mark},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Harris - Optimizing Parallel Reduction in CUDA 1.pdf}
 }
 
 @article{harveyMultivariateStochasticVariance1994,
@@ -2427,6 +2619,24 @@
   archiveprefix = {arXiv}
 }
 
+@misc{hintonDistillingKnowledgeNeural2015,
+  title = {Distilling the {{Knowledge}} in a {{Neural Network}}},
+  author = {Hinton, Geoffrey and Vinyals, Oriol and Dean, Jeff},
+  year = 2015,
+  month = mar,
+  number = {arXiv:1503.02531},
+  eprint = {1503.02531},
+  primaryclass = {stat},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1503.02531},
+  urldate = {2026-02-28},
+  abstract = {A very simple way to improve the performance of almost any machine learning algorithm is to train many different models on the same data and then to average their predictions [3]. Unfortunately, making predictions using a whole ensemble of models is cumbersome and may be too computationally expensive to allow deployment to a large number of users, especially if the individual models are large neural nets. Caruana and his collaborators [1] have shown that it is possible to compress the knowledge in an ensemble into a single model which is much easier to deploy and we develop this approach further using a different compression technique. We achieve some surprising results on MNIST and we show that we can significantly improve the acoustic model of a heavily used commercial system by distilling the knowledge in an ensemble of models into a single model. We also introduce a new type of ensemble composed of one or more full models and many specialist models which learn to distinguish fine-grained classes that the full models confuse. Unlike a mixture of experts, these specialist models can be trained rapidly and in parallel.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Machine Learning,Computer Science - Neural and Evolutionary Computing,Statistics - Machine Learning},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Hinton et al. - 2015 - Distilling the Knowledge in a Neural Network.pdf}
+}
+
 @article{hintonForwardForwardAlgorithmPreliminary,
   title = {The Forward-Forward Algorithm: Some Preliminary Investigations},
   author = {Hinton, Geoffrey}
@@ -2551,6 +2761,15 @@
   langid = {british},
   annotation = {Item ID: \_:n0},
   file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Housel - 2020 - The Psychology of Money.epub}
+}
+
+@misc{HowMakeYour,
+  title = {How to Make Your Completions Outputs Consistent with the New Seed Parameter \textbar{} {{OpenAI Cookbook}}},
+  urldate = {2026-02-01},
+  abstract = {TLDR: Developers can now specify seed parameter in the Chat Completion request to receive (mostly) consistent outputs. To help you keep t...},
+  howpublished = {https://developers.openai.com/cookbook/examples/reproducible\_outputs\_with\_the\_seed\_parameter},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/WMXNDXAW/reproducible_outputs_with_the_seed_parameter.html}
 }
 
 @misc{huangSnapshotEnsemblesTrain2017,
@@ -2756,6 +2975,25 @@
   isbn = {978-1-5445-1420-8},
   langid = {english},
   file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Jorgenson - 2020 - The Almanack of Naval Ravikant A Guide to Wealth and Happiness.epub}
+}
+
+@misc{joshiStochasticCHAOSWhy2026,
+  title = {Stochastic {{CHAOS}}: {{Why Deterministic Inference Kills}}, and {{Distributional Variability Is}} the {{Heartbeat}} of {{Artifical Cognition}}},
+  shorttitle = {Stochastic {{CHAOS}}},
+  author = {Joshi, Tanmay and Aggarwal, Shourya and Saha, Anusa and Pandey, Aadi and Dhoot, Shreyash and Rai, Vighnesh and Goswami, Raxit and Chadha, Aman and Jain, Vinija and Das, Amitava},
+  year = 2026,
+  month = jan,
+  number = {arXiv:2601.07239},
+  eprint = {2601.07239},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2601.07239},
+  urldate = {2026-03-07},
+  abstract = {Deterministic inference is a comforting ideal in classical software: the same program on the same input should always produce the same output. As large language models (LLMs) move into real-world deployment, this ideal has been imported wholesale into inference stacks. Recent work from the Thinking Machines Lab has presented a detailed analysis of nondeterminism in LLM inference, showing in a widely discussed blog post how batch-invariant kernels and deterministic attention can be used to enforce bitwise-identical outputs for a given prompt, effectively positioning ``deterministic inference'' as a prerequisite for reproducibility, onpolicy RL, and enterprise reliability. In this paper, we take the opposite stance. We argue that, for LLMs, deterministic inference kills: it kills the ability to model uncertainty, makes emergent abilities vanish, disrupts reasoning abilities by killing multiple reasoning paths, and renders safety alignment brittle so that we lose honest generalization. LLMs implement conditional distributions p\texttheta (y \textbar{} x), not fixed functions f (x); collapsing these distributions to a single canonical output per prompt may feel reassuring, but it systematically hides the very properties that matter for artificial cognition. We instead advocate Stochastic CHAOS---and claim that distributional variability is the heart of artificial cognition.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Artificial Intelligence},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Joshi et al. - 2026 - Stochastic CHAOS Why Deterministic Inference Kills, and Distributional Variability Is the Heartbeat.pdf}
 }
 
 @misc{josseConsistencySupervisedLearning2020,
@@ -3378,6 +3616,24 @@
   doi = {10.18653/v1/2020.coling-main.320}
 }
 
+@misc{liuRingAttentionBlockwise2023,
+  title = {Ring {{Attention}} with {{Blockwise Transformers}} for {{Near-Infinite Context}}},
+  author = {Liu, Hao and Zaharia, Matei and Abbeel, Pieter},
+  year = 2023,
+  month = nov,
+  number = {arXiv:2310.01889},
+  eprint = {2310.01889},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2310.01889},
+  urldate = {2026-02-07},
+  abstract = {Transformers have emerged as the architecture of choice for many state-of-the-art AI models, showcasing exceptional performance across a wide range of AI applications. However, the memory demands imposed by Transformers limit their ability to handle long sequences, thereby posing challenges in utilizing videos, actions, and other long-form sequences and modalities in complex environments. We present a novel approach, Ring Attention with Blockwise Transformers (Ring Attention), which leverages blockwise computation of self-attention and feedforward to distribute long sequences across multiple devices while fully overlapping the communication of key-value blocks with the computation of blockwise attention. Our approach enables training and inference of sequences that are up to device count times longer than those achievable by prior memory-efficient Transformers, without resorting to approximations or incurring additional communication and computation overheads. Extensive experiments on language modeling and reinforcement learning tasks demonstrate the effectiveness of our approach in allowing millions of tokens context size and improving performance. 1.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computation and Language},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Liu et al. - 2023 - Ring Attention with Blockwise Transformers for Near-Infinite Context.pdf}
+}
+
 @misc{liuRoBERTaRobustlyOptimized2019,
   title = {Roberta: A Robustly Optimized Bert Pretraining Approach},
   author = {Liu, Yinhan and Ott, Myle and Goyal, Naman and Du, Jingfei and Joshi, Mandar and Chen, Danqi and Levy, Omer and Lewis, Mike and Zettlemoyer, Luke and Stoyanov, Veselin},
@@ -3531,6 +3787,13 @@
   langid = {english},
   keywords = {Computer Science - Computation and Language,Computer Science - Machine Learning},
   file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Ma et al. - 2024 - The Era of 1-bit LLMs All Large Language Models are in 1.58 Bits.pdf}
+}
+
+@misc{MakingDeepLearning,
+  title = {Making {{Deep Learning}} Go {{Brrrr From First Principles}}},
+  urldate = {2026-02-08},
+  howpublished = {https://horace.io/brrr\_intro.html},
+  file = {/Users/markusbilz/Zotero/storage/WUVZ25ZZ/brrr_intro.html}
 }
 
 @misc{malininUncertaintyGradientBoosting2021,
@@ -3715,6 +3978,24 @@
   pages = {746--751},
   publisher = {Association for Computational Linguistics},
   address = {Atlanta, GE, USA}
+}
+
+@misc{milakovOnlineNormalizerCalculation2018,
+  title = {Online Normalizer Calculation for Softmax},
+  author = {Milakov, Maxim and Gimelshein, Natalia},
+  year = 2018,
+  month = jul,
+  number = {arXiv:1805.02867},
+  eprint = {1805.02867},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1805.02867},
+  urldate = {2026-02-07},
+  abstract = {The Softmax function is ubiquitous in machine learning, multiple previous works suggested faster alternatives for it. In this paper we propose a way to compute classical Softmax with fewer memory accesses and hypothesize that this reduction in memory accesses should improve Softmax performance on actual hardware. The benchmarks confirm this hypothesis: Softmax accelerates by up to 1.3x and Softmax+TopK combined and fused by up to 5x.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Computation and Language,Computer Science - Performance},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Milakov and Gimelshein - 2018 - Online normalizer calculation for softmax.pdf}
 }
 
 @misc{millerAddingErrorBars2024,
@@ -4022,6 +4303,19 @@
   urldate = {2021-11-06}
 }
 
+@misc{nvidiaSortingFreeGPUKernels2025,
+  title = {Sorting-{{Free GPU Kernels}} for {{LLM Sampling}}},
+  author = {NVIDIA), Zihao Ye (UW, NVIDIA), Bohan Hou (CMU), Luis Ceze (UW, NVIDIA), Tianqi Chen (CMU, Shanli Xing (UW)},
+  year = 2025,
+  month = mar,
+  journal = {FlashInfer},
+  urldate = {2026-02-19},
+  abstract = {Background},
+  howpublished = {https://flashinfer.ai/2025/03/10/sampling.html},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/JHLP229Q/sampling.html}
+}
+
 @misc{Ochama,
   title = {Ochama},
   urldate = {2023-02-17}
@@ -4055,6 +4349,16 @@
   eprint = {1804.09170},
   urldate = {2022-10-30},
   archiveprefix = {arXiv}
+}
+
+@misc{openaiHowMakeYour,
+  title = {How to Make Your Completions Outputs Consistent with the New Seed Parameter},
+  author = {{Openai}},
+  urldate = {2026-02-15},
+  abstract = {TLDR: Developers can now specify seed parameter in the Chat Completion request to receive (mostly) consistent outputs. To help you keep trac},
+  howpublished = {https://developers.openai.com/cookbook/examples/reproducible\_outputs\_with\_the\_seed\_parameter/},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/C9HHC2UY/reproducible_outputs_with_the_seed_parameter.html}
 }
 
 @misc{OptionTrades,
@@ -4357,6 +4661,24 @@
   langid = {english},
   keywords = {Computer Science - Artificial Intelligence,Computer Science - Computation and Language},
   file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Qin et al. - 2025 - Scaling Laws of Synthetic Data for Language Models.pdf}
+}
+
+@misc{qiuGatedAttentionLarge2025,
+  title = {Gated {{Attention}} for {{Large Language Models}}: {{Non-linearity}}, {{Sparsity}}, and {{Attention-Sink-Free}}},
+  shorttitle = {Gated {{Attention}} for {{Large Language Models}}},
+  author = {Qiu, Zihan and Wang, Zekun and Zheng, Bo and Huang, Zeyu and Wen, Kaiyue and Yang, Songlin and Men, Rui and Yu, Le and Huang, Fei and Huang, Suozhi and Liu, Dayiheng and Zhou, Jingren and Lin, Junyang},
+  year = 2025,
+  month = may,
+  number = {arXiv:2505.06708},
+  eprint = {2505.06708},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2505.06708},
+  urldate = {2026-01-10},
+  abstract = {Gating mechanisms have been widely utilized, from early models like LSTMs (Hochreiter \& Schmidhuber, 1997) and Highway Networks (Srivastava et al., 2015) to recent state space models (Gu \& Dao, 2023), linear attention (Hua et al., 2022), and also softmax attention (Lin et al., 2025). Yet, existing literature rarely examines the specific effects of gating. In this work, we conduct comprehensive experiments to systematically investigate gating-augmented softmax attention variants. Specifically, we perform a comprehensive comparison over 30 variants of 15B Mixture-of-Experts (MoE) models and 1.7B dense models trained on a 3.5 trillion token dataset. Our central finding is that a simple modification---applying a head-specific sigmoid gate after the Scaled Dot-Product Attention (SDPA)---consistently improves performance. This modification also enhances training stability, tolerates larger learning rates, and improves scaling properties. By comparing various gating positions and computational variants, we attribute this effectiveness to two key factors: (1) introducing non-linearity upon the low-rank mapping in the softmax attention, and (2) applying query-dependent sparse gating scores to modulate the SDPA output. Notably, we find this sparse gating mechanism mitigates `attention sink' and enhances long-context extrapolation performance, and we also release related codes and models to facilitate future research.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computation and Language}
 }
 
 @article{radfordImprovingLanguageUnderstanding,
@@ -4714,6 +5036,15 @@
   archiveprefix = {arXiv}
 }
 
+@misc{simonozHowWriteFast2024,
+  title = {How to Write a Fast {{Softmax}} Kernel},
+  author = {{Simon Oz}},
+  year = 2024,
+  month = jul,
+  urldate = {2026-03-22},
+  abstract = {Support this channel at: https://buymeacoffee.com/simonoz Code for animations: https://github.com/SzymonOzog/GPU\_Pro... Code for kernels and benchmarks: https://github.com/SzymonOzog/FastSof... References: https://arxiv.org/pdf/1805.02867 https://github.com/karpathy/llm.c/blo... https://siboehm.com/articles/22/CUDA-MMM https://github.com/facebookincubator/... Programming Masively Parallel Processors book}
+}
+
 @inproceedings{smiejaProcessingMissingData2018,
   title = {Processing of Missing Data by Neural Networks},
   booktitle = {Advances in {{Neural Information Processing Systems}}},
@@ -4813,6 +5144,12 @@
   pages = {1161--1170},
   doi = {10.1145/3357384.3357925},
   archiveprefix = {arXiv}
+}
+
+@article{songGoodBadGreedy,
+  title = {The {{Good}}, {{The Bad}}, and {{The Greedy}}:},
+  author = {Song, Yifan and Wang, Guoyin and Li, Sujian and Lin, Bill Yuchen},
+  langid = {english}
 }
 
 @misc{SparseAutoencodersUsing2020,
@@ -5000,6 +5337,13 @@
   archiveprefix = {arXiv}
 }
 
+@misc{TemperatureCreativityParameter,
+  title = {Is {{Temperature}} the {{Creativity Parameter}} of {{Large Language Models}}?},
+  urldate = {2026-02-19},
+  howpublished = {https://arxiv.org/html/2405.00492v1},
+  file = {/Users/markusbilz/Zotero/storage/R6BLA7YK/2405.html}
+}
+
 @inproceedings{tenneyBERTRediscoversClassical2019,
   title = {{{BERT}} Rediscovers the Classical {{NLP}} Pipeline},
   booktitle = {Proceedings of the 57th {{Annual Meeting}} of the {{Association}} for {{Computational Linguistics}}},
@@ -5129,6 +5473,22 @@
   pages = {18853--18865},
   publisher = {Curran Associates, Inc.},
   urldate = {2022-10-27}
+}
+
+@misc{UltraScalePlaybookHugging,
+  title = {The {{Ultra-Scale Playbook}} - a {{Hugging Face Space}} by Nanotron},
+  urldate = {2026-02-08},
+  abstract = {The ultimate guide to training LLM on large GPU Clusters},
+  howpublished = {https://huggingface.co/spaces/nanotron/ultrascale-playbook},
+  file = {/Users/markusbilz/Zotero/storage/A6WTZCLZ/ultrascale-playbook.html}
+}
+
+@misc{UltraScalePlaybookHugginga,
+  title = {The {{Ultra-Scale Playbook}} - a {{Hugging Face Space}} by Nanotron},
+  urldate = {2026-02-19},
+  abstract = {The ultimate guide to training LLM on large GPU Clusters},
+  howpublished = {https://huggingface.co/spaces/nanotron/ultrascale-playbook},
+  file = {/Users/markusbilz/Zotero/storage/67XHRXES/ultrascale-playbook.html}
 }
 
 @article{universityoftechnologysydneyaustraliaLiquidityMotivatedAlgorithm2008,
@@ -5436,6 +5796,18 @@
   chapter = {posts}
 }
 
+@misc{WhatLLMTemperature2024,
+  title = {What Is {{LLM Temperature}}? \textbar{} {{IBM}}},
+  shorttitle = {What Is {{LLM Temperature}}?},
+  year = 2024,
+  month = dec,
+  urldate = {2026-02-19},
+  abstract = {Temperature is a parameter for adjusting the output of LLMs. Temperature controls the randomness or creativity generated by LLMs during inference},
+  howpublished = {https://www.ibm.com/think/topics/llm-temperature},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/A5UHIB3S/llm-temperature.html}
+}
+
 @misc{WhenMachinesTrade,
   title = {When Machines Trade on Corporate Disclosures: Using Text Analytics for Investment Strategies \textbar{} Elsevier Enhanced Reader},
   doi = {10.1016/j.dss.2022.113892},
@@ -5532,6 +5904,20 @@
   doi = {10.3115/981658.981684}
 }
 
+@article{yeOnlineSoftmaxFlashAttention,
+  title = {From {{Online Softmax}} to {{FlashAttention}}},
+  author = {Ye, Zihao},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Ye - From Online Softmax to FlashAttention.pdf}
+}
+
+@article{yeOnlineSoftmaxFlashAttentiona,
+  title = {From {{Online Softmax}} to {{FlashAttention}}},
+  author = {Ye, Zihao},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Ye - From Online Softmax to FlashAttention 1.pdf}
+}
+
 @inproceedings{yinTaBERTPretrainingJoint2020,
   title = {{{TaBERT}}: Pretraining for Joint Understanding of Textual and Tabular Data},
   booktitle = {Proceedings of the 58th {{Annual Meeting}} of the {{Association}} for {{Computational Linguistics}}},
@@ -5564,6 +5950,47 @@
   address = {Red Hook, NY}
 }
 
+@misc{YourEfficientRL,
+  title = {Your {{Efficient RL Framework Secretly Brings You Off-Policy RL Training}} \textbar{} {{Notion}}},
+  journal = {fengyao on Notion},
+  urldate = {2026-02-15},
+  abstract = {Feng Yao*     Liyuan Liu*     Dinghuai Zhang     Chengyu Dong     Jingbo Shang     Jianfeng Gao},
+  howpublished = {https://fengyao.notion.site/off-policy-rl},
+  langid = {english},
+  file = {/Users/markusbilz/Zotero/storage/RAKANG7H/off-policy-rl.html}
+}
+
+@misc{yuanUnderstandingMitigatingNumerical2025,
+  title = {Understanding and {{Mitigating Numerical Sources}} of {{Nondeterminism}} in {{LLM Inference}}},
+  author = {Yuan, Jiayi and Li, Hao and Ding, Xinheng and Xie, Wenya and Li, Yu-Jhe and Zhao, Wentian and Wan, Kun and Shi, Jing and Hu, Xia and Liu, Zirui},
+  year = 2025,
+  publisher = {arXiv},
+  doi = {10.48550/ARXIV.2506.09501},
+  urldate = {2026-02-15},
+  abstract = {Large Language Models (LLMs) are now integral across various domains and have demonstrated impressive performance. Progress, however, rests on the premise that benchmark scores are both accurate and reproducible. We demonstrate that the reproducibility of LLM performance is fragile: changing system configuration, such as evaluation batch size, GPU count, and GPU version, can introduce significant differences in the generated responses. This issue is especially pronounced in reasoning models, where minor rounding differences in early tokens can cascade into divergent chains of thought, ultimately affecting accuracy. For instance, under bfloat16 precision with greedy decoding, a reasoning model like DeepSeek-R1-Distill-Qwen-7B can exhibit up to 9\% variation in accuracy and 9,000 tokens difference in response length due to differences in GPU count, type, and evaluation batch size. We trace the root cause of this variability to the non-associative nature of floating-point arithmetic under limited numerical precision. This work presents the first systematic investigation into how numerical precision affects reproducibility in LLM inference. Through carefully controlled experiments across various hardware, software, and precision settings, we quantify when and how model outputs diverge. Our analysis reveals that floating-point precision---while critical for reproducibility---is often neglected in evaluation practices. Inspired by this, we develop a lightweight inference pipeline, dubbed LayerCast, that stores weights in 16-bit precision but performs all computations in FP32, balancing memory efficiency with numerical stability. Code is available at https://github.com/nanomaoli/llm\_reproducibility.},
+  copyright = {Creative Commons Attribution 4.0 International},
+  langid = {english},
+  keywords = {Computation and Language (cs.CL),FOS: Computer and information sciences},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Yuan et al. - 2025 - Understanding and Mitigating Numerical Sources of Nondeterminism in LLM Inference.pdf}
+}
+
+@misc{yuanUnderstandingMitigatingNumerical2025a,
+  title = {Understanding and {{Mitigating Numerical Sources}} of {{Nondeterminism}} in {{LLM Inference}}},
+  author = {Yuan, Jiayi and Li, Hao and Ding, Xinheng and Xie, Wenya and Li, Yu-Jhe and Zhao, Wentian and Wan, Kun and Shi, Jing and Hu, Xia and Liu, Zirui},
+  year = 2025,
+  month = oct,
+  number = {arXiv:2506.09501},
+  eprint = {2506.09501},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2506.09501},
+  urldate = {2026-02-15},
+  abstract = {Large Language Models (LLMs) are now integral across various domains and have demonstrated impressive performance. Progress, however, rests on the premise that benchmark scores are both accurate and reproducible. We demonstrate that the reproducibility of LLM performance is fragile: changing system configuration, such as evaluation batch size, GPU count, and GPU version, can introduce significant differences in the generated responses. This issue is especially pronounced in reasoning models, where minor rounding differences in early tokens can cascade into divergent chains of thought, ultimately affecting accuracy. For instance, under bfloat16 precision with greedy decoding, a reasoning model like DeepSeek-R1-Distill-Qwen-7B can exhibit up to 9\% variation in accuracy and 9,000 tokens difference in response length due to differences in GPU count, type, and evaluation batch size. We trace the root cause of this variability to the non-associative nature of floating-point arithmetic under limited numerical precision. This work presents the first systematic investigation into how numerical precision affects reproducibility in LLM inference. Through carefully controlled experiments across various hardware, software, and precision settings, we quantify when and how model outputs diverge. Our analysis reveals that floating-point precision---while critical for reproducibility---is often neglected in evaluation practices. Inspired by this, we develop a lightweight inference pipeline, dubbed LayerCast, that stores weights in 16-bit precision but performs all computations in FP32, balancing memory efficiency with numerical stability. Code is available at https://github.com/nanomaoli/llm\_reproducibility.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computation and Language}
+}
+
 @misc{zengAreTransformersEffective2022,
   title = {Are Transformers Effective for Time Series Forecasting?},
   author = {Zeng, Ailing and Chen, Muxi and Zhang, Lei and Xu, Qiang},
@@ -5578,10 +6005,46 @@
   author = {Zhai, Shaodan and Xia, Tian and Li, Zhongliang and Wang, Shaojun}
 }
 
+@misc{zhangDeterministicInferenceTensor2025,
+  title = {Deterministic {{Inference}} across {{Tensor Parallel Sizes That Eliminates Training-Inference Mismatch}}},
+  author = {Zhang, Ziyang and Ding, Xinheng and Yuan, Jiayi and Liu, Rixin and Mao, Huizi and Xing, Jiarong and Liu, Zirui},
+  year = 2025,
+  month = nov,
+  number = {arXiv:2511.17826},
+  eprint = {2511.17826},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2511.17826},
+  urldate = {2026-03-07},
+  abstract = {Deterministic inference is increasingly critical for large language model (LLM) applications such as LLM-asa-judge evaluation, multi-agent systems, and Reinforcement Learning (RL). However, existing LLM serving frameworks exhibit non-deterministic behavior: identical inputs can yield different outputs when system configurations (e.g., tensor parallel (TP) size, batch size) vary, even under greedy decoding. This arises from the non-associativity of floating-point arithmetic and inconsistent reduction orders across GPUs. While prior work has addressed batch-size--related nondeterminism through batch-invariant kernels, determinism across different TP sizes remains an open problem, particularly in RL settings, where the training engine typically uses Fully Sharded Data Parallel (i.e., TP = 1) while the rollout engine relies on multi-GPU TP to maximize the inference throughput, creating a natural mismatch between the two. This precision mismatch problem may lead to suboptimal performance or even collapse for RL training. We identify and analyze the root causes of TP-induced inconsistency and propose Tree-Based Invariant Kernels (TBIK), a set of TP-invariant matrix multiplication and reduction primitives that guarantee bit-wise identical results regardless of TP size. Our key insight is to align intra- and inter-GPU reduction orders through a unified hierarchical binary tree structure. We implement these kernels in Triton and integrate them into vLLM and FSDP. Experiments confirm zero probability divergence and bit-wise reproducibility for deterministic inference across different TP sizes. Also, we achieve bit-wise identical results between vLLM and FSDP in RL training pipelines with different parallel strategy. Code is available at https://github.com/nanomaoli/llm\_reproducibility.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computation and Language,Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Zhang et al. - 2025 - Deterministic Inference across Tensor Parallel Sizes That Eliminates Training-Inference Mismatch.pdf}
+}
+
 @misc{zhangDiveDeepLearning2021,
   title = {Dive into Deep Learning},
   author = {Zhang, Aston and Lipton, Zachary C and Li, Mu and Smola, Alexander J},
   year = 2021
+}
+
+@misc{zhangRootMeanSquare2019,
+  title = {Root {{Mean Square Layer Normalization}}},
+  author = {Zhang, Biao and Sennrich, Rico},
+  year = 2019,
+  month = oct,
+  number = {arXiv:1910.07467},
+  eprint = {1910.07467},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.1910.07467},
+  urldate = {2026-02-19},
+  abstract = {Layer normalization (LayerNorm) has been successfully applied to various deep neural networks to help stabilize training and boost model convergence because of its capability in handling re-centering and re-scaling of both inputs and weight matrix. However, the computational overhead introduced by LayerNorm makes these improvements expensive and significantly slows the underlying network, e.g. RNN in particular. In this paper, we hypothesize that re-centering invariance in LayerNorm is dispensable and propose root mean square layer normalization, or RMSNorm. RMSNorm regularizes the summed inputs to a neuron in one layer according to root mean square (RMS), giving the model re-scaling invariance property and implicit learning rate adaptation ability. RMSNorm is computationally simpler and thus more efficient than LayerNorm. We also present partial RMSNorm, or pRMSNorm where the RMS is estimated from p\% of the summed inputs without breaking the above properties. Extensive experiments on several tasks using diverse network architectures show that RMSNorm achieves comparable performance against LayerNorm but reduces the running time by 7\%{$\sim$}64\% on different models. Source code is available at https://github.com/bzhangGo/rmsnorm.},
+  archiveprefix = {arXiv},
+  langid = {english},
+  keywords = {Computer Science - Computation and Language,Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Zhang and Sennrich - 2019 - Root Mean Square Layer Normalization.pdf}
 }
 
 @article{zhangUptodateComparisonStateoftheart2017,
@@ -5599,6 +6062,14 @@
   title = {Feature Engineering for Machine Learning},
   author = {Zheng, Alice and Casari, Amanda},
   pages = {217}
+}
+
+@article{zhuangRandomnessNeuralNetwork,
+  title = {Randomness in {{Neural Network Training}}: {{Characterizing}} the {{Impact}} of {{Tooling}}},
+  author = {Zhuang, Donglin and Zhang, Xingyao and Song, Shuaiwen Leon and Hooker, Sara},
+  abstract = {The quest for determinism in machine learning has disproportionately focused on characterizing the impact of noise introduced by algorithmic design choices. In this work, we address a less well understood and studied question: how does our choice of tooling introduce randomness to deep neural network training. We conduct large scale experiments across different types of hardware, accelerators, state-of-the-art networks, and open-source datasets, to characterize how tooling choices contribute to the level of non-determinism in a system, the impact of said non-determinism, and the cost of eliminating different sources of noise. Our findings suggest that the impact of non-determinism is nuanced. While top-line metrics such as top-1 accuracy are not noticeably impacted, model performance on certain parts of the data distribution is far more sensitive to the introduction of randomness. Our results suggest that deterministic tooling is critical for AI safety. However, we also find that the cost of ensuring determinism varies dramatically between neural network architectures and hardware types, e.g., with overhead up to 746\% on a spectrum of widely used GPU accelerator architectures, relative to non-deterministic training.},
+  langid = {english},
+  file = {/Users/markusbilz/Library/CloudStorage/OneDrive-Personal/Documents/05 - Wissen & Weiterbildung/paper/Zhuang et al. - Randomness in Neural Network Training Characterizing the Impact of Tooling.pdf}
 }
 
 @misc{zhuClusteringStructureMicrostructure2021,
