@@ -12,8 +12,8 @@ images:
 link-citations: true
 tags:
 - tokenization
-- vision understanding
-- visual data
+- vision-understanding
+- visual-data
 - vision-language-models
 - paper
 thumbnail: images/thumbnail_nested_tokenization.png
