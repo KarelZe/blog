@@ -38,7 +38,9 @@ All three aspects seem intuitive at first glance. Conveniently, the authors prop
 
 While $\alpha$-precision and $\beta$-recall are generalizations of the classic precision and recall metrics, denoted by $P_1$ and $R_1$, the concept of *authenticity* is what's truly new here. This emphasis on distinguishing generalization from memorization represents one of the paper's key contributions. Let's take a closer look at the metric $\mathcal{E}$.
 
-$$\mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}\_{\text {Generalization }}) .$$
+$$
+\mathcal{E} \triangleq(\underbrace{\alpha \text{-Precision}}_{\text {Fidelity }}, \underbrace{\beta \text{-Recall}}_{\text {Diversity }}, \underbrace{\text { Authenticity }}\_{\text {Generalization }}) .
+$$
 
 ## $\alpha$-Precision, $\beta$-Recall, and Authenticity at three levels of understanding
 
@@ -74,17 +76,21 @@ Let's get a little bit more formal with our third level of understanding.
 
 1.  The paper defines $\alpha$-precision ($P\_\alpha$) as the probability:
 
-    $$P\_\alpha \triangleq \mathbb{P}\left(\widetilde{X}\_g \in \mathcal{S}\_r^\alpha\right), \text { for } \alpha \in[0,1],$$
+    $$
+    P\_\alpha \triangleq \mathbb{P}\left(\widetilde{X}\_g \in \mathcal{S}\_r^\alpha\right), \text { for } \alpha \in[0,1],
+    $$
     for an embedded synthetic sample $\widetilde{X}\_g=\Phi(X_g)$ embedded with $\Phi$ to be inside the $\alpha$-support of real samples $\mathcal{S}\_r=\operatorname{supp}{(\mathbb{P}\_r)}$. $\mathbb{P}\_r$ is the generative distribution. $\Phi$ is an embedding function that maps input data to a feature space suitable for comparison. For a formal definition of the support please refer to the paper. By ranging $\alpha$ from 0 to 1, we get full $\alpha$-precision curves.
 
 2.  Likewise, $\beta$-recall ($R\_\beta$) is formally defined as the probability:
-
-    $$R\_\beta \triangleq \mathbb{P}\left(\widetilde{X}\_r \in \mathcal{S}\_g^\beta\right), \text { for } \beta \in[0,1],$$
+    $$
+    R\_\beta \triangleq \mathbb{P}\left(\widetilde{X}\_r \in \mathcal{S}\_g^\beta\right), \text { for } \beta \in[0,1],
+    $$
     for the embedded real sample $\widetilde{X}\_r=\Phi(X_r)$ to reside in the support of the generative distribution ($\mathcal{S}\_g=\operatorname{supp}{(\mathbb{P}\_g)}$).
 
 3.  The authenticity score $A$ is defined as the rate by which the model generates new samples. The generative distribution is then a mixture of the generative distribution conditioned on the synthetic samples ($\mathbb{P}_g^{\prime}$) not being copied and of a noisy distribution over the training data ($\delta_{g, \epsilon}$) weighted by the *authenticity score*:
-
-    $$\mathbb{P}\_g=A \cdot \mathbb{P}_g^{\prime}+(1-A) \cdot \delta_{g, \epsilon}.$$
+    $$
+    \mathbb{P}\_g=A \cdot \mathbb{P}_g^{\prime}+(1-A) \cdot \delta_{g, \epsilon}.
+    $$
 
 Let's next look at a practical example from the paper and count some kittens 🐈.
 
@@ -150,7 +156,9 @@ Let's next see what is needed to implement the approach practically.
 
 1.  **Evaluation embeddings:** Evaluation embeddings are learned using a simple *one-class* neural network with a loss function inspired *one-class* support-vector machines (SVMs). The neural networks is rather simplistic with 2 to 3 layers, ahidden dimension of 32 to 128, and a good old ReLU activation. We learn the parameters on *real samples*. The *soft-boundary loss function* is given by $L=\sum_i \ell_i$ where:
 
-    $$\ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left|\Phi\left(X\_{r, i}\right)-c_r\right|^2-r^2\right\}$$
+    $$
+    \ell_i=r^2+\frac{1}{\nu} \max \left\{0,\left|\Phi\left(X\_{r, i}\right)-c_r\right|^2-r^2\right\}
+    $$
     This formula deserves some more explanation. We first map the inputs $X\_{r,i}$ into the embedding space, where typical data points and outliers are more easily separable from the origin. We then try to find an optimal separating hyperplane/decision boundary. $\nu$ controls the fraction of outliers/tolerance that may violate the decision boundary. The paper sets $\nu=0.1$. The max-term penalizes for larger margin violations. $c_r$ is the centre from which the Euclidean distance between the sample and the centroid is measured.
     ![visualization of soft boundary](non-linear-mapping.png)The loss is minimized over the radius $r$ and the parameters of $\Phi$. The embedding dimension, centroids, and $\nu$ are hyperparameters that potentially require tuning.
 
@@ -547,7 +555,9 @@ TODO: translate + make a svg
 
 For the FID, synthetic and real images are first embedded using the [Inception v3 model](https://en.wikipedia.org/wiki/Inception_(deep_learning_architecture)) and the resulting feature vectors are used to parameterize multivariate distributions for the real dataset $\mathcal{N}\left(\boldsymbol{\mu}_{r}, \boldsymbol{\Sigma}_{r}\right)$ and generated dataset $\mathcal{N}\left(\boldsymbol{\mu}_{s}, \boldsymbol{\Sigma}_{s}\right)$. The discrepancy between both distributions can then be estimated as:
 
-$$\operatorname{FID}\left(\boldsymbol{\mu}\_r, \boldsymbol{\Sigma}\_r, \boldsymbol{\mu}\_s, \boldsymbol{\Sigma}\_s\right)=\left|\boldsymbol{\mu}\_r-\boldsymbol{\mu}\_s\right|\_2^2+\operatorname{Tr}\left(\boldsymbol{\Sigma}\_r+\boldsymbol{\Sigma}\_s-2\left(\boldsymbol{\Sigma}\_r \boldsymbol{\Sigma}\_s\right)^{\frac{1}{2}}\right)$$
+$$
+\operatorname{FID}\left(\boldsymbol{\mu}\_r, \boldsymbol{\Sigma}\_r, \boldsymbol{\mu}\_s, \boldsymbol{\Sigma}\_s\right)=\left|\boldsymbol{\mu}\_r-\boldsymbol{\mu}\_s\right|\_2^2+\operatorname{Tr}\left(\boldsymbol{\Sigma}\_r+\boldsymbol{\Sigma}\_s-2\left(\boldsymbol{\Sigma}\_r \boldsymbol{\Sigma}\_s\right)^{\frac{1}{2}}\right)
+$$
 
 Unlike the current paper, FID is only computable at the dataset level and considers only *diversity* and *fidelity*. Most critically, it would assign optimal scores to a model that simply memorizes the training/real dataset.
 
