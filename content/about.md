@@ -9,9 +9,11 @@ weight: 400
 
 Hi, I'm Markus Bilz.👋
 
-I'm passionate about machine learning and deep learning, currently focusing on vision-language models and synthetic data generation. My goal is always readable, performant code.🚀
+I'm passionate about deep learning, specifically vision-language models and synthetic data.
 
-After graduating from KIT, I joined [Atruvia](https://atruvia.de/) to develop document AI solutions.
+I graduated from KIT. I currently work at [Atruvia](https://atruvia.de/) developing document AI solutions and agents. My previous engineering experience includes building systems for fraud detection and loan processing.
+
+I value clean, performant code above all. 🚀
 
 In my spare time, you'll find me strolling, gravel biking or travelling. One of my greatest dreams would be to set foot on [Jan Mayen](https://en.wikipedia.org/wiki/Jan_Mayen).❄️
 
