@@ -11,7 +11,7 @@ Hi, I'm Markus Bilz.👋
 
 I'm passionate about deep learning, specifically vision-language models and synthetic data.
 
-I graduated from KIT. I currently work at [Atruvia](https://atruvia.de/) developing document AI solutions and agents. My previous engineering experience includes building systems for fraud detection and loan processing.
+I graduated from KIT and currently work at [Atruvia](https://atruvia.de/) developing document AI solutions and AI agents. My previous engineering experience includes building systems for fraud detection and loan processing.
 
 I value clean, performant code above all. 🚀
 
