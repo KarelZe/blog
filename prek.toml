@@ -1,0 +1,23 @@
+# Configuration file for `prek`, a git hook framework written in Rust.
+# See https://prek.j178.dev for more information.
+#:schema https://www.schemastore.org/prek.json
+
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "check-added-large-files", args = ["--maxkb=5000"] },
+  { id = "fix-byte-order-marker" },
+  { id = "check-merge-conflict" },
+  { id = "check-symlinks" },
+  { id = "check-toml" },
+  { id = "check-yaml", args = ["--unsafe"] },
+  { id = "end-of-file-fixer" },
+  { id = "mixed-line-ending" },
+  { id = "trailing-whitespace" },
+]
+
+# Python-specific hooks without a prek builtin equivalent.
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [{ id = "check-builtin-literals" }, { id = "debug-statements" }]
